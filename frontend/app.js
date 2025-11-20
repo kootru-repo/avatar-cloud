@@ -45,6 +45,9 @@ class GeminiLiveClient {
         this.sendTextBtn = document.getElementById('sendTextBtn');
         this.logEl = document.getElementById('log');
         this.audioIndicator = document.getElementById('audioIndicator');
+        this.ccOverlay = document.getElementById('ccOverlay');
+        this.ccText = document.getElementById('ccText');
+        this.ccTimeout = null;  // For auto-hiding CC
 
         // Pre-loaded video elements for instant state switching (no load delay)
         this.avatarVideos = {
@@ -448,6 +451,7 @@ class GeminiLiveClient {
 
                 case 'text':
                     console.log(`💬 Gemini: ${message.data}`);
+                    this.updateClosedCaptions(message.data);
                     break;
 
                 case 'turn_complete':
@@ -586,6 +590,9 @@ class GeminiLiveClient {
         this.sendTextBtn.disabled = true;
         this.audioIndicator.classList.remove('active');
 
+        // Clear closed captions
+        this.clearClosedCaptions();
+
         // Set avatar back to idle
         this.setAvatarState('idle');
 
@@ -596,6 +603,40 @@ class GeminiLiveClient {
     setStatus(state, text) {
         this.statusEl.className = `status ${state}`;
         this.statusEl.textContent = text;
+    }
+
+    updateClosedCaptions(text) {
+        if (!this.ccText || !this.ccOverlay) return;
+
+        // Clear any existing timeout
+        if (this.ccTimeout) {
+            clearTimeout(this.ccTimeout);
+        }
+
+        // Update text content
+        this.ccText.textContent = text;
+
+        // Show overlay
+        this.ccOverlay.classList.add('active');
+
+        // Auto-hide after 5 seconds
+        this.ccTimeout = setTimeout(() => {
+            this.ccOverlay.classList.remove('active');
+        }, 5000);
+    }
+
+    clearClosedCaptions() {
+        if (!this.ccOverlay) return;
+
+        if (this.ccTimeout) {
+            clearTimeout(this.ccTimeout);
+            this.ccTimeout = null;
+        }
+
+        this.ccOverlay.classList.remove('active');
+        if (this.ccText) {
+            this.ccText.textContent = '';
+        }
     }
 
 

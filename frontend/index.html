@@ -191,40 +191,6 @@
             z-index: 1;
         }
 
-        /* VU Meter Status Display */
-        .status-panel {
-            background: #0d0d0d;
-            border: 2px solid #333;
-            border-radius: 6px;
-            padding: 1vh 1.5vw;
-            margin-bottom: 1.5vh;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-        }
-
-        .status-label {
-            font-size: clamp(9px, 1.2vh, 11px);
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-right: 1vw;
-        }
-
-        .status {
-            flex: 1;
-            text-align: center;
-            padding: 0.8vh 1.5vw;
-            border-radius: 4px;
-            font-size: clamp(10px, 1.3vh, 13px);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 1px solid transparent;
-            transition: all 0.3s ease;
-        }
-
         .status.disconnected {
             background: #1a0000;
             color: #ff3333;
@@ -416,6 +382,86 @@
             color: #444;
         }
 
+        /* System Status Display */
+        .status-display {
+            width: 100%;
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 1.5vh 1vw;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-display .status-label {
+            font-size: clamp(9px, 1.1vh, 11px);
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5vh;
+        }
+
+        .status-display .status {
+            padding: 0.8vh 1.5vw;
+            border-radius: 4px;
+            font-size: clamp(11px, 1.3vh, 13px);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        /* Closed Captioning Overlay */
+        .cc-overlay {
+            position: absolute;
+            bottom: 8%;
+            left: 5%;
+            right: 5%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 1.5vh 2vw;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            max-height: 25%;
+            overflow-y: auto;
+        }
+
+        .cc-overlay.active {
+            opacity: 1;
+        }
+
+        .cc-text {
+            color: #ffffff;
+            font-family: 'Roboto Mono', monospace;
+            font-size: clamp(13px, 1.6vh, 16px);
+            line-height: 1.5;
+            text-align: center;
+            font-weight: 500;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+        }
+
+        .cc-overlay::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .cc-overlay::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .cc-overlay::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
         /* Bottom Controls Section */
         .bottom-controls {
             display: flex;
@@ -501,6 +547,10 @@
                 <div class="audio-indicator" id="audioIndicator" style="display: none; padding: 1.5vh; text-align: center; border: 2px solid #ff3333; border-radius: 6px; background: rgba(255, 51, 51, 0.1);">
                     <span class="audio-indicator-text" style="font-size: clamp(10px, 1.2vh, 12px);">🎤 RECORDING</span>
                 </div>
+                <div class="status-display">
+                    <div class="status-label">System</div>
+                    <div id="status" class="status disconnected">Offline</div>
+                </div>
             </div>
 
             <!-- Center Video Display -->
@@ -510,6 +560,11 @@
                         <video id="video-idle" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                         <video id="video-listening" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                         <video id="video-speaking" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
+
+                        <!-- Closed Captioning Overlay -->
+                        <div id="ccOverlay" class="cc-overlay">
+                            <div id="ccText" class="cc-text"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -523,14 +578,6 @@
 
         <!-- Bottom Controls -->
         <div class="bottom-controls">
-            <!-- Status Panel -->
-            <div class="status-panel">
-                <span class="status-label">System:</span>
-                <div id="status" class="status disconnected">
-                    Offline
-                </div>
-            </div>
-
             <!-- Console Log -->
             <div class="log-module" id="log">
                 <div class="log-entry info">System ready. Press REC to start live session...</div>
