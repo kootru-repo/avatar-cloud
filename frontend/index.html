@@ -61,20 +61,22 @@
         /* Main 3-Column Layout */
         .main-layout {
             display: flex;
-            gap: 2vw;
-            align-items: center;
+            gap: 3vw;
+            align-items: stretch;
             justify-content: center;
             flex: 1;
             min-height: 0;
             margin-bottom: 1.5vh;
+            padding-top: 3vh;
         }
 
         .left-controls, .right-controls {
             display: flex;
             flex-direction: column;
-            gap: 2vh;
-            min-width: 120px;
-            max-width: 180px;
+            gap: 3vh;
+            min-width: 140px;
+            max-width: 200px;
+            justify-content: center;
         }
 
         .center-display {
@@ -250,180 +252,6 @@
             50% { opacity: 0.6; }
         }
 
-        /* Professional Audio Controls */
-        .control-rack {
-            background: #0d0d0d;
-            border: 2px solid #333;
-            border-radius: 6px;
-            padding: 1.5vh 1.5vw;
-            margin-bottom: 1.5vh;
-            flex-shrink: 0;
-        }
-
-        .control-rack-label {
-            font-size: clamp(8px, 1vh, 10px);
-            color: #ff3333;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 1vh;
-            padding-bottom: 0.5vh;
-            border-bottom: 1px solid #222;
-        }
-
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1vw;
-        }
-
-        button {
-            font-family: 'Roboto Mono', monospace;
-            padding: 1.5vh 1vw;
-            border: 2px solid;
-            border-radius: 4px;
-            font-size: clamp(11px, 1.4vh, 14px);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-            position: relative;
-            overflow: hidden;
-        }
-
-        button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: translate(-50%, -50%);
-            transition: width 0.3s, height 0.3s;
-        }
-
-        button:active::before {
-            width: 300px;
-            height: 300px;
-        }
-
-        button:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .btn-start {
-            border-color: #00ff00;
-            color: #00ff00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-        }
-
-        .btn-start:hover:not(:disabled) {
-            background: rgba(0, 255, 0, 0.1);
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
-        }
-
-        .btn-stop {
-            border-color: #ff3333;
-            color: #ff3333;
-            box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
-        }
-
-        .btn-stop:hover:not(:disabled) {
-            background: rgba(255, 51, 51, 0.1);
-            box-shadow: 0 0 20px rgba(255, 51, 51, 0.5);
-        }
-
-        /* Text Input Section */
-        .input-module {
-            background: #0d0d0d;
-            border: 2px solid #333;
-            border-radius: 6px;
-            padding: 1.5vh 1.5vw;
-            margin-bottom: 1.5vh;
-            flex-shrink: 0;
-        }
-
-        .text-input {
-            width: 100%;
-            padding: 1.2vh 1vw;
-            background: #000;
-            border: 1px solid #333;
-            border-radius: 4px;
-            color: #00ccff;
-            font-family: 'Roboto Mono', monospace;
-            font-size: clamp(10px, 1.3vh, 13px);
-            resize: vertical;
-            min-height: 6vh;
-            margin-bottom: 1vh;
-        }
-
-        .text-input:focus {
-            outline: none;
-            border-color: #00ccff;
-            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
-        }
-
-        .text-input::placeholder {
-            color: #444;
-        }
-
-        .btn-send {
-            width: 100%;
-            border-color: #00ccff;
-            color: #00ccff;
-            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
-        }
-
-        .btn-send:hover:not(:disabled) {
-            background: rgba(0, 204, 255, 0.1);
-            box-shadow: 0 0 20px rgba(0, 204, 255, 0.5);
-        }
-
-        /* Audio Level Indicator */
-        .audio-indicator {
-            background: #0d0d0d;
-            border: 2px solid #333;
-            border-radius: 6px;
-            padding: 1vh 1.5vw;
-            margin-bottom: 1.5vh;
-            display: none;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        .audio-indicator.active {
-            display: block;
-            border-color: #ff3333;
-            box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
-        }
-
-        .audio-indicator::before {
-            content: '';
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            background: #ff3333;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: recording 0.8s ease-in-out infinite;
-        }
-
-        @keyframes recording {
-            0%, 100% { opacity: 1; box-shadow: 0 0 5px #ff3333; }
-            50% { opacity: 0.3; box-shadow: 0 0 15px #ff3333; }
-        }
-
-        .audio-indicator-text {
-            color: #ff3333;
-            font-size: clamp(10px, 1.2vh, 12px);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
-        }
 
         /* Console Log Display */
         .log-module {
@@ -474,198 +302,118 @@
             color: #ff3333;
         }
 
-        /* Decorative Mixer Controls */
-        .mixer-panel {
-            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-            border: 2px solid #333;
+        /* Functional Control Buttons */
+        .control-btn {
+            font-family: 'Roboto Mono', monospace;
+            padding: 2vh 1.5vw;
+            border: 2px solid;
             border-radius: 6px;
-            padding: 1.5vh 1vw;
-            flex-shrink: 0;
-        }
-
-        .channel-strip {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5vh;
-        }
-
-        .channel-label {
-            font-size: clamp(7px, 0.9vh, 9px);
-            color: #666;
+            font-size: clamp(12px, 1.5vh, 15px);
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 0.5vh;
-        }
-
-        /* Rotary Knobs */
-        .knob {
-            width: clamp(35px, 5vw, 50px);
-            height: clamp(35px, 5vw, 50px);
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #2a2a2a, #0a0a0a);
-            border: 3px solid #333;
-            position: relative;
-            box-shadow:
-                inset 0 2px 8px rgba(0, 0, 0, 0.8),
-                0 2px 5px rgba(0, 0, 0, 0.5);
-        }
-
-        .knob::before {
-            content: '';
-            position: absolute;
-            top: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20%;
-            height: 35%;
-            background: linear-gradient(180deg, #00ccff, #0088aa);
-            border-radius: 2px;
-            box-shadow: 0 0 5px rgba(0, 204, 255, 0.8);
-        }
-
-        .knob::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 30%;
-            height: 30%;
-            background: #000;
-            border-radius: 50%;
-            border: 1px solid #222;
-        }
-
-        /* VU Meter */
-        .vu-meter {
-            width: 100%;
-            height: 1.5vh;
-            background: #000;
-            border: 2px solid #222;
-            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
             position: relative;
             overflow: hidden;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9);
-        }
-
-        .vu-meter::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 60%;
-            background: linear-gradient(90deg,
-                #00ff00 0%,
-                #00ff00 60%,
-                #ffff00 60%,
-                #ffff00 80%,
-                #ff3333 80%);
-            animation: vuPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes vuPulse {
-            0%, 100% { width: 40%; }
-            50% { width: 75%; }
-        }
-
-        /* Fader */
-        .fader-track {
-            width: clamp(20px, 2.5vw, 30px);
-            height: clamp(60px, 8vh, 80px);
-            background: linear-gradient(180deg, #1a1a1a, #000);
-            border: 2px solid #333;
-            border-radius: 4px;
-            position: relative;
-            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.9);
-        }
-
-        .fader-thumb {
-            position: absolute;
-            width: 120%;
-            height: 20%;
-            left: -10%;
-            top: 40%;
-            background: linear-gradient(145deg, #ff3333, #cc0000);
-            border: 2px solid #ff6666;
-            border-radius: 3px;
-            box-shadow:
-                0 2px 5px rgba(255, 51, 51, 0.5),
-                inset 0 1px 2px rgba(255, 255, 255, 0.3);
-        }
-
-        /* Push Button */
-        .push-button {
-            width: clamp(30px, 4vw, 40px);
-            height: clamp(30px, 4vw, 40px);
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #2a2a2a, #0a0a0a);
-            border: 3px solid #333;
-            position: relative;
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5);
-            cursor: pointer;
-            transition: all 0.1s;
-        }
-
-        .push-button:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-        }
-
-        .push-button.active::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 50%;
-            height: 50%;
-            background: #00ff00;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #00ff00;
-            animation: buttonGlow 1s ease-in-out infinite;
-        }
-
-        @keyframes buttonGlow {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* LED Indicators */
-        .led-strip {
+            width: 100%;
+            min-height: 60px;
             display: flex;
-            gap: 0.5vw;
+            align-items: center;
             justify-content: center;
         }
 
-        .led {
-            width: clamp(6px, 0.8vw, 10px);
-            height: clamp(6px, 0.8vw, 10px);
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
             border-radius: 50%;
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
         }
 
-        .led.active-green {
-            background: #00ff00;
-            box-shadow: 0 0 8px #00ff00;
+        .control-btn:active::before {
+            width: 300px;
+            height: 300px;
         }
 
-        .led.active-red {
-            background: #ff3333;
-            box-shadow: 0 0 8px #ff3333;
-            animation: ledBlink 0.8s ease-in-out infinite;
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
 
-        .led.active-blue {
-            background: #00ccff;
-            box-shadow: 0 0 8px #00ccff;
+        .control-btn.btn-rec {
+            border-color: #ff3333;
+            color: #ff3333;
+            box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
         }
 
-        @keyframes ledBlink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        .control-btn.btn-rec:hover:not(:disabled) {
+            background: rgba(255, 51, 51, 0.1);
+            box-shadow: 0 0 25px rgba(255, 51, 51, 0.6);
+        }
+
+        .control-btn.btn-stop-alt {
+            border-color: #ffcc00;
+            color: #ffcc00;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+        }
+
+        .control-btn.btn-stop-alt:hover:not(:disabled) {
+            background: rgba(255, 204, 0, 0.1);
+            box-shadow: 0 0 25px rgba(255, 204, 0, 0.6);
+        }
+
+        .control-btn.btn-send {
+            border-color: #00ccff;
+            color: #00ccff;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.4);
+        }
+
+        .control-btn.btn-send:hover:not(:disabled) {
+            background: rgba(0, 204, 255, 0.1);
+            box-shadow: 0 0 25px rgba(0, 204, 255, 0.6);
+        }
+
+        .control-btn.btn-neutral {
+            border-color: #666;
+            color: #888;
+            box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+        }
+
+        .control-btn.btn-neutral:hover:not(:disabled) {
+            background: rgba(102, 102, 102, 0.1);
+            box-shadow: 0 0 20px rgba(102, 102, 102, 0.5);
+        }
+
+        /* Text Input for Messages */
+        .text-input-inline {
+            width: 100%;
+            padding: 1.2vh 1vw;
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 6px;
+            color: #00ccff;
+            font-family: 'Roboto Mono', monospace;
+            font-size: clamp(11px, 1.3vh, 13px);
+            resize: none;
+            min-height: 80px;
+            margin-bottom: 1vh;
+        }
+
+        .text-input-inline:focus {
+            outline: none;
+            border-color: #00ccff;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.4);
+        }
+
+        .text-input-inline::placeholder {
+            color: #444;
         }
 
         /* Bottom Controls Section */
@@ -691,12 +439,8 @@
                 flex-direction: row;
                 max-width: 100%;
                 width: 100%;
-                justify-content: space-around;
-            }
-
-            .controls {
-                grid-template-columns: 1fr;
-                gap: 1.5vh;
+                justify-content: center;
+                gap: 2vw;
             }
 
             .avatar-video-wrapper {
@@ -704,13 +448,14 @@
                 max-height: 85vw;
             }
 
-            .knob {
-                width: 35px;
-                height: 35px;
+            .control-btn {
+                min-height: 50px;
+                font-size: clamp(10px, 1.2vh, 12px);
+                flex: 1;
             }
 
-            .fader-track {
-                height: 50px;
+            .text-input-inline {
+                min-height: 60px;
             }
         }
 
@@ -749,48 +494,12 @@
 
         <!-- Main 3-Column Layout -->
         <div class="main-layout">
-            <!-- Left Audio Controls -->
+            <!-- Left Controls -->
             <div class="left-controls">
-                <!-- Channel 1: Gain -->
-                <div class="mixer-panel">
-                    <div class="channel-strip">
-                        <div class="channel-label">Gain</div>
-                        <div class="knob"></div>
-                        <div class="vu-meter"></div>
-                    </div>
-                </div>
-
-                <!-- Channel 2: EQ High -->
-                <div class="mixer-panel">
-                    <div class="channel-strip">
-                        <div class="channel-label">High</div>
-                        <div class="knob"></div>
-                        <div class="led-strip">
-                            <div class="led active-green"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Channel 3: EQ Mid -->
-                <div class="mixer-panel">
-                    <div class="channel-strip">
-                        <div class="channel-label">Mid</div>
-                        <div class="knob"></div>
-                        <div class="led-strip">
-                            <div class="led active-blue"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Channel 4: EQ Low -->
-                <div class="mixer-panel">
-                    <div class="channel-strip">
-                        <div class="channel-label">Low</div>
-                        <div class="knob"></div>
-                        <div class="led-strip">
-                            <div class="led active-green"></div>
-                        </div>
-                    </div>
+                <button id="startBtn" class="control-btn btn-rec">● REC / LIVE</button>
+                <button id="stopBtn" class="control-btn btn-stop-alt" disabled>■ STOP</button>
+                <div class="audio-indicator" id="audioIndicator" style="display: none; padding: 1.5vh; text-align: center; border: 2px solid #ff3333; border-radius: 6px; background: rgba(255, 51, 51, 0.1);">
+                    <span class="audio-indicator-text" style="font-size: clamp(10px, 1.2vh, 12px);">🎤 RECORDING</span>
                 </div>
             </div>
 
@@ -805,48 +514,10 @@
                 </div>
             </div>
 
-            <!-- Right Audio Controls -->
+            <!-- Right Controls -->
             <div class="right-controls">
-                <!-- Channel 5: Pan -->
-                <div class="mixer-panel">
-                    <div class="channel-strip">
-                        <div class="channel-label">Pan</div>
-                        <div class="knob"></div>
-                        <div class="led-strip">
-                            <div class="led"></div>
-                            <div class="led active-red"></div>
-                            <div class="led"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Channel 6: Master Fader -->
-                <div class="mixer-panel">
-                    <div class="channel-strip">
-                        <div class="channel-label">Master</div>
-                        <div class="fader-track">
-                            <div class="fader-thumb"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Channel 7: Monitor -->
-                <div class="mixer-panel">
-                    <div class="channel-strip">
-                        <div class="channel-label">Monitor</div>
-                        <div class="push-button active"></div>
-                        <div class="vu-meter"></div>
-                    </div>
-                </div>
-
-                <!-- Channel 8: Effects -->
-                <div class="mixer-panel">
-                    <div class="channel-strip">
-                        <div class="channel-label">FX Send</div>
-                        <div class="knob"></div>
-                        <div class="push-button"></div>
-                    </div>
-                </div>
+                <textarea id="textInput" class="text-input-inline" placeholder="Type message..."></textarea>
+                <button id="sendTextBtn" class="control-btn btn-send" disabled>▶ SEND MESSAGE</button>
             </div>
         </div>
 
@@ -858,26 +529,6 @@
                 <div id="status" class="status disconnected">
                     Offline
                 </div>
-            </div>
-
-            <!-- Main Controls -->
-            <div class="control-rack">
-                <div class="control-rack-label">▶ Transport Controls</div>
-                <div class="controls">
-                    <button id="startBtn" class="btn-start">● REC / Live</button>
-                    <button id="stopBtn" class="btn-stop" disabled>■ Stop</button>
-                </div>
-            </div>
-
-            <!-- Audio Level Indicator -->
-            <div class="audio-indicator" id="audioIndicator">
-                <span class="audio-indicator-text">🎤 Recording Live Input</span>
-            </div>
-
-            <!-- Text Input Module -->
-            <div class="input-module">
-                <textarea id="textInput" class="text-input" placeholder="Type message to performer..."></textarea>
-                <button id="sendTextBtn" class="btn-send" disabled>▶ Send Message</button>
             </div>
 
             <!-- Console Log -->
