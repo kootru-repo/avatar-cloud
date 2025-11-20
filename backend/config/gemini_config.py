@@ -60,7 +60,7 @@ def get_gemini_config() -> dict:
     # The SDK requires speech_config to be a dictionary with voice_name
     config = {
         "generation_config": {
-            "response_modalities": ["AUDIO"],
+            "response_modalities": api_config.response_modalities,
             "speech_config": {
                 "voice_config": {
                     "prebuilt_voice_config": {
@@ -79,7 +79,7 @@ def get_gemini_config() -> dict:
 
     logger.info(f"✅ SDK-compliant Gemini config created (plain dict)")
     logger.info(f"   Voice: {voice_name}")
-    logger.info(f"   Response modalities: AUDIO")
+    logger.info(f"   Response modalities: {', '.join(api_config.response_modalities)}")
     if api_config.affective_dialog:
         logger.info(f"   Affective dialog: Enabled (adapts to tone/expression)")
     logger.info(f"   Config type: {type(config)}")

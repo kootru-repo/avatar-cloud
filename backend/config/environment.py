@@ -103,11 +103,18 @@ class ApiConfig:
         # Affective dialog configuration
         self.affective_dialog = config.get('geminiVoice', {}).get('affectiveDialog', True)
 
+        # Response modalities configuration (AUDIO, TEXT, or both)
+        audio_config = config.get('audio', {})
+        self.response_modalities = audio_config.get('responseModalities', ["AUDIO"])
+        if not isinstance(self.response_modalities, list):
+            self.response_modalities = ["AUDIO"]
+
         logger.info(f"Initialized Google AI Developer API configuration")
         logger.info(f"  API: Google AI (Developer)")
         logger.info(f"  Authentication: API Key")
         logger.info(f"  Model: {self.model}")
         logger.info(f"  Voice: {self.voice}")
+        logger.info(f"  Response Modalities: {self.response_modalities}")
 
     async def initialize(self):
         """
