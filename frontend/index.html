@@ -451,6 +451,204 @@
             color: #ff3333;
         }
 
+        /* Decorative Mixer Controls */
+        .mixer-panel {
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 1.5vh 1.5vw;
+            margin-bottom: 1.5vh;
+            flex-shrink: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 1.5vw;
+        }
+
+        .channel-strip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5vh;
+        }
+
+        .channel-label {
+            font-size: clamp(7px, 0.9vh, 9px);
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5vh;
+        }
+
+        /* Rotary Knobs */
+        .knob {
+            width: clamp(35px, 5vw, 50px);
+            height: clamp(35px, 5vw, 50px);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #2a2a2a, #0a0a0a);
+            border: 3px solid #333;
+            position: relative;
+            box-shadow:
+                inset 0 2px 8px rgba(0, 0, 0, 0.8),
+                0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .knob::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20%;
+            height: 35%;
+            background: linear-gradient(180deg, #00ccff, #0088aa);
+            border-radius: 2px;
+            box-shadow: 0 0 5px rgba(0, 204, 255, 0.8);
+        }
+
+        .knob::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30%;
+            height: 30%;
+            background: #000;
+            border-radius: 50%;
+            border: 1px solid #222;
+        }
+
+        /* VU Meter */
+        .vu-meter {
+            width: 100%;
+            height: 1.5vh;
+            background: #000;
+            border: 2px solid #222;
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9);
+        }
+
+        .vu-meter::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 60%;
+            background: linear-gradient(90deg,
+                #00ff00 0%,
+                #00ff00 60%,
+                #ffff00 60%,
+                #ffff00 80%,
+                #ff3333 80%);
+            animation: vuPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes vuPulse {
+            0%, 100% { width: 40%; }
+            50% { width: 75%; }
+        }
+
+        /* Fader */
+        .fader-track {
+            width: clamp(20px, 2.5vw, 30px);
+            height: clamp(60px, 8vh, 80px);
+            background: linear-gradient(180deg, #1a1a1a, #000);
+            border: 2px solid #333;
+            border-radius: 4px;
+            position: relative;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.9);
+        }
+
+        .fader-thumb {
+            position: absolute;
+            width: 120%;
+            height: 20%;
+            left: -10%;
+            top: 40%;
+            background: linear-gradient(145deg, #ff3333, #cc0000);
+            border: 2px solid #ff6666;
+            border-radius: 3px;
+            box-shadow:
+                0 2px 5px rgba(255, 51, 51, 0.5),
+                inset 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Push Button */
+        .push-button {
+            width: clamp(30px, 4vw, 40px);
+            height: clamp(30px, 4vw, 40px);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #2a2a2a, #0a0a0a);
+            border: 3px solid #333;
+            position: relative;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .push-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .push-button.active::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50%;
+            height: 50%;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff00;
+            animation: buttonGlow 1s ease-in-out infinite;
+        }
+
+        @keyframes buttonGlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* LED Indicators */
+        .led-strip {
+            display: flex;
+            gap: 0.5vw;
+            justify-content: center;
+        }
+
+        .led {
+            width: clamp(6px, 0.8vw, 10px);
+            height: clamp(6px, 0.8vw, 10px);
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+        }
+
+        .led.active-green {
+            background: #00ff00;
+            box-shadow: 0 0 8px #00ff00;
+        }
+
+        .led.active-red {
+            background: #ff3333;
+            box-shadow: 0 0 8px #ff3333;
+            animation: ledBlink 0.8s ease-in-out infinite;
+        }
+
+        .led.active-blue {
+            background: #00ccff;
+            box-shadow: 0 0 8px #00ccff;
+        }
+
+        @keyframes ledBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .console-container {
@@ -465,6 +663,20 @@
 
             .avatar-video-wrapper {
                 max-width: 85vw;
+            }
+
+            .mixer-panel {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 2vw;
+            }
+
+            .knob {
+                width: 35px;
+                height: 35px;
+            }
+
+            .fader-track {
+                height: 50px;
             }
         }
 
@@ -505,6 +717,76 @@
                 <video id="video-idle" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                 <video id="video-listening" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                 <video id="video-speaking" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
+            </div>
+        </div>
+
+        <!-- Decorative Mixer Panel -->
+        <div class="mixer-panel">
+            <!-- Channel 1: Gain -->
+            <div class="channel-strip">
+                <div class="channel-label">Gain</div>
+                <div class="knob"></div>
+                <div class="vu-meter"></div>
+            </div>
+
+            <!-- Channel 2: EQ High -->
+            <div class="channel-strip">
+                <div class="channel-label">High</div>
+                <div class="knob"></div>
+                <div class="led-strip">
+                    <div class="led active-green"></div>
+                </div>
+            </div>
+
+            <!-- Channel 3: EQ Mid -->
+            <div class="channel-strip">
+                <div class="channel-label">Mid</div>
+                <div class="knob"></div>
+                <div class="led-strip">
+                    <div class="led active-blue"></div>
+                </div>
+            </div>
+
+            <!-- Channel 4: EQ Low -->
+            <div class="channel-strip">
+                <div class="channel-label">Low</div>
+                <div class="knob"></div>
+                <div class="led-strip">
+                    <div class="led active-green"></div>
+                </div>
+            </div>
+
+            <!-- Channel 5: Pan -->
+            <div class="channel-strip">
+                <div class="channel-label">Pan</div>
+                <div class="knob"></div>
+                <div class="led-strip">
+                    <div class="led"></div>
+                    <div class="led active-red"></div>
+                    <div class="led"></div>
+                </div>
+            </div>
+
+            <!-- Channel 6: Master Fader -->
+            <div class="channel-strip">
+                <div class="channel-label">Master</div>
+                <div class="fader-track">
+                    <div class="fader-thumb"></div>
+                </div>
+            </div>
+
+            <!-- Channel 7: Monitor -->
+            <div class="channel-strip">
+                <div class="channel-label">Monitor</div>
+                <div class="push-button active"></div>
+                <div class="vu-meter"></div>
+            </div>
+
+            <!-- Channel 8: Effects -->
+            <div class="channel-strip">
+                <div class="channel-label">FX Send</div>
+                <div class="knob"></div>
+                <div class="push-button"></div>
             </div>
         </div>
 
