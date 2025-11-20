@@ -52,8 +52,8 @@
       }
     },
     "baseVideoDuration": 10.0,
-    "displayWidth": 400,
-    "displayHeight": 400,
+    "displayWidth": 1024,
+    "displayHeight": 1024,
     "frameInterval": 1000,
     "screenCaptureInterval": 1000
   },
