@@ -268,101 +268,198 @@
             color: #ff3333;
         }
 
-        /* Functional Control Buttons */
+        /* High-End Mixer Board Buttons */
         .control-btn {
             font-family: 'Roboto Mono', monospace;
-            padding: 2vh 1.5vw;
-            border: 2px solid;
-            border-radius: 6px;
-            font-size: clamp(12px, 1.5vh, 15px);
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            font-size: clamp(11px, 1.4vh, 14px);
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            transition: all 0.15s ease;
             position: relative;
-            overflow: hidden;
             width: 100%;
-            min-height: 60px;
+            min-height: 65px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 0.5vh;
+
+            /* Metallic base with depth */
+            background:
+                linear-gradient(180deg,
+                    rgba(255, 255, 255, 0.15) 0%,
+                    rgba(255, 255, 255, 0.05) 45%,
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(0, 0, 0, 0.4) 100%),
+                linear-gradient(145deg, #2a2a2a, #1a1a1a);
+
+            /* 3D embossed effect */
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.1) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
         .control-btn::before {
             content: '';
             position: absolute;
-            top: 50%;
+            top: 8%;
             left: 50%;
-            width: 0;
-            height: 0;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: translate(-50%, -50%);
-            transition: width 0.3s, height 0.3s;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent);
+            transition: all 0.2s ease;
+            opacity: 0.3;
         }
 
-        .control-btn:active::before {
-            width: 300px;
-            height: 300px;
+        .control-btn:active {
+            transform: translateY(2px);
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.1) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+                0 2px 4px rgba(0, 0, 0, 0.6),
+                0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
         .control-btn:disabled {
-            opacity: 0.3;
+            opacity: 0.4;
             cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        /* LED Indicator */
+        .btn-led {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0a0a0a;
+            border: 1px solid rgba(0, 0, 0, 0.5);
+            box-shadow:
+                0 0 3px rgba(0, 0, 0, 0.8) inset,
+                0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
         }
 
         .control-btn.btn-rec {
-            border-color: #ff3333;
-            color: #ff3333;
-            box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
+            background:
+                linear-gradient(180deg,
+                    rgba(255, 100, 100, 0.2) 0%,
+                    rgba(255, 51, 51, 0.1) 45%,
+                    rgba(139, 0, 0, 0.3) 50%,
+                    rgba(80, 0, 0, 0.5) 100%),
+                linear-gradient(145deg, #3a2222, #2a1a1a);
+            color: #ff6666;
+            text-shadow: 0 0 8px rgba(255, 51, 51, 0.6);
+            border: 1px solid rgba(255, 51, 51, 0.3);
+        }
+
+        .control-btn.btn-rec .btn-led {
+            background: radial-gradient(circle at 30% 30%, #ff3333, #aa0000);
+            box-shadow:
+                0 0 8px #ff3333,
+                0 0 12px rgba(255, 51, 51, 0.6),
+                0 0 3px rgba(0, 0, 0, 0.8) inset;
+            animation: ledPulse 1.5s ease-in-out infinite;
         }
 
         .control-btn.btn-rec:hover:not(:disabled) {
-            background: rgba(255, 51, 51, 0.1);
-            box-shadow: 0 0 25px rgba(255, 51, 51, 0.6);
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.15) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 8px 20px rgba(255, 51, 51, 0.4);
         }
 
         .control-btn.btn-stop-alt {
-            border-color: #ffcc00;
-            color: #ffcc00;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
+            background:
+                linear-gradient(180deg,
+                    rgba(255, 220, 100, 0.2) 0%,
+                    rgba(255, 204, 0, 0.1) 45%,
+                    rgba(139, 100, 0, 0.3) 50%,
+                    rgba(80, 60, 0, 0.5) 100%),
+                linear-gradient(145deg, #3a3222, #2a2a1a);
+            color: #ffdd66;
+            text-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+        }
+
+        .control-btn.btn-stop-alt .btn-led {
+            background: radial-gradient(circle at 30% 30%, #ffcc00, #aa8800);
+            box-shadow:
+                0 0 8px #ffcc00,
+                0 0 12px rgba(255, 204, 0, 0.6),
+                0 0 3px rgba(0, 0, 0, 0.8) inset;
         }
 
         .control-btn.btn-stop-alt:hover:not(:disabled) {
-            background: rgba(255, 204, 0, 0.1);
-            box-shadow: 0 0 25px rgba(255, 204, 0, 0.6);
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.15) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 8px 20px rgba(255, 204, 0, 0.4);
         }
 
         .control-btn.btn-send {
-            border-color: #00ccff;
-            color: #00ccff;
-            box-shadow: 0 0 15px rgba(0, 204, 255, 0.4);
+            background:
+                linear-gradient(180deg,
+                    rgba(100, 220, 255, 0.2) 0%,
+                    rgba(0, 204, 255, 0.1) 45%,
+                    rgba(0, 100, 139, 0.3) 50%,
+                    rgba(0, 60, 80, 0.5) 100%),
+                linear-gradient(145deg, #223a3a, #1a2a2a);
+            color: #66ddff;
+            text-shadow: 0 0 8px rgba(0, 204, 255, 0.6);
+            border: 1px solid rgba(0, 204, 255, 0.3);
+        }
+
+        .control-btn.btn-send .btn-led {
+            background: radial-gradient(circle at 30% 30%, #00ccff, #0088aa);
+            box-shadow:
+                0 0 8px #00ccff,
+                0 0 12px rgba(0, 204, 255, 0.6),
+                0 0 3px rgba(0, 0, 0, 0.8) inset;
         }
 
         .control-btn.btn-send:hover:not(:disabled) {
-            background: rgba(0, 204, 255, 0.1);
-            box-shadow: 0 0 25px rgba(0, 204, 255, 0.6);
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.15) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 8px 20px rgba(0, 204, 255, 0.4);
         }
 
-        .control-btn.btn-neutral {
-            border-color: #666;
-            color: #888;
-            box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
-        }
-
-        .control-btn.btn-neutral:hover:not(:disabled) {
-            background: rgba(102, 102, 102, 0.1);
-            box-shadow: 0 0 20px rgba(102, 102, 102, 0.5);
+        @keyframes ledPulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow:
+                    0 0 8px #ff3333,
+                    0 0 12px rgba(255, 51, 51, 0.6),
+                    0 0 3px rgba(0, 0, 0, 0.8) inset;
+            }
+            50% {
+                opacity: 0.6;
+                box-shadow:
+                    0 0 12px #ff3333,
+                    0 0 20px rgba(255, 51, 51, 0.8),
+                    0 0 3px rgba(0, 0, 0, 0.8) inset;
+            }
         }
 
         /* Text Input for Messages */
         .text-input-inline {
             width: 100%;
             padding: 1.2vh 1vw;
-            background: #000;
-            border: 2px solid #333;
+            background:
+                linear-gradient(145deg, #0a0a0a, #050505);
+            border: 1px solid #333;
             border-radius: 6px;
             color: #00ccff;
             font-family: 'Roboto Mono', monospace;
@@ -370,12 +467,21 @@
             resize: none;
             min-height: 80px;
             margin-bottom: 1vh;
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.8) inset,
+                0 -1px 0 rgba(255, 255, 255, 0.05) inset,
+                0 1px 0 rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
         }
 
         .text-input-inline:focus {
             outline: none;
             border-color: #00ccff;
-            box-shadow: 0 0 15px rgba(0, 204, 255, 0.4);
+            box-shadow:
+                0 2px 4px rgba(0, 0, 0, 0.8) inset,
+                0 -1px 0 rgba(255, 255, 255, 0.05) inset,
+                0 0 0 1px rgba(0, 204, 255, 0.5),
+                0 0 12px rgba(0, 204, 255, 0.3);
         }
 
         .text-input-inline::placeholder {
@@ -385,35 +491,49 @@
         /* System Status Display */
         .status-display {
             width: 100%;
-            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
-            border: 2px solid #333;
-            border-radius: 6px;
+            background:
+                linear-gradient(180deg,
+                    rgba(255, 255, 255, 0.08) 0%,
+                    rgba(255, 255, 255, 0.03) 45%,
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(0, 0, 0, 0.4) 100%),
+                linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
             padding: 1.5vh 1vw;
             text-align: center;
-            min-height: 60px;
+            min-height: 65px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.1) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
+                0 3px 6px rgba(0, 0, 0, 0.6);
         }
 
         .status-display .status-label {
             font-size: clamp(9px, 1.1vh, 11px);
-            color: #666;
+            color: #888;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.5vh;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.6vh;
+            font-weight: 600;
         }
 
         .status-display .status {
-            padding: 0.8vh 1.5vw;
-            border-radius: 4px;
-            font-size: clamp(11px, 1.3vh, 13px);
+            padding: 0.5vh 1.2vw;
+            border-radius: 3px;
+            font-size: clamp(10px, 1.2vh, 12px);
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
             border: 1px solid transparent;
             transition: all 0.3s ease;
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.6) inset,
+                0 -1px 0 rgba(255, 255, 255, 0.05) inset;
         }
 
         /* Closed Captioning Overlay */
@@ -542,8 +662,14 @@
         <div class="main-layout">
             <!-- Left Controls -->
             <div class="left-controls">
-                <button id="startBtn" class="control-btn btn-rec">● REC / LIVE</button>
-                <button id="stopBtn" class="control-btn btn-stop-alt" disabled>■ STOP</button>
+                <button id="startBtn" class="control-btn btn-rec">
+                    <div class="btn-led"></div>
+                    REC / LIVE
+                </button>
+                <button id="stopBtn" class="control-btn btn-stop-alt" disabled>
+                    <div class="btn-led"></div>
+                    STOP
+                </button>
                 <div class="audio-indicator" id="audioIndicator" style="display: none; padding: 1.5vh; text-align: center; border: 2px solid #ff3333; border-radius: 6px; background: rgba(255, 51, 51, 0.1);">
                     <span class="audio-indicator-text" style="font-size: clamp(10px, 1.2vh, 12px);">🎤 RECORDING</span>
                 </div>
@@ -572,7 +698,10 @@
             <!-- Right Controls -->
             <div class="right-controls">
                 <textarea id="textInput" class="text-input-inline" placeholder="Type message..."></textarea>
-                <button id="sendTextBtn" class="control-btn btn-send" disabled>▶ SEND MESSAGE</button>
+                <button id="sendTextBtn" class="control-btn btn-send" disabled>
+                    <div class="btn-led"></div>
+                    SEND MESSAGE
+                </button>
             </div>
         </div>
 
