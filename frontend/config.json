@@ -104,8 +104,7 @@
     "outputSampleRate": 24000,
     "inputSampleRate": 16000,
     "responseModalities": [
-      "AUDIO",
-      "TEXT"
+      "AUDIO"
     ],
     "pcmFormat": "PCM16LE",
     "bytesPerSample": 2,
