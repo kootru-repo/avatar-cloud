@@ -52,6 +52,7 @@ class GeminiLiveClient {
         // Speech recognition for live transcription
         this.recognition = null;
         this.recognitionActive = false;
+        this.ccEnabled = false;  // Only enable after first audio to avoid showing system messages
         this.initSpeechRecognition();
 
         // Pre-loaded video elements for instant state switching (no load delay)
@@ -425,6 +426,12 @@ class GeminiLiveClient {
                     this.interruptTimeout = null;
                 }
 
+                // Enable CC after first audio chunk (prevents showing system messages)
+                if (!this.ccEnabled) {
+                    this.ccEnabled = true;
+                    console.log('✅ Closed captions enabled');
+                }
+
                 // ASYNC COORDINATION: Start video first, then audio
                 // This prevents interference between video decoder initialization and audio processing
                 this.setAvatarState('speaking');
@@ -598,6 +605,9 @@ class GeminiLiveClient {
         // Stop speech recognition
         this.stopSpeechRecognition();
 
+        // Reset CC enabled flag
+        this.ccEnabled = false;
+
         // Clear closed captions
         this.clearClosedCaptions();
 
@@ -625,18 +635,22 @@ class GeminiLiveClient {
         try {
             this.recognition = new SpeechRecognition();
             this.recognition.continuous = true;
-            this.recognition.interimResults = true;
+            this.recognition.interimResults = true;  // Get partial results immediately
             this.recognition.lang = 'en-US';
-            this.recognition.maxAlternatives = 1;
+            this.recognition.maxAlternatives = 3;  // Get multiple alternatives for better accuracy
 
             // Handle recognition results
             this.recognition.onresult = (event) => {
+                // Only process if CC is enabled (prevents showing system messages)
+                if (!this.ccEnabled) return;
+
                 let transcript = '';
                 let isFinal = false;
 
                 // Get the latest results
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const result = event.results[i];
+                    // Use the most confident alternative
                     transcript += result[0].transcript;
                     if (result.isFinal) {
                         isFinal = true;
@@ -677,6 +691,8 @@ class GeminiLiveClient {
             };
 
             console.log('✅ Speech recognition initialized for closed captions');
+            console.log('⚠️ Note: CC accuracy depends on audio quality and may have delays');
+            console.log('   For best results: increase speaker volume, reduce background noise');
         } catch (error) {
             console.warn('Failed to initialize speech recognition:', error);
         }
