@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Live Avatar - SDK Compliant</title>
+    <title>Live Performance Console - Gemini Audio Studio</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;500;700&display=swap');
+
         * {
             margin: 0;
             padding: 0;
@@ -12,186 +14,126 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Roboto Mono', monospace;
+            background: #0a0a0a url('media/images/stage.png') center center/cover no-repeat fixed;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
         }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            /* Size set dynamically from config.json */
-            width: var(--container-width, 600px);
-            padding: 40px;
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(3px);
+            z-index: 0;
+        }
+
+        .console-container {
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(145deg, #1a1a1a 0%, #0d0d0d 100%);
+            border: 3px solid #333;
+            border-radius: 12px;
+            box-shadow:
+                0 0 60px rgba(255, 0, 0, 0.3),
+                0 0 100px rgba(0, 150, 255, 0.2),
+                inset 0 2px 10px rgba(255, 255, 255, 0.05);
+            width: var(--container-width, 550px);
+            padding: 30px;
+            max-width: 95vw;
+        }
+
+        .console-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ff3333;
+            position: relative;
+        }
+
+        .console-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ccff, transparent);
         }
 
         h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 26px;
+            font-weight: 900;
+            color: #ff3333;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow:
+                0 0 10px rgba(255, 51, 51, 0.8),
+                0 0 20px rgba(255, 51, 51, 0.4);
+            margin-bottom: 8px;
         }
 
         .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: #00ccff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 400;
         }
 
-        .status {
-            text-align: center;
+        /* Studio Monitor Display */
+        .monitor-display {
+            background: #000;
+            border: 4px solid #222;
+            border-radius: 8px;
             padding: 15px;
-            border-radius: 10px;
             margin-bottom: 20px;
-            font-weight: 500;
+            box-shadow:
+                inset 0 0 20px rgba(0, 0, 0, 0.9),
+                0 0 20px rgba(0, 200, 255, 0.3);
+            position: relative;
         }
 
-        .status.disconnected {
-            background: #fee;
-            color: #c33;
+        .monitor-display::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff00;
+            animation: powerLED 2s ease-in-out infinite;
         }
 
-        .status.connecting {
-            background: #ffeaa7;
-            color: #856404;
-        }
-
-        .status.connected {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-start {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .btn-start:hover:not(:disabled) {
-            background: #45a049;
-        }
-
-        .btn-stop {
-            background: #f44336;
-            color: white;
-        }
-
-        .btn-stop:hover:not(:disabled) {
-            background: #da190b;
-        }
-
-        .text-input-container {
-            margin-bottom: 20px;
-        }
-
-        .text-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 14px;
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .text-input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn-send {
-            background: #667eea;
-            color: white;
-            width: 100%;
-        }
-
-        .btn-send:hover:not(:disabled) {
-            background: #5568d3;
-        }
-
-        .log {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-        }
-
-        .log-entry {
-            padding: 5px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .log-entry:last-child {
-            border-bottom: none;
-        }
-
-        .log-entry.info {
-            color: #0066cc;
-        }
-
-        .log-entry.success {
-            color: #28a745;
-        }
-
-        .log-entry.error {
-            color: #dc3545;
-        }
-
-        .audio-indicator {
-            text-align: center;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 10px;
-            background: #f8f9fa;
-            display: none;
-        }
-
-        .audio-indicator.active {
-            display: block;
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .avatar-container {
-            text-align: center;
-            margin-bottom: 20px;
+        @keyframes powerLED {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         .avatar-video-wrapper {
             position: relative;
-            width: var(--video-width, 768px);
-            height: var(--video-height, 768px);
+            width: var(--video-width, 400px);
+            height: var(--video-height, 400px);
             margin: 0 auto;
+            border: 2px solid #ff3333;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow:
+                0 0 20px rgba(255, 51, 51, 0.4),
+                inset 0 0 30px rgba(0, 0, 0, 0.8);
         }
 
         .avatar-video {
@@ -200,27 +142,321 @@
             left: 0;
             width: 100%;
             height: 100%;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             object-fit: cover;
             opacity: 0;
-            transition: opacity 0.2s ease-in-out;
-            pointer-events: none;
+            transition: opacity 0.3s ease;
         }
 
         .avatar-video.active {
             opacity: 1;
-            pointer-events: auto;
             z-index: 1;
+        }
+
+        /* VU Meter Status Display */
+        .status-panel {
+            background: #0d0d0d;
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 10px;
+        }
+
+        .status {
+            flex: 1;
+            text-align: center;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .status.disconnected {
+            background: #1a0000;
+            color: #ff3333;
+            border-color: #ff3333;
+            box-shadow: inset 0 0 10px rgba(255, 51, 51, 0.3);
+        }
+
+        .status.connecting {
+            background: #1a1a00;
+            color: #ffcc00;
+            border-color: #ffcc00;
+            box-shadow: inset 0 0 10px rgba(255, 204, 0, 0.3);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .status.connected {
+            background: #001a00;
+            color: #00ff00;
+            border-color: #00ff00;
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Professional Audio Controls */
+        .control-rack {
+            background: #0d0d0d;
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-rack-label {
+            font-size: 9px;
+            color: #ff3333;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #222;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            font-family: 'Roboto Mono', monospace;
+            padding: 14px;
+            border: 2px solid;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            border-color: #00ff00;
+            color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        .btn-stop {
+            border-color: #ff3333;
+            color: #ff3333;
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.3);
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            background: rgba(255, 51, 51, 0.1);
+            box-shadow: 0 0 20px rgba(255, 51, 51, 0.5);
+        }
+
+        /* Text Input Section */
+        .input-module {
+            background: #0d0d0d;
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #00ccff;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            resize: vertical;
+            min-height: 70px;
+            margin-bottom: 10px;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #00ccff;
+            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
+        }
+
+        .text-input::placeholder {
+            color: #444;
+        }
+
+        .btn-send {
+            width: 100%;
+            border-color: #00ccff;
+            color: #00ccff;
+            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
+        }
+
+        .btn-send:hover:not(:disabled) {
+            background: rgba(0, 204, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 204, 255, 0.5);
+        }
+
+        /* Audio Level Indicator */
+        .audio-indicator {
+            background: #0d0d0d;
+            border: 2px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: center;
+        }
+
+        .audio-indicator.active {
+            display: block;
+            border-color: #ff3333;
+            box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
+        }
+
+        .audio-indicator::before {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #ff3333;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: recording 0.8s ease-in-out infinite;
+        }
+
+        @keyframes recording {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px #ff3333; }
+            50% { opacity: 0.3; box-shadow: 0 0 15px #ff3333; }
+        }
+
+        .audio-indicator-text {
+            color: #ff3333;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        /* Console Log Display */
+        .log-module {
+            background: #000;
+            border: 2px solid #222;
+            border-radius: 6px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 10px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+        }
+
+        .log-module::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .log-module::-webkit-scrollbar-track {
+            background: #0d0d0d;
+        }
+
+        .log-module::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid #111;
+            color: #666;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.info {
+            color: #00ccff;
+        }
+
+        .log-entry.success {
+            color: #00ff00;
+        }
+
+        .log-entry.error {
+            color: #ff3333;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .console-container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎙️ Gemini Live Avatar</h1>
-        <p class="subtitle">100% SDK Compliant Implementation</p>
+    <div class="console-container">
+        <div class="console-header">
+            <h1>🎸 Live Studio Console</h1>
+            <p class="subtitle">Gemini Audio Production System</p>
+        </div>
 
-        <div class="avatar-container">
+        <!-- Studio Monitor Display -->
+        <div class="monitor-display">
             <div class="avatar-video-wrapper">
                 <video id="video-idle" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                 <video id="video-listening" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
@@ -228,29 +464,40 @@
             </div>
         </div>
 
-        <div id="status" class="status disconnected">
-            Disconnected
+        <!-- Status Panel -->
+        <div class="status-panel">
+            <span class="status-label">System:</span>
+            <div id="status" class="status disconnected">
+                Offline
+            </div>
         </div>
 
-        <div class="controls">
-            <button id="startBtn" class="btn-start">Start Conversation</button>
-            <button id="stopBtn" class="btn-stop" disabled>Stop</button>
+        <!-- Main Controls -->
+        <div class="control-rack">
+            <div class="control-rack-label">▶ Transport Controls</div>
+            <div class="controls">
+                <button id="startBtn" class="btn-start">● REC / Live</button>
+                <button id="stopBtn" class="btn-stop" disabled>■ Stop</button>
+            </div>
         </div>
 
-        <div class="text-input-container">
-            <textarea id="textInput" class="text-input" placeholder="Type a message to send (optional)..."></textarea>
-            <button id="sendTextBtn" class="btn-send" disabled>Send Text</button>
-        </div>
-
+        <!-- Audio Level Indicator -->
         <div class="audio-indicator" id="audioIndicator">
-            🎤 Listening...
+            <span class="audio-indicator-text">🎤 Recording Live Input</span>
         </div>
 
-        <div class="log" id="log">
-            <div class="log-entry info">Ready to connect...</div>
+        <!-- Text Input Module -->
+        <div class="input-module">
+            <textarea id="textInput" class="text-input" placeholder="Type message to performer..."></textarea>
+            <button id="sendTextBtn" class="btn-send" disabled>▶ Send Message</button>
+        </div>
+
+        <!-- Console Log -->
+        <div class="log-module" id="log">
+            <div class="log-entry info">System ready. Press REC to start live session...</div>
         </div>
     </div>
 
-    <script type="module" src="app.js?v=11"></script>
+    <script type="module" src="app.js?v=12"></script>
 </body>
 </html>
