@@ -49,6 +49,11 @@ class GeminiLiveClient {
         this.ccText = document.getElementById('ccText');
         this.ccTimeout = null;  // For auto-hiding CC
 
+        // Speech recognition for live transcription
+        this.recognition = null;
+        this.recognitionActive = false;
+        this.initSpeechRecognition();
+
         // Pre-loaded video elements for instant state switching (no load delay)
         this.avatarVideos = {
             idle: document.getElementById('video-idle'),
@@ -590,6 +595,9 @@ class GeminiLiveClient {
         this.sendTextBtn.disabled = true;
         this.audioIndicator.classList.remove('active');
 
+        // Stop speech recognition
+        this.stopSpeechRecognition();
+
         // Clear closed captions
         this.clearClosedCaptions();
 
@@ -605,7 +613,100 @@ class GeminiLiveClient {
         this.statusEl.textContent = text;
     }
 
-    updateClosedCaptions(text) {
+    initSpeechRecognition() {
+        // Check for browser support
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            console.warn('⚠️ Web Speech API not supported in this browser');
+            return;
+        }
+
+        try {
+            this.recognition = new SpeechRecognition();
+            this.recognition.continuous = true;
+            this.recognition.interimResults = true;
+            this.recognition.lang = 'en-US';
+            this.recognition.maxAlternatives = 1;
+
+            // Handle recognition results
+            this.recognition.onresult = (event) => {
+                let transcript = '';
+                let isFinal = false;
+
+                // Get the latest results
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const result = event.results[i];
+                    transcript += result[0].transcript;
+                    if (result.isFinal) {
+                        isFinal = true;
+                    }
+                }
+
+                if (transcript.trim()) {
+                    this.updateClosedCaptions(transcript, isFinal);
+                }
+            };
+
+            this.recognition.onerror = (event) => {
+                console.warn('Speech recognition error:', event.error);
+                // Don't show errors to user, just log them
+                if (event.error === 'no-speech') {
+                    // Restart recognition if it stops due to no speech
+                    if (this.recognitionActive && this.currentAvatarState === 'speaking') {
+                        setTimeout(() => {
+                            try {
+                                this.recognition.start();
+                            } catch (e) {
+                                // Already running
+                            }
+                        }, 100);
+                    }
+                }
+            };
+
+            this.recognition.onend = () => {
+                // Restart if Whinny is still speaking
+                if (this.recognitionActive && this.currentAvatarState === 'speaking') {
+                    try {
+                        this.recognition.start();
+                    } catch (e) {
+                        // Already running
+                    }
+                }
+            };
+
+            console.log('✅ Speech recognition initialized for closed captions');
+        } catch (error) {
+            console.warn('Failed to initialize speech recognition:', error);
+        }
+    }
+
+    startSpeechRecognition() {
+        if (!this.recognition || this.recognitionActive) return;
+
+        try {
+            this.recognition.start();
+            this.recognitionActive = true;
+            console.log('🎤 Started speech recognition for CC');
+        } catch (error) {
+            console.warn('Failed to start speech recognition:', error);
+        }
+    }
+
+    stopSpeechRecognition() {
+        if (!this.recognition || !this.recognitionActive) return;
+
+        try {
+            this.recognition.stop();
+            this.recognitionActive = false;
+            console.log('🛑 Stopped speech recognition for CC');
+        } catch (error) {
+            console.warn('Failed to stop speech recognition:', error);
+        }
+    }
+
+    updateClosedCaptions(text, isFinal = false) {
         if (!this.ccText || !this.ccOverlay) return;
 
         // Clear any existing timeout
@@ -614,15 +715,25 @@ class GeminiLiveClient {
         }
 
         // Update text content
+        // Add visual indicator for interim vs final results
         this.ccText.textContent = text;
+
+        // Style differently for interim results (lighter color)
+        if (!isFinal) {
+            this.ccText.style.opacity = '0.8';
+        } else {
+            this.ccText.style.opacity = '1';
+        }
 
         // Show overlay
         this.ccOverlay.classList.add('active');
 
-        // Auto-hide after 5 seconds
-        this.ccTimeout = setTimeout(() => {
-            this.ccOverlay.classList.remove('active');
-        }, 5000);
+        // Auto-hide after 5 seconds for final results
+        if (isFinal) {
+            this.ccTimeout = setTimeout(() => {
+                this.ccOverlay.classList.remove('active');
+            }, 5000);
+        }
     }
 
     clearClosedCaptions() {
@@ -906,6 +1017,9 @@ class GeminiLiveClient {
 
         // Handle speaking state with video cycling
         if (state === 'speaking') {
+            // Start speech recognition for closed captions
+            this.startSpeechRecognition();
+
             // Prepare video for cycle control
             this.avatarVideo.loop = false;
             this.avatarVideo.playbackRate = 1.0;
@@ -930,6 +1044,9 @@ class GeminiLiveClient {
                 this.startVideoSpeakingCycle();
             }
         } else {
+            // Stop speech recognition when not speaking
+            this.stopSpeechRecognition();
+
             // Stop cycling when returning to idle or listening
             this.stopVideoSpeakingCycle();
 
