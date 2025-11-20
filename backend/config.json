@@ -16,6 +16,6 @@
   "audio": {
     "outputSampleRate": 24000,
     "inputSampleRate": 16000,
-    "responseModalities": ["AUDIO"]
+    "responseModalities": ["AUDIO", "TEXT"]
   }
 }
