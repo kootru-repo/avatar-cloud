@@ -13,12 +13,20 @@ logger = logging.getLogger(__name__)
 def load_backstory() -> dict:
     """Load character backstory from JSON file."""
     try:
-        backstory_path = Path(__file__).parent.parent.parent / 'docs' / 'whinny_backstory.json'
-
-        if backstory_path.exists():
-            with open(backstory_path, 'r', encoding='utf-8') as f:
+        # Try backend directory first (for cloud deployment)
+        backend_backstory_path = Path(__file__).parent.parent / 'whinny_backstory.json'
+        if backend_backstory_path.exists():
+            with open(backend_backstory_path, 'r', encoding='utf-8') as f:
                 backstory = json.load(f)
-                logger.info(f"✅ Backstory loaded: {backstory.get('character_name', 'Unknown')}")
+                logger.info(f"✅ Backstory loaded from backend: {backstory.get('character_name', 'Unknown')}")
+                return backstory
+
+        # Fall back to docs directory (for local development)
+        docs_backstory_path = Path(__file__).parent.parent.parent / 'docs' / 'whinny_backstory.json'
+        if docs_backstory_path.exists():
+            with open(docs_backstory_path, 'r', encoding='utf-8') as f:
+                backstory = json.load(f)
+                logger.info(f"✅ Backstory loaded from docs: {backstory.get('character_name', 'Unknown')}")
                 return backstory
 
         logger.warning("Backstory file not found, using empty backstory")

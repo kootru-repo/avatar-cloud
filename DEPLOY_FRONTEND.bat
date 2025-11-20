@@ -22,8 +22,10 @@ if %errorlevel% neq 0 (
 )
 
 echo Checking Firebase login status...
-firebase projects:list >nul 2>nul
+echo.
+firebase projects:list
 if %errorlevel% neq 0 (
+    echo.
     echo You need to login to Firebase
     echo.
     set /p login="Login now? (y/n): "

@@ -831,13 +831,17 @@ class GeminiLiveClient {
     setAvatarState(state) {
         if (!this.videoSources) return;
 
-        const videoSrc = this.videoSources[state];
-        if (!videoSrc) return;
-
         // Get the target video element for this state
         const targetVideo = this.avatarVideos[state];
         if (!targetVideo) {
             console.error(`❌ Video element not found for state: ${state}`);
+            return;
+        }
+
+        // Verify video source exists for this state (environment-aware)
+        const videoUrl = this.getVideoUrl(state);
+        if (!videoUrl) {
+            console.error(`❌ Video source not found for state: ${state}`);
             return;
         }
 

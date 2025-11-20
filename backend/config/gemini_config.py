@@ -55,13 +55,19 @@ def get_gemini_config() -> dict:
             f"Update geminiVoice.voiceName in frontend/config.json"
         )
 
-    # OFFICIAL GOOGLE PATTERN: Use simple string format for speech_config
+    # OFFICIAL GOOGLE PATTERN: speech_config as dictionary object
     # Reference: https://ai.google.dev/gemini-api/docs/audio
-    # The SDK accepts voice name directly as a string
+    # The SDK requires speech_config to be a dictionary with voice_name
     config = {
         "generation_config": {
             "response_modalities": ["AUDIO"],
-            "speech_config": voice_name  # Simple string format (e.g., "Charon")
+            "speech_config": {
+                "voice_config": {
+                    "prebuilt_voice_config": {
+                        "voice_name": voice_name
+                    }
+                }
+            }
         },
         "system_instruction": SYSTEM_INSTRUCTIONS
     }

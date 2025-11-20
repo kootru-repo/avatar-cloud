@@ -11,7 +11,7 @@
     "region": "global",
     "proxyUrl": {
       "local": "ws://localhost:8080",
-      "cloud": "/ws"
+      "cloud": "wss://gemini-avatar-backend-580499038386.us-central1.run.app"
     }
   },
   "backend": {
@@ -19,17 +19,16 @@
     "host": "0.0.0.0",
     "wsUrl": {
       "local": "ws://localhost:8080",
-      "cloud": "wss://YOUR-CLOUD-RUN-SERVICE.run.app",
-      "_comment": "Update 'cloud' URL after deploying backend to Cloud Run. Get URL from: gcloud run services describe gemini-avatar-backend --format='value(status.url)'"
+      "cloud": "wss://gemini-avatar-backend-580499038386.us-central1.run.app"
     }
   },
   "firebase": {
     "_comment": "Firebase configuration for authentication and hosting. Get from Firebase Console > Project Settings > Your apps > SDK setup and configuration",
     "projectId": "avatar-478217",
-    "appId": "YOUR-FIREBASE-APP-ID",
-    "apiKey": "YOUR-FIREBASE-API-KEY",
+    "appId": "1:580499038386:web:303450a3e1a2da9289a9ab",
+    "apiKey": "AIzaSyCs3DfEW-CIrv9HUZJwPExTVHFNuRuYor4",
     "authDomain": "avatar-478217.firebaseapp.com",
-    "enabled": true,
+    "enabled": false,
     "_usage": "Set enabled=false to disable Firebase Auth for local development without login"
   },
   "cloud": {
@@ -53,8 +52,8 @@
       }
     },
     "baseVideoDuration": 10.0,
-    "displayWidth": 768,
-    "displayHeight": 768,
+    "displayWidth": 400,
+    "displayHeight": 400,
     "frameInterval": 1000,
     "screenCaptureInterval": 1000
   },

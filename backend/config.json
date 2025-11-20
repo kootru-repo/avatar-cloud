@@ -1,0 +1,21 @@
+{
+  "api": {
+    "model": "models/gemini-2.5-flash-native-audio-preview-09-2025"
+  },
+  "geminiVoice": {
+    "enabled": true,
+    "voiceName": "Algenib",
+    "affectiveDialog": true
+  },
+  "geminiVAD": {
+    "startSensitivity": "START_SENSITIVITY_HIGH",
+    "endSensitivity": "END_SENSITIVITY_HIGH",
+    "prefixPaddingMs": 100,
+    "silenceDurationMs": 200
+  },
+  "audio": {
+    "outputSampleRate": 24000,
+    "inputSampleRate": 16000,
+    "responseModalities": ["AUDIO"]
+  }
+}

@@ -22,10 +22,18 @@ class ConfigurationError(Exception):
 
 def load_config_json() -> dict:
     """Load configuration from config.json."""
-    config_path = Path(__file__).parent.parent.parent / 'frontend' / 'config.json'
-    if config_path.exists():
-        with open(config_path, 'r') as f:
+    # Try backend directory first (for cloud deployment)
+    backend_config_path = Path(__file__).parent.parent / 'config.json'
+    if backend_config_path.exists():
+        with open(backend_config_path, 'r') as f:
             return json.load(f)
+
+    # Fall back to frontend directory (for local development)
+    frontend_config_path = Path(__file__).parent.parent.parent / 'frontend' / 'config.json'
+    if frontend_config_path.exists():
+        with open(frontend_config_path, 'r') as f:
+            return json.load(f)
+
     return {}
 
 
