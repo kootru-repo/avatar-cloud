@@ -136,7 +136,13 @@ class AudioTranscriber:
                 if result.alternatives:
                     text = result.alternatives[0].transcript.strip()
                     if text:
-                        logger.debug(f"Transcribed: {text[:100]}...")
+                        logger.debug(f"Transcribed (delaying {BUFFER_DURATION_MS}ms): {text[:100]}...")
+
+                        # IMPORTANT: Delay caption display to sync with audio playback
+                        # We transcribed 2 seconds of past audio, so delay showing text
+                        # until that audio actually plays on the client
+                        await asyncio.sleep(BUFFER_DURATION_MS / 1000.0)
+
                         return text
 
             return None
