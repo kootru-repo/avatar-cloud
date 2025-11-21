@@ -2,8 +2,8 @@
 ## Master Reference for All Deployments & Architecture
 
 **Project:** Gemini Live Avatar - Voice-to-voice AI conversation with animated avatar
-**Last Updated:** 2025-11-21
-**Status:** Production-ready, auto-deploys enabled
+**Last Updated:** 2025-11-20
+**Status:** Production-ready, manual deployments
 
 ---
 
@@ -29,21 +29,19 @@
 
 ### **Live URLs**
 - **Frontend (Firebase Hosting):** https://avatar-478217.web.app
-- **Backend (Cloud Run):** https://gemini-avatar-backend-j77zxealoq-uc.a.run.app
+- **Backend (Cloud Run):** https://gemini-avatar-backend-580499038386.us-central1.run.app
 - **Backend WebSocket:** wss://gemini-avatar-backend-580499038386.us-central1.run.app
 
 ### **Quick Deploy Commands**
 ```bash
-# Deploy backend (triggers automatically on git push to main)
-git add backend/
-git commit -m "Update backend"
-git push origin main
+# Deploy backend (manual - from backend directory)
+cd backend
+gcloud run deploy gemini-avatar-backend --source . --region=us-central1
 
-# Deploy frontend (manual)
+# Deploy frontend (manual - from project root)
 firebase deploy --only hosting
 
 # View deployment status
-gcloud builds list --limit=5
 gcloud run services describe gemini-avatar-backend --region=us-central1
 ```
 
@@ -157,7 +155,7 @@ gemini-livewire-avatar/
 
 ### **2. Cloud Run Service**
 **Name:** `gemini-avatar-backend`
-- **URL:** https://gemini-avatar-backend-j77zxealoq-uc.a.run.app
+- **URL:** https://gemini-avatar-backend-580499038386.us-central1.run.app
 - **Region:** us-central1
 - **Container:** `us-central1-docker.pkg.dev/avatar-478217/cloud-run-source-deploy/gemini-avatar-backend`
 - **Service Account:** `580499038386-compute@developer.gserviceaccount.com`
@@ -245,59 +243,64 @@ gemini-livewire-avatar/
 - **Managed By:** Cloud Run (auto-updated on deploy)
 
 ### **8. Cloud Build (CI/CD)**
-**Status:** Configured to auto-deploy backend
-- **Trigger:** Push to `main` branch in GitHub repo
-- **Build Config:** `cloudbuild.yaml`
-- **Steps:**
-  1. Build Docker container from `backend/Dockerfile`
-  2. Push to Artifact Registry
-  3. Deploy to Cloud Run
-  4. Route 100% traffic to new revision
-- **Build Time:** ~3-5 minutes
-- **Service Account:** `580499038386@cloudbuild.gserviceaccount.com`
+**Status:** NOT CURRENTLY CONFIGURED (manual deployments only)
+- **Trigger:** None configured (can be set up to auto-deploy on git push)
+- **Build Config:** `cloudbuild.yaml` exists but not actively used
+- **Current Deployment Method:** Manual `gcloud run deploy` from local machine
+- **Note:** cloudbuild.yaml file is available for future CI/CD setup if needed
 
 ---
 
 ## Deployment Workflows
 
-### **Workflow 1: Backend Auto-Deployment (AUTOMATIC)**
+### **Workflow 1: Backend Manual Deployment (MANUAL)**
 
-**Trigger:** Any commit to `main` branch that modifies `backend/` files
+**Trigger:** Manual command after modifying `backend/` files
 
 ```
-Developer pushes to GitHub main branch
+Developer modifies backend files
         ↓
-GitHub webhook notifies Cloud Build
+Developer commits to git (for version control)
         ↓
-Cloud Build reads cloudbuild.yaml
+Developer runs: cd backend && gcloud run deploy gemini-avatar-backend --source .
         ↓
-Step 1: Build Docker image (backend/Dockerfile)
+Cloud Run builds Docker image (backend/Dockerfile)
         ↓
-Step 2: Push to Artifact Registry (us-central1)
+Deploys to Cloud Run (gemini-avatar-backend)
         ↓
-Step 3: Deploy to Cloud Run (gemini-avatar-backend)
+Routes 100% traffic to new revision
         ↓
-Step 4: Route 100% traffic to new revision
-        ↓
-✅ Backend live at: https://gemini-avatar-backend-*.run.app
+✅ Backend live at: https://gemini-avatar-backend-580499038386.us-central1.run.app
 ```
 
 **Time:** 3-5 minutes
-**No Manual Intervention Required**
+**Manual Intervention Required**
 
-**To trigger:**
+**To deploy:**
 ```bash
 # Modify backend code
 vim backend/core/transcription.py
 
-# Commit and push
+# Commit to git (for version control)
 git add backend/
 git commit -m "Fix transcription bug"
 git push origin main
 
-# Monitor deployment
-gcloud builds list --limit=1
-gcloud builds log $(gcloud builds list --limit=1 --format='value(id)')
+# Deploy to Cloud Run
+cd backend
+gcloud run deploy gemini-avatar-backend \
+  --source . \
+  --region=us-central1 \
+  --platform=managed \
+  --allow-unauthenticated \
+  --min-instances=1 \
+  --max-instances=10 \
+  --timeout=300 \
+  --memory=512Mi \
+  --cpu=1 \
+  --set-env-vars=BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=true \
+  --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest \
+  --port=8080
 ```
 
 ### **Workflow 2: Frontend Manual Deployment (MANUAL)**
@@ -351,18 +354,18 @@ vim backend/core/transcription.py
 cd backend
 python main.py
 
-# 3. Commit and push (auto-deploys to Cloud Run)
+# 3. Commit to git (for version control)
 git add backend/core/transcription.py
 git commit -m "Fix transcription VAD filter"
 git push origin main
 
-# 4. Monitor deployment
-gcloud builds list --limit=1
-gcloud builds log $(gcloud builds list --limit=1 --format='value(id)')
+# 4. Deploy to Cloud Run
+cd backend
+gcloud run deploy gemini-avatar-backend --source . --region=us-central1
 
 # 5. Verify deployment
 gcloud run services describe gemini-avatar-backend --region=us-central1
-curl https://gemini-avatar-backend-j77zxealoq-uc.a.run.app/health
+curl https://gemini-avatar-backend-580499038386.us-central1.run.app/health
 
 # 6. Test in browser
 # Visit https://avatar-478217.web.app and start conversation
@@ -417,14 +420,15 @@ git add backend/ frontend/
 git commit -m "Add new feature: XYZ"
 git push origin main
 
-# 3. Backend deploys automatically (3-5 min)
-# Monitor: gcloud builds list --limit=1
+# 3. Deploy backend manually
+cd backend
+gcloud run deploy gemini-avatar-backend --source . --region=us-central1
 
 # 4. Deploy frontend manually
 firebase deploy --only hosting
 
 # 5. Verify both
-curl https://gemini-avatar-backend-j77zxealoq-uc.a.run.app/health
+curl https://gemini-avatar-backend-580499038386.us-central1.run.app/health
 curl -I https://avatar-478217.web.app
 
 # 6. Test end-to-end
@@ -617,31 +621,36 @@ gcloud run services describe gemini-avatar-backend \
 
 ## Troubleshooting
 
-### **Backend Not Deploying After Git Push**
+### **Setting Up Auto-Deployment (Optional)**
 
-**Problem:** Pushed to GitHub but Cloud Build didn't trigger
+**Current Status:** Deployments are currently manual. Auto-deployment can be configured if desired.
 
-**Check:**
+**To enable auto-deployment on git push:**
 ```bash
-# 1. Verify Cloud Build trigger exists
-gcloud builds triggers list --project=avatar-478217
-
-# 2. Check recent builds
-gcloud builds list --limit=5
-
-# 3. Check if changes were in backend/ directory
-git log --oneline --name-only -5 | grep backend/
-```
-
-**Fix:**
-```bash
-# If trigger doesn't exist, create it:
+# 1. Create Cloud Build trigger
 gcloud builds triggers create github \
   --repo-name=avatar-cloud \
   --repo-owner=kootru-repo \
   --branch-pattern=^main$ \
-  --build-config=cloudbuild.yaml
+  --build-config=cloudbuild.yaml \
+  --project=avatar-478217
+
+# 2. Verify trigger created
+gcloud builds triggers list --project=avatar-478217
+
+# 3. Connect GitHub repository (if not already connected)
+# Visit: https://console.cloud.google.com/cloud-build/triggers
+# Click "Connect Repository" and follow GitHub OAuth flow
+
+# 4. Test by pushing to main
+git commit --allow-empty -m "Test auto-deploy"
+git push origin main
+
+# 5. Monitor build
+gcloud builds list --limit=1
 ```
+
+**Note:** Currently all deployments are done manually with `gcloud run deploy`
 
 ---
 
@@ -681,7 +690,7 @@ vim frontend/index.html
 **Check:**
 ```bash
 # 1. Verify backend is running
-curl https://gemini-avatar-backend-j77zxealoq-uc.a.run.app/health
+curl https://gemini-avatar-backend-580499038386.us-central1.run.app/health
 
 # 2. Check WebSocket URL in frontend config
 cat frontend/config.json | grep wsUrl
@@ -840,27 +849,28 @@ gcloud run services update gemini-avatar-backend \
 
 ### **Deployment**
 ```bash
-# Backend (automatic via git)
-git push origin main
+# Backend (manual)
+cd backend
+gcloud run deploy gemini-avatar-backend --source . --region=us-central1
 
 # Frontend (manual)
 firebase deploy --only hosting
 
-# Both (frontend requires manual step)
-git push origin main && firebase deploy --only hosting
+# Both (both require manual steps)
+cd backend && gcloud run deploy gemini-avatar-backend --source . --region=us-central1
+cd .. && firebase deploy --only hosting
 ```
 
 ### **Monitoring**
 ```bash
 # Backend logs
-gcloud logging read "resource.type=cloud_run_revision" --limit=50
-
-# Build logs
-gcloud builds list --limit=5
-gcloud builds log BUILD_ID
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=gemini-avatar-backend" --limit=50
 
 # Service status
 gcloud run services describe gemini-avatar-backend --region=us-central1
+
+# List recent revisions
+gcloud run revisions list --service=gemini-avatar-backend --region=us-central1
 ```
 
 ### **Configuration**
@@ -887,15 +897,15 @@ gcloud secrets versions access latest --secret=GEMINI_API_KEY
 ```
 File Modified?
 │
-├── backend/* → Git push → Cloud Build AUTO-DEPLOYS to Cloud Run (3-5 min)
+├── backend/* → Git commit + MANUAL: cd backend && gcloud run deploy (3-5 min)
 │
-├── frontend/* → Git push + MANUAL: firebase deploy --only hosting (30-60 sec)
+├── frontend/* → Git commit + MANUAL: firebase deploy --only hosting (30-60 sec)
 │
-├── cloudbuild.yaml → Git push → Affects NEXT backend deployment
+├── cloudbuild.yaml → (Not used - manual deployments only)
 │
 ├── firebase.json → MANUAL: firebase deploy (affects hosting config)
 │
-└── Other files → Git push (version control only, no deployment)
+└── Other files → Git commit (version control only, no deployment)
 ```
 
 ---
@@ -904,13 +914,14 @@ File Modified?
 
 **What Claude Needs to Know:**
 
-1. **Backend changes** (Python code in `backend/`) auto-deploy via Cloud Build when pushed to GitHub main branch
+1. **Backend changes** (Python code in `backend/`) require manual deployment: `cd backend && gcloud run deploy gemini-avatar-backend --source . --region=us-central1`
 2. **Frontend changes** (HTML/JS in `frontend/`) require manual `firebase deploy --only hosting`
-3. **Always commit to git first**, then handle deployment
-4. **Backend URL:** https://gemini-avatar-backend-j77zxealoq-uc.a.run.app
+3. **Always commit to git first** for version control, then deploy manually
+4. **Backend URL:** https://gemini-avatar-backend-580499038386.us-central1.run.app
 5. **Frontend URL:** https://avatar-478217.web.app
 6. **Project ID:** avatar-478217
 7. **GitHub Repo:** https://github.com/kootru-repo/avatar-cloud
+8. **Auto-deployment:** NOT currently configured (all deployments are manual)
 
 **Deployment Workflow:**
 ```bash
@@ -918,7 +929,9 @@ File Modified?
 git add backend/
 git commit -m "Fix: description"
 git push origin main
-# Wait 3-5 minutes for Cloud Build
+cd backend
+gcloud run deploy gemini-avatar-backend --source . --region=us-central1
+# Takes 3-5 minutes
 
 # For frontend changes:
 git add frontend/
@@ -931,7 +944,8 @@ firebase deploy --only hosting
 git add .
 git commit -m "Fix: description"
 git push origin main
-# Wait for backend, then:
+cd backend
+gcloud run deploy gemini-avatar-backend --source . --region=us-central1
 firebase deploy --only hosting
 ```
 
