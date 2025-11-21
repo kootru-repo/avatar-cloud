@@ -137,14 +137,29 @@ class AudioTranscriber:
 
 # Global transcriber instance (initialized on first use)
 _transcriber: Optional[AudioTranscriber] = None
+_transcriber_failed: bool = False  # Track if initialization failed to avoid repeated attempts
 
 
-async def get_transcriber() -> AudioTranscriber:
-    """Get or create the global transcriber instance."""
-    global _transcriber
+async def get_transcriber() -> Optional[AudioTranscriber]:
+    """
+    Get or create the global transcriber instance.
+    Returns None if initialization fails (e.g., model download issues).
+    """
+    global _transcriber, _transcriber_failed
+
+    # Don't retry if we already failed
+    if _transcriber_failed:
+        return None
 
     if _transcriber is None:
-        _transcriber = AudioTranscriber(model_size="tiny")  # Ultra-fast
-        await _transcriber.initialize()
+        try:
+            _transcriber = AudioTranscriber(model_size="tiny")  # Ultra-fast
+            await _transcriber.initialize()
+            logger.info("✅ Transcription enabled")
+        except Exception as e:
+            logger.warning(f"⚠️ Transcription disabled: {str(e)[:100]}")
+            logger.info("   Audio playback will continue normally without captions")
+            _transcriber_failed = True
+            return None
 
     return _transcriber
