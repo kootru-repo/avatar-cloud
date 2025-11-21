@@ -42,6 +42,7 @@ class GeminiLiveClient {
         this.mixerToggle = document.getElementById('mixerToggle');
         this.labelOn = document.getElementById('labelOn');
         this.isToggleActive = false;
+        this.isToggleAnimating = false;
         this.textInput = document.getElementById('textInput');
         this.sendTextBtn = document.getElementById('sendTextBtn');
         this.logEl = document.getElementById('log');
@@ -82,11 +83,29 @@ class GeminiLiveClient {
     }
 
     toggleConnection() {
-        if (this.isToggleActive) {
-            this.stop();
-        } else {
-            this.start();
+        // Prevent double-clicks during animation
+        if (this.isToggleAnimating) {
+            return;
         }
+
+        // Determine the target state
+        const willBeActive = !this.isToggleActive;
+
+        // Mark as animating
+        this.isToggleAnimating = true;
+
+        // Update UI immediately to start animation
+        this.updateToggleUI(willBeActive);
+
+        // Wait for animation to complete (300ms transition) before triggering action
+        setTimeout(() => {
+            this.isToggleAnimating = false;
+            if (willBeActive) {
+                this.start();
+            } else {
+                this.stop();
+            }
+        }, 300);
     }
 
     updateToggleUI(active) {
@@ -625,6 +644,7 @@ class GeminiLiveClient {
         this.isInterrupted = false;  // Clear interrupted state
         this.pendingTurnComplete = false;  // Clear pending flags
         this.lastInterruptTime = 0;  // Reset interrupt timestamp
+        this.isToggleAnimating = false;  // Reset animation flag
 
         this.updateToggleUI(false);
         this.sendTextBtn.disabled = true;
