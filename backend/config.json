@@ -17,5 +17,9 @@
     "outputSampleRate": 24000,
     "inputSampleRate": 16000,
     "responseModalities": ["AUDIO"]
+  },
+  "captions": {
+    "speedPercent": 100,
+    "enabled": true
   }
 }

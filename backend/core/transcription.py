@@ -1,21 +1,41 @@
 """
 Real-time audio transcription using Google Cloud Speech-to-Text API
 Fast, serverless, no model downloads required
-Uses 5-second audio buffering to accumulate full phrases for better accuracy
+Uses configurable audio buffering to accumulate phrases for better accuracy
 Captions display in real-time sync with audio playback
 """
 
 import logging
 import asyncio
 import base64
+import json
+from pathlib import Path
 from typing import Optional
 from collections import deque
 from google.cloud import speech_v1 as speech
 
 logger = logging.getLogger(__name__)
 
-# Audio buffering configuration
-BUFFER_DURATION_MS = 5000  # Buffer 5 seconds of audio before transcribing (full phrases)
+# Load configuration
+def load_config():
+    """Load configuration from config.json."""
+    config_path = Path(__file__).parent.parent / "config.json"
+    try:
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load config.json: {e}, using defaults")
+        return {}
+
+config = load_config()
+
+# Caption speed configuration (percentage: 100% = normal, 50% = slower updates, 200% = faster updates)
+CAPTION_SPEED_PERCENT = config.get("captions", {}).get("speedPercent", 100)
+CAPTIONS_ENABLED = config.get("captions", {}).get("enabled", True)
+
+# Audio buffering configuration (adjusted by speed percentage)
+BASE_BUFFER_DURATION_MS = 5000  # Base: 5 seconds at 100%
+BUFFER_DURATION_MS = int(BASE_BUFFER_DURATION_MS * (100 / CAPTION_SPEED_PERCENT))
 CHUNK_DURATION_MS = 200    # Estimated duration of each Gemini audio chunk
 CAPTION_DELAY_MS = 0       # No delay - show captions in sync with audio playback
 
@@ -37,8 +57,10 @@ class AudioTranscriber:
         self._initialized = False
         self.audio_buffer = deque()  # Buffer for accumulating audio chunks
         self.chunks_in_buffer = 0
-        self.max_chunks_before_transcribe = BUFFER_DURATION_MS // CHUNK_DURATION_MS  # ~25 chunks = 5 seconds
-        logger.info(f"AudioTranscriber created (Google Cloud Speech-to-Text, buffering {BUFFER_DURATION_MS}ms)")
+        self.max_chunks_before_transcribe = BUFFER_DURATION_MS // CHUNK_DURATION_MS
+        logger.info(f"AudioTranscriber created (Google Cloud Speech-to-Text)")
+        logger.info(f"  Caption speed: {CAPTION_SPEED_PERCENT}% (buffer: {BUFFER_DURATION_MS}ms, ~{self.max_chunks_before_transcribe} chunks)")
+        logger.info(f"  Captions enabled: {CAPTIONS_ENABLED}")
 
     async def initialize(self, progress_callback=None):
         """
@@ -92,6 +114,10 @@ class AudioTranscriber:
         Returns:
             Transcribed text or None if buffering or no speech detected
         """
+        # Skip transcription if captions disabled
+        if not CAPTIONS_ENABLED:
+            return None
+
         if not self._initialized:
             await self.initialize()
 
