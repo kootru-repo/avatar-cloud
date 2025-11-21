@@ -112,7 +112,10 @@ class AudioTranscriber:
         logger.info(f"AudioTranscriber created (model: {model_size})")
 
     async def initialize(self, progress_callback=None):
-        """Load the Whisper model asynchronously from GCS.
+        """Load the Whisper model asynchronously.
+
+        Uses faster-whisper's built-in model download which handles CTranslate2 format.
+        Model is cached in /root/.cache/huggingface/hub for subsequent loads.
 
         Args:
             progress_callback: Optional async function to call with download progress
@@ -121,18 +124,19 @@ class AudioTranscriber:
             return
 
         try:
-            # Download model from GCS to local filesystem
-            if not await download_model_from_gcs(progress_callback):
-                raise Exception("Failed to download model from GCS")
+            logger.info(f"Loading Whisper model '{self.model_size}'...")
 
-            logger.info(f"Loading Whisper model from {LOCAL_MODEL_PATH}...")
+            # Send progress update if callback provided
+            if progress_callback:
+                await progress_callback(0, 1, "Downloading Whisper tiny model...", 10)
 
-            # Load model from local path (blocking operation)
+            # Load model directly - faster-whisper handles download and caching
+            # Model will be cached in /root/.cache/huggingface/hub
             loop = asyncio.get_event_loop()
             self.model = await loop.run_in_executor(
                 None,
                 lambda: WhisperModel(
-                    LOCAL_MODEL_PATH,     # Use local path instead of model size
+                    self.model_size,      # "tiny" - faster-whisper downloads correct format
                     device="cpu",
                     compute_type="int8",  # Fast int8 quantization
                     num_workers=1,        # Single worker for low latency
@@ -140,7 +144,11 @@ class AudioTranscriber:
             )
 
             self._initialized = True
-            logger.info(f"Whisper model loaded successfully from GCS")
+            logger.info(f"Whisper model '{self.model_size}' loaded successfully")
+
+            # Send completion update
+            if progress_callback:
+                await progress_callback(1, 1, "Model ready", 0)
 
         except Exception as e:
             logger.error(f"Failed to load Whisper model: {e}")
@@ -182,12 +190,7 @@ class AudioTranscriber:
                     beam_size=1,              # Greedy decoding (fastest)
                     best_of=1,                # No alternative sampling
                     temperature=0,            # Deterministic output
-                    vad_filter=True,          # Skip silence
-                    vad_parameters=dict(
-                        threshold=0.3,        # Lower = more sensitive
-                        min_speech_duration_ms=100,  # Catch short words
-                        min_silence_duration_ms=300  # Quick sentence breaks
-                    ),
+                    vad_filter=False,         # Disabled for testing
                     word_timestamps=False,    # Skip word timing (faster)
                     condition_on_previous_text=False  # No context (faster)
                 )

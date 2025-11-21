@@ -80,12 +80,7 @@ async def transcribe_and_send(websocket: Any, audio_base64: str) -> None:
     Asynchronously transcribe audio chunk and send to client.
     Runs in parallel with audio playback for ultra-fast captions.
     Silently skips if transcription is unavailable.
-
-    TEMPORARILY DISABLED due to model loading issues.
     """
-    # Transcription temporarily disabled - model loading causing memory/connection issues
-    return
-
     try:
         # Pass websocket for download progress updates
         transcriber = await get_transcriber(websocket)
@@ -103,7 +98,7 @@ async def transcribe_and_send(websocket: Any, audio_base64: str) -> None:
             }))
     except Exception as e:
         # Don't let transcription errors affect audio playback
-        pass  # Silently skip
+        logger.debug(f"Transcription skipped: {e}")
 
 
 async def cleanup_session(session: Optional[SessionState], session_id: str) -> None:
