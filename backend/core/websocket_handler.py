@@ -18,7 +18,7 @@ from core.session import (
 )
 from core.gemini_client import create_gemini_session
 from config.prompts import get_backstory_for_kv_cache
-from core.transcription import get_transcriber
+from core.transcription import get_transcriber, MAX_WORDS_PER_CAPTION, CAPTION_DISPLAY_DURATION_MS
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +79,7 @@ async def transcribe_and_send(websocket: Any, audio_base64: str) -> None:
     """
     Asynchronously transcribe audio chunk and send to client.
     Runs in parallel with audio playback for ultra-fast captions.
+    Splits long transcriptions into word chunks with configurable display duration.
     Silently skips if transcription is unavailable.
     """
     try:
@@ -91,11 +92,20 @@ async def transcribe_and_send(websocket: Any, audio_base64: str) -> None:
         text = await transcriber.transcribe_audio_chunk(audio_base64)
 
         if text:
-            # Send transcription to frontend for closed captions
-            await websocket.send(json.dumps({
-                "type": "transcription",
-                "data": text
-            }))
+            # Split text into word chunks based on config
+            chunks = transcriber.split_into_word_chunks(text, MAX_WORDS_PER_CAPTION)
+
+            # Send chunks sequentially with display duration delay
+            for i, chunk in enumerate(chunks):
+                await websocket.send(json.dumps({
+                    "type": "transcription",
+                    "data": chunk
+                }))
+
+                # Add delay between chunks (except after last chunk)
+                if i < len(chunks) - 1:
+                    await asyncio.sleep(CAPTION_DISPLAY_DURATION_MS / 1000.0)
+
     except Exception as e:
         # Don't let transcription errors affect audio playback
         logger.debug(f"Transcription skipped: {e}")

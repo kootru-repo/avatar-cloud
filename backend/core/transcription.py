@@ -32,6 +32,8 @@ config = load_config()
 # Caption speed configuration (percentage: 100% = normal, 50% = slower updates, 200% = faster updates)
 CAPTION_SPEED_PERCENT = config.get("captions", {}).get("speedPercent", 100)
 CAPTIONS_ENABLED = config.get("captions", {}).get("enabled", True)
+MAX_WORDS_PER_CAPTION = config.get("captions", {}).get("maxWordsPerCaption", 15)
+CAPTION_DISPLAY_DURATION_MS = config.get("captions", {}).get("displayDurationMs", 3000)
 
 # Audio buffering configuration (adjusted by speed percentage)
 BASE_BUFFER_DURATION_MS = 5000  # Base: 5 seconds at 100%
@@ -61,6 +63,27 @@ class AudioTranscriber:
         logger.info(f"AudioTranscriber created (Google Cloud Speech-to-Text)")
         logger.info(f"  Caption speed: {CAPTION_SPEED_PERCENT}% (buffer: {BUFFER_DURATION_MS}ms, ~{self.max_chunks_before_transcribe} chunks)")
         logger.info(f"  Captions enabled: {CAPTIONS_ENABLED}")
+        logger.info(f"  Max words per caption: {MAX_WORDS_PER_CAPTION}, Display duration: {CAPTION_DISPLAY_DURATION_MS}ms")
+
+    def split_into_word_chunks(self, text: str, max_words: int) -> list[str]:
+        """
+        Split text into chunks of maximum word count.
+
+        Args:
+            text: Full transcribed text
+            max_words: Maximum words per chunk
+
+        Returns:
+            List of text chunks
+        """
+        words = text.split()
+        chunks = []
+
+        for i in range(0, len(words), max_words):
+            chunk = ' '.join(words[i:i + max_words])
+            chunks.append(chunk)
+
+        return chunks
 
     async def initialize(self, progress_callback=None):
         """

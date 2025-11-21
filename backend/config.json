@@ -20,6 +20,8 @@
   },
   "captions": {
     "speedPercent": 100,
-    "enabled": true
+    "enabled": true,
+    "maxWordsPerCaption": 15,
+    "displayDurationMs": 3000
   }
 }
