@@ -39,8 +39,10 @@ class GeminiLiveClient {
 
         // DOM elements
         this.statusEl = document.getElementById('status');
-        this.startBtn = document.getElementById('startBtn');
-        this.stopBtn = document.getElementById('stopBtn');
+        this.mixerToggle = document.getElementById('mixerToggle');
+        this.labelOff = document.getElementById('labelOff');
+        this.labelOn = document.getElementById('labelOn');
+        this.isToggleActive = false;
         this.textInput = document.getElementById('textInput');
         this.sendTextBtn = document.getElementById('sendTextBtn');
         this.logEl = document.getElementById('log');
@@ -68,8 +70,7 @@ class GeminiLiveClient {
     }
 
     setupEventListeners() {
-        this.startBtn.addEventListener('click', () => this.start());
-        this.stopBtn.addEventListener('click', () => this.stop());
+        this.mixerToggle.addEventListener('click', () => this.toggleConnection());
         this.sendTextBtn.addEventListener('click', () => this.sendText());
 
         // Enter to send text
@@ -79,6 +80,27 @@ class GeminiLiveClient {
                 this.sendText();
             }
         });
+    }
+
+    toggleConnection() {
+        if (this.isToggleActive) {
+            this.stop();
+        } else {
+            this.start();
+        }
+    }
+
+    updateToggleUI(active) {
+        this.isToggleActive = active;
+        if (active) {
+            this.mixerToggle.classList.add('active');
+            this.labelOn.classList.add('active');
+            this.labelOff.classList.remove('active');
+        } else {
+            this.mixerToggle.classList.remove('active');
+            this.labelOff.classList.add('active');
+            this.labelOn.classList.remove('active');
+        }
     }
 
     async start() {
@@ -101,8 +123,7 @@ class GeminiLiveClient {
             await this.startAudio();
 
             this.isConnected = true;
-            this.startBtn.disabled = true;
-            this.stopBtn.disabled = false;
+            this.updateToggleUI(true);
             this.sendTextBtn.disabled = false;
 
             // Set avatar to listening state
@@ -608,8 +629,7 @@ class GeminiLiveClient {
         this.pendingTurnComplete = false;  // Clear pending flags
         this.lastInterruptTime = 0;  // Reset interrupt timestamp
 
-        this.startBtn.disabled = false;
-        this.stopBtn.disabled = true;
+        this.updateToggleUI(false);
         this.sendTextBtn.disabled = true;
         this.audioIndicator.classList.remove('active');
 
