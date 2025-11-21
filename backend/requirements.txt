@@ -16,3 +16,6 @@ firebase-admin==6.5.0
 # Real-time audio transcription (optimized for speed)
 faster-whisper==1.1.0
 numpy>=1.24.3,<2.0.0
+
+# Google Cloud Storage for hosting whisper models
+google-cloud-storage==2.14.0
