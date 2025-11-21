@@ -145,6 +145,9 @@ class GeminiLiveClient {
             // Set avatar to listening state
             this.setAvatarState('listening');
 
+            // Update status to ONLINE
+            this.setStatus('connected', 'ONLINE');
+
             this.log('✅ Connected and ready!', 'success');
 
         } catch (error) {
