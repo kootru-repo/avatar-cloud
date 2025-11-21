@@ -82,7 +82,8 @@ async def transcribe_and_send(websocket: Any, audio_base64: str) -> None:
     Silently skips if transcription is unavailable.
     """
     try:
-        transcriber = await get_transcriber()
+        # Pass websocket for download progress updates
+        transcriber = await get_transcriber(websocket)
         if transcriber is None:
             # Transcription unavailable (model failed to load)
             return

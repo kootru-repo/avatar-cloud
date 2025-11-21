@@ -23,10 +23,13 @@ GCS_MODEL_PREFIX = "faster-whisper-tiny/"
 LOCAL_MODEL_PATH = "/tmp/whisper-models/faster-whisper-tiny"
 
 
-async def download_model_from_gcs() -> bool:
+async def download_model_from_gcs(progress_callback=None) -> bool:
     """
     Download whisper model from GCS to local filesystem.
     Returns True if successful, False otherwise.
+
+    Args:
+        progress_callback: Optional async function to call with progress updates
     """
     model_path = Path(LOCAL_MODEL_PATH)
 
@@ -45,30 +48,37 @@ async def download_model_from_gcs() -> bool:
         # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
 
-        def download_blobs():
+        # First, count total files
+        def count_blobs():
             client = storage.Client()
             bucket = client.bucket(GCS_BUCKET_NAME)
+            blobs = list(bucket.list_blobs(prefix=GCS_MODEL_PREFIX))
+            return [b for b in blobs if not b.name.endswith('/') and b.name[len(GCS_MODEL_PREFIX):]]
 
-            # List all blobs with the model prefix
-            blobs = bucket.list_blobs(prefix=GCS_MODEL_PREFIX)
+        blobs_to_download = await loop.run_in_executor(None, count_blobs)
+        total_files = len(blobs_to_download)
 
-            for blob in blobs:
-                # Skip directory markers
-                if blob.name.endswith('/'):
-                    continue
+        if progress_callback:
+            await progress_callback(0, total_files, "Preparing download...")
 
-                # Get the filename relative to the prefix
-                relative_path = blob.name[len(GCS_MODEL_PREFIX):]
-                if not relative_path:
-                    continue
+        # Download files with progress updates
+        for idx, blob in enumerate(blobs_to_download, 1):
+            relative_path = blob.name[len(GCS_MODEL_PREFIX):]
+            local_file = model_path / relative_path
+            local_file.parent.mkdir(parents=True, exist_ok=True)
 
-                local_file = model_path / relative_path
-                local_file.parent.mkdir(parents=True, exist_ok=True)
+            if progress_callback:
+                # Estimate: ~1 second per file
+                eta_seconds = (total_files - idx + 1) * 1
+                await progress_callback(idx, total_files, f"Downloading {relative_path}...", eta_seconds)
 
-                logger.info(f"  Downloading {blob.name}...")
-                blob.download_to_filename(str(local_file))
+            logger.info(f"  Downloading {blob.name}...")
 
-        await loop.run_in_executor(None, download_blobs)
+            # Download in thread pool
+            await loop.run_in_executor(
+                None,
+                lambda b=blob, lf=local_file: b.download_to_filename(str(lf))
+            )
 
         logger.info(f"Model downloaded successfully to {LOCAL_MODEL_PATH}")
         return True
@@ -101,14 +111,18 @@ class AudioTranscriber:
         self._initialized = False
         logger.info(f"AudioTranscriber created (model: {model_size})")
 
-    async def initialize(self):
-        """Load the Whisper model asynchronously from GCS."""
+    async def initialize(self, progress_callback=None):
+        """Load the Whisper model asynchronously from GCS.
+
+        Args:
+            progress_callback: Optional async function to call with download progress
+        """
         if self._initialized:
             return
 
         try:
             # Download model from GCS to local filesystem
-            if not await download_model_from_gcs():
+            if not await download_model_from_gcs(progress_callback):
                 raise Exception("Failed to download model from GCS")
 
             logger.info(f"Loading Whisper model from {LOCAL_MODEL_PATH}...")
@@ -208,11 +222,14 @@ _transcriber_failed: bool = False  # Track if initialization failed to avoid rep
 _transcriber_lock: Optional[asyncio.Lock] = None  # Lock to prevent concurrent initialization
 
 
-async def get_transcriber() -> Optional[AudioTranscriber]:
+async def get_transcriber(websocket=None) -> Optional[AudioTranscriber]:
     """
     Get or create the global transcriber instance.
     Returns None if initialization fails (e.g., model download issues).
     Thread-safe with async lock to prevent race conditions.
+
+    Args:
+        websocket: Optional websocket to send progress updates to client
     """
     global _transcriber, _transcriber_failed, _transcriber_lock
 
@@ -238,8 +255,23 @@ async def get_transcriber() -> Optional[AudioTranscriber]:
             return None
 
         try:
+            # Create progress callback to send updates to client
+            async def progress_callback(current, total, message, eta_seconds=0):
+                if websocket:
+                    import json
+                    try:
+                        await websocket.send(json.dumps({
+                            "type": "download_progress",
+                            "current": current,
+                            "total": total,
+                            "message": message,
+                            "eta_seconds": eta_seconds
+                        }))
+                    except Exception as e:
+                        logger.debug(f"Failed to send progress update: {e}")
+
             _transcriber = AudioTranscriber(model_size="tiny")  # Ultra-fast
-            await _transcriber.initialize()
+            await _transcriber.initialize(progress_callback if websocket else None)
             logger.info("Transcription enabled")
         except Exception as e:
             logger.warning(f"Transcription disabled: {str(e)[:100]}")

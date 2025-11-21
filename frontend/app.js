@@ -50,6 +50,10 @@ class GeminiLiveClient {
         this.ccTimeout = null;  // For auto-hiding CC
         this.ccEnabled = false;  // Only enable after first audio to avoid showing system messages
 
+        // Download progress tracking
+        this.downloadCountdownInterval = null;
+        this.downloadEta = 0;
+
         // Pre-loaded video elements for instant state switching (no load delay)
         this.avatarVideos = {
             idle: document.getElementById('video-idle'),
@@ -468,6 +472,11 @@ class GeminiLiveClient {
                     }
                     break;
 
+                case 'download_progress':
+                    // Model download progress with countdown timer
+                    this.handleDownloadProgress(message);
+                    break;
+
                 case 'turn_complete':
                     console.log('✅ Turn complete received (sentence boundary)');
                     // NATURAL PAUSING: Pause the talking video between sentences
@@ -610,6 +619,13 @@ class GeminiLiveClient {
         // Clear closed captions
         this.clearClosedCaptions();
 
+        // Clear download countdown timer
+        if (this.downloadCountdownInterval) {
+            clearInterval(this.downloadCountdownInterval);
+            this.downloadCountdownInterval = null;
+        }
+        this.downloadEta = 0;
+
         // Set avatar back to idle
         this.setAvatarState('idle');
 
@@ -665,6 +681,48 @@ class GeminiLiveClient {
         if (this.ccText) {
             this.ccText.textContent = '';
         }
+    }
+
+    handleDownloadProgress(message) {
+        const { current, total, message: progressMessage, eta_seconds } = message;
+
+        // Clear any existing countdown
+        if (this.downloadCountdownInterval) {
+            clearInterval(this.downloadCountdownInterval);
+            this.downloadCountdownInterval = null;
+        }
+
+        // If ETA provided, start countdown timer
+        if (eta_seconds > 0) {
+            this.downloadEta = eta_seconds;
+            this.startDownloadCountdown(progressMessage, total, current);
+        } else {
+            // No ETA, just show message
+            this.setStatus('connecting', progressMessage);
+        }
+    }
+
+    startDownloadCountdown(baseMessage, total, current) {
+        // Update immediately
+        this.updateDownloadStatus(baseMessage, total, current);
+
+        // Then update every second
+        this.downloadCountdownInterval = setInterval(() => {
+            this.downloadEta = Math.max(0, this.downloadEta - 1);
+            this.updateDownloadStatus(baseMessage, total, current);
+
+            // Stop countdown when it reaches 0
+            if (this.downloadEta <= 0 && this.downloadCountdownInterval) {
+                clearInterval(this.downloadCountdownInterval);
+                this.downloadCountdownInterval = null;
+            }
+        }, 1000);
+    }
+
+    updateDownloadStatus(baseMessage, total, current) {
+        const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+        const statusText = `${baseMessage} (${current}/${total}) - ${this.downloadEta}s`;
+        this.setStatus('connecting', statusText);
     }
 
 
