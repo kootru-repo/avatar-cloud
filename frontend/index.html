@@ -443,7 +443,7 @@
 
         .toggle-labels {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             width: 100%;
             font-family: 'Roboto Mono', monospace;
             font-size: clamp(9px, 1.1vh, 11px);
@@ -552,9 +552,7 @@
             animation: ledPulse 1.5s ease-in-out infinite;
         }
 
-        .toggle-switch:active .toggle-handle {
-            transform: translateX(-50%) scale(0.95);
-        }
+        /* Remove push effect - toggle just slides smoothly */
 
         .control-btn.btn-send {
             background:
@@ -823,7 +821,6 @@
                 <div class="mixer-toggle-container">
                     <div class="mixer-toggle">
                         <div class="toggle-labels">
-                            <span class="toggle-label" id="labelOff">STOP</span>
                             <span class="toggle-label active" id="labelOn">REC / LIVE</span>
                         </div>
                         <div class="toggle-switch" id="mixerToggle">

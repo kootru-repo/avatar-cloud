@@ -40,7 +40,6 @@ class GeminiLiveClient {
         // DOM elements
         this.statusEl = document.getElementById('status');
         this.mixerToggle = document.getElementById('mixerToggle');
-        this.labelOff = document.getElementById('labelOff');
         this.labelOn = document.getElementById('labelOn');
         this.isToggleActive = false;
         this.textInput = document.getElementById('textInput');
@@ -95,10 +94,8 @@ class GeminiLiveClient {
         if (active) {
             this.mixerToggle.classList.add('active');
             this.labelOn.classList.add('active');
-            this.labelOff.classList.remove('active');
         } else {
             this.mixerToggle.classList.remove('active');
-            this.labelOff.classList.add('active');
             this.labelOn.classList.remove('active');
         }
     }
