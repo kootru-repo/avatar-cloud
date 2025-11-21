@@ -458,7 +458,7 @@ class GeminiLiveClient {
 
                 case 'text':
                     console.log(`💬 Gemini: ${message.data}`);
-                    this.updateClosedCaptions(message.data);
+                    // Don't show text messages in CC - only STT transcriptions
                     break;
 
                 case 'transcription':
