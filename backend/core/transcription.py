@@ -1,15 +1,21 @@
 """
 Real-time audio transcription using Google Cloud Speech-to-Text API
 Fast, serverless, no model downloads required
+Uses audio buffering to accumulate chunks for better transcription accuracy
 """
 
 import logging
 import asyncio
 import base64
 from typing import Optional
+from collections import deque
 from google.cloud import speech_v1 as speech
 
 logger = logging.getLogger(__name__)
+
+# Audio buffering configuration
+BUFFER_DURATION_MS = 2000  # Buffer 2 seconds of audio before transcribing
+CHUNK_DURATION_MS = 200    # Estimated duration of each Gemini audio chunk
 
 
 class AudioTranscriber:
@@ -27,7 +33,10 @@ class AudioTranscriber:
         """Initialize transcriber with Google Cloud Speech-to-Text client."""
         self.client = None
         self._initialized = False
-        logger.info("AudioTranscriber created (Google Cloud Speech-to-Text)")
+        self.audio_buffer = deque()  # Buffer for accumulating audio chunks
+        self.chunks_in_buffer = 0
+        self.max_chunks_before_transcribe = BUFFER_DURATION_MS // CHUNK_DURATION_MS  # ~10 chunks = 2 seconds
+        logger.info(f"AudioTranscriber created (Google Cloud Speech-to-Text, buffering {BUFFER_DURATION_MS}ms)")
 
     async def initialize(self, progress_callback=None):
         """
@@ -71,21 +80,36 @@ class AudioTranscriber:
         sample_rate: int = 24000
     ) -> Optional[str]:
         """
-        Transcribe a single audio chunk using Google Cloud Speech-to-Text.
+        Buffer audio chunks and transcribe when enough audio accumulated.
+        This improves transcription accuracy for short chunks from Gemini.
 
         Args:
             audio_base64: Base64-encoded PCM audio data
             sample_rate: Audio sample rate (24000 for Gemini output)
 
         Returns:
-            Transcribed text or None if no speech detected
+            Transcribed text or None if buffering or no speech detected
         """
         if not self._initialized:
             await self.initialize()
 
         try:
-            # Decode base64 PCM audio
-            pcm_data = base64.b64decode(audio_base64)
+            # Add chunk to buffer
+            self.audio_buffer.append(audio_base64)
+            self.chunks_in_buffer += 1
+
+            # Only transcribe when buffer is full
+            if self.chunks_in_buffer < self.max_chunks_before_transcribe:
+                logger.debug(f"Buffering audio ({self.chunks_in_buffer}/{self.max_chunks_before_transcribe} chunks)")
+                return None
+
+            # Combine buffered chunks
+            logger.debug(f"Transcribing {self.chunks_in_buffer} buffered chunks...")
+            combined_pcm = b''.join(base64.b64decode(chunk) for chunk in self.audio_buffer)
+
+            # Clear buffer for next batch
+            self.audio_buffer.clear()
+            self.chunks_in_buffer = 0
 
             # Configure recognition
             config = speech.RecognitionConfig(
@@ -96,7 +120,7 @@ class AudioTranscriber:
                 model="default",  # Fast general model
             )
 
-            audio = speech.RecognitionAudio(content=pcm_data)
+            audio = speech.RecognitionAudio(content=combined_pcm)
 
             # Run transcription in thread pool (synchronous API)
             loop = asyncio.get_event_loop()
@@ -112,13 +136,16 @@ class AudioTranscriber:
                 if result.alternatives:
                     text = result.alternatives[0].transcript.strip()
                     if text:
-                        logger.debug(f"Transcribed: {text[:50]}...")
+                        logger.debug(f"Transcribed: {text[:100]}...")
                         return text
 
             return None
 
         except Exception as e:
             logger.error(f"Transcription error: {e}")
+            # Clear buffer on error to avoid accumulation
+            self.audio_buffer.clear()
+            self.chunks_in_buffer = 0
             return None
 
     def cleanup(self):
