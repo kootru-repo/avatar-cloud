@@ -114,8 +114,8 @@ class AudioTranscriber:
     async def initialize(self, progress_callback=None):
         """Load the Whisper model asynchronously.
 
-        Uses faster-whisper's built-in model download which handles CTranslate2 format.
-        Model is cached in /root/.cache/huggingface/hub for subsequent loads.
+        Downloads model from GCS bucket to local filesystem, then loads it.
+        Model is cached in /tmp/whisper-models for subsequent loads.
 
         Args:
             progress_callback: Optional async function to call with download progress
@@ -126,17 +126,17 @@ class AudioTranscriber:
         try:
             logger.info(f"Loading Whisper model '{self.model_size}'...")
 
-            # Send progress update if callback provided
-            if progress_callback:
-                await progress_callback(0, 1, "Downloading Whisper tiny model...", 10)
+            # Download model from GCS if not already cached
+            download_success = await download_model_from_gcs(progress_callback)
+            if not download_success:
+                raise Exception("Failed to download model from GCS")
 
-            # Load model directly - faster-whisper handles download and caching
-            # Model will be cached in /root/.cache/huggingface/hub
+            # Load model from local path (downloaded from GCS)
             loop = asyncio.get_event_loop()
             self.model = await loop.run_in_executor(
                 None,
                 lambda: WhisperModel(
-                    self.model_size,      # "tiny" - faster-whisper downloads correct format
+                    LOCAL_MODEL_PATH,     # Use local path from GCS download
                     device="cpu",
                     compute_type="int8",  # Fast int8 quantization
                     num_workers=1,        # Single worker for low latency
@@ -144,7 +144,7 @@ class AudioTranscriber:
             )
 
             self._initialized = True
-            logger.info(f"Whisper model '{self.model_size}' loaded successfully")
+            logger.info(f"Whisper model loaded from {LOCAL_MODEL_PATH}")
 
             # Send completion update
             if progress_callback:
