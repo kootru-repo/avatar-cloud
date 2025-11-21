@@ -48,12 +48,7 @@ class GeminiLiveClient {
         this.ccOverlay = document.getElementById('ccOverlay');
         this.ccText = document.getElementById('ccText');
         this.ccTimeout = null;  // For auto-hiding CC
-
-        // Speech recognition for live transcription
-        this.recognition = null;
-        this.recognitionActive = false;
         this.ccEnabled = false;  // Only enable after first audio to avoid showing system messages
-        this.initSpeechRecognition();
 
         // Pre-loaded video elements for instant state switching (no load delay)
         this.avatarVideos = {
@@ -466,6 +461,13 @@ class GeminiLiveClient {
                     this.updateClosedCaptions(message.data);
                     break;
 
+                case 'transcription':
+                    // Backend faster-whisper transcription for ultra-fast CC
+                    if (this.ccEnabled) {
+                        this.updateClosedCaptions(message.data, true);
+                    }
+                    break;
+
                 case 'turn_complete':
                     console.log('✅ Turn complete received (sentence boundary)');
                     // NATURAL PAUSING: Pause the talking video between sentences
@@ -623,104 +625,6 @@ class GeminiLiveClient {
         this.statusEl.textContent = text;
     }
 
-    initSpeechRecognition() {
-        // Check for browser support
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-        if (!SpeechRecognition) {
-            console.warn('⚠️ Web Speech API not supported in this browser');
-            return;
-        }
-
-        try {
-            this.recognition = new SpeechRecognition();
-            this.recognition.continuous = true;
-            this.recognition.interimResults = true;  // Get partial results immediately
-            this.recognition.lang = 'en-US';
-            this.recognition.maxAlternatives = 3;  // Get multiple alternatives for better accuracy
-
-            // Handle recognition results
-            this.recognition.onresult = (event) => {
-                // Only process if CC is enabled (prevents showing system messages)
-                if (!this.ccEnabled) return;
-
-                let transcript = '';
-                let isFinal = false;
-
-                // Get the latest results
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const result = event.results[i];
-                    // Use the most confident alternative
-                    transcript += result[0].transcript;
-                    if (result.isFinal) {
-                        isFinal = true;
-                    }
-                }
-
-                if (transcript.trim()) {
-                    this.updateClosedCaptions(transcript, isFinal);
-                }
-            };
-
-            this.recognition.onerror = (event) => {
-                console.warn('Speech recognition error:', event.error);
-                // Don't show errors to user, just log them
-                if (event.error === 'no-speech') {
-                    // Restart recognition if it stops due to no speech
-                    if (this.recognitionActive && this.currentAvatarState === 'speaking') {
-                        setTimeout(() => {
-                            try {
-                                this.recognition.start();
-                            } catch (e) {
-                                // Already running
-                            }
-                        }, 100);
-                    }
-                }
-            };
-
-            this.recognition.onend = () => {
-                // Restart if Whinny is still speaking
-                if (this.recognitionActive && this.currentAvatarState === 'speaking') {
-                    try {
-                        this.recognition.start();
-                    } catch (e) {
-                        // Already running
-                    }
-                }
-            };
-
-            console.log('✅ Speech recognition initialized for closed captions');
-            console.log('⚠️ Note: CC accuracy depends on audio quality and may have delays');
-            console.log('   For best results: increase speaker volume, reduce background noise');
-        } catch (error) {
-            console.warn('Failed to initialize speech recognition:', error);
-        }
-    }
-
-    startSpeechRecognition() {
-        if (!this.recognition || this.recognitionActive) return;
-
-        try {
-            this.recognition.start();
-            this.recognitionActive = true;
-            console.log('🎤 Started speech recognition for CC');
-        } catch (error) {
-            console.warn('Failed to start speech recognition:', error);
-        }
-    }
-
-    stopSpeechRecognition() {
-        if (!this.recognition || !this.recognitionActive) return;
-
-        try {
-            this.recognition.stop();
-            this.recognitionActive = false;
-            console.log('🛑 Stopped speech recognition for CC');
-        } catch (error) {
-            console.warn('Failed to stop speech recognition:', error);
-        }
-    }
 
     updateClosedCaptions(text, isFinal = false) {
         if (!this.ccText || !this.ccOverlay) return;
@@ -1033,9 +937,6 @@ class GeminiLiveClient {
 
         // Handle speaking state with video cycling
         if (state === 'speaking') {
-            // Start speech recognition for closed captions
-            this.startSpeechRecognition();
-
             // Prepare video for cycle control
             this.avatarVideo.loop = false;
             this.avatarVideo.playbackRate = 1.0;
@@ -1060,9 +961,6 @@ class GeminiLiveClient {
                 this.startVideoSpeakingCycle();
             }
         } else {
-            // Stop speech recognition when not speaking
-            this.stopSpeechRecognition();
-
             // Stop cycling when returning to idle or listening
             this.stopVideoSpeakingCycle();
 

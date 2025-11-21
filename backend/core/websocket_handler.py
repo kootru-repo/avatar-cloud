@@ -18,6 +18,7 @@ from core.session import (
 )
 from core.gemini_client import create_gemini_session
 from config.prompts import get_backstory_for_kv_cache
+from core.transcription import get_transcriber
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,26 @@ async def send_error_message(websocket: Any, error_data: dict) -> None:
         }))
     except Exception as e:
         logger.error(f"Failed to send error message: {e}")
+
+
+async def transcribe_and_send(websocket: Any, audio_base64: str) -> None:
+    """
+    Asynchronously transcribe audio chunk and send to client.
+    Runs in parallel with audio playback for ultra-fast captions.
+    """
+    try:
+        transcriber = await get_transcriber()
+        text = await transcriber.transcribe_audio_chunk(audio_base64)
+
+        if text:
+            # Send transcription to frontend for closed captions
+            await websocket.send(json.dumps({
+                "type": "transcription",
+                "data": text
+            }))
+    except Exception as e:
+        # Don't let transcription errors affect audio playback
+        logger.debug(f"Transcription skipped: {e}")
 
 
 async def cleanup_session(session: Optional[SessionState], session_id: str) -> None:
@@ -431,8 +452,13 @@ async def process_server_content(websocket: Any, session: SessionState, server_c
                 if inline_data:
                     # Audio data is raw bytes - encode to base64 for client
                     audio_base64 = base64.b64encode(inline_data.data).decode('utf-8')
+
+                    # Send audio to client for playback
                     # Use string concatenation instead of json.dumps for simple messages (faster)
                     await websocket.send(f'{{"type":"audio","data":"{audio_base64}"}}')
+
+                    # Start async transcription (non-blocking, runs in parallel)
+                    asyncio.create_task(transcribe_and_send(websocket, audio_base64))
 
                 # SDK-COMPLIANT: Handle text
                 else:

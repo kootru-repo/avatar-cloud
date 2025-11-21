@@ -12,3 +12,7 @@ aiohttp==3.9.1
 
 # Firebase Authentication (for user token verification in cloud)
 firebase-admin==6.5.0
+
+# Real-time audio transcription (optimized for speed)
+faster-whisper==1.1.0
+numpy>=1.24.3,<2.0.0
