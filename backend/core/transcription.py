@@ -1,7 +1,8 @@
 """
 Real-time audio transcription using Google Cloud Speech-to-Text API
 Fast, serverless, no model downloads required
-Uses audio buffering to accumulate chunks for better transcription accuracy
+Uses 5-second audio buffering to accumulate full phrases for better accuracy
+Captions display in real-time sync with audio playback
 """
 
 import logging
@@ -14,9 +15,9 @@ from google.cloud import speech_v1 as speech
 logger = logging.getLogger(__name__)
 
 # Audio buffering configuration
-BUFFER_DURATION_MS = 2000  # Buffer 2 seconds of audio before transcribing
+BUFFER_DURATION_MS = 5000  # Buffer 5 seconds of audio before transcribing (full phrases)
 CHUNK_DURATION_MS = 200    # Estimated duration of each Gemini audio chunk
-CAPTION_DELAY_MS = 4000    # Delay caption display by 4 seconds to sync with playback
+CAPTION_DELAY_MS = 0       # No delay - show captions in sync with audio playback
 
 
 class AudioTranscriber:
@@ -36,7 +37,7 @@ class AudioTranscriber:
         self._initialized = False
         self.audio_buffer = deque()  # Buffer for accumulating audio chunks
         self.chunks_in_buffer = 0
-        self.max_chunks_before_transcribe = BUFFER_DURATION_MS // CHUNK_DURATION_MS  # ~10 chunks = 2 seconds
+        self.max_chunks_before_transcribe = BUFFER_DURATION_MS // CHUNK_DURATION_MS  # ~25 chunks = 5 seconds
         logger.info(f"AudioTranscriber created (Google Cloud Speech-to-Text, buffering {BUFFER_DURATION_MS}ms)")
 
     async def initialize(self, progress_callback=None):
@@ -137,12 +138,11 @@ class AudioTranscriber:
                 if result.alternatives:
                     text = result.alternatives[0].transcript.strip()
                     if text:
-                        logger.debug(f"Transcribed (delaying {CAPTION_DELAY_MS}ms): {text[:100]}...")
+                        logger.debug(f"Transcribed: {text}")
 
-                        # IMPORTANT: Delay caption display to sync with audio playback
-                        # We transcribe buffered audio but need to wait for it to actually play
-                        # Longer delay ensures captions appear when user is hearing those words
-                        await asyncio.sleep(CAPTION_DELAY_MS / 1000.0)
+                        # Apply minimal delay if configured (currently 0 for real-time sync)
+                        if CAPTION_DELAY_MS > 0:
+                            await asyncio.sleep(CAPTION_DELAY_MS / 1000.0)
 
                         return text
 
