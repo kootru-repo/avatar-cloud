@@ -604,9 +604,6 @@ class GeminiLiveClient {
         this.sendTextBtn.disabled = true;
         this.audioIndicator.classList.remove('active');
 
-        // Stop speech recognition
-        this.stopSpeechRecognition();
-
         // Reset CC enabled flag
         this.ccEnabled = false;
 
