@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Audio buffering configuration
 BUFFER_DURATION_MS = 2000  # Buffer 2 seconds of audio before transcribing
 CHUNK_DURATION_MS = 200    # Estimated duration of each Gemini audio chunk
+CAPTION_DELAY_MS = 4000    # Delay caption display by 4 seconds to sync with playback
 
 
 class AudioTranscriber:
@@ -136,12 +137,12 @@ class AudioTranscriber:
                 if result.alternatives:
                     text = result.alternatives[0].transcript.strip()
                     if text:
-                        logger.debug(f"Transcribed (delaying {BUFFER_DURATION_MS}ms): {text[:100]}...")
+                        logger.debug(f"Transcribed (delaying {CAPTION_DELAY_MS}ms): {text[:100]}...")
 
                         # IMPORTANT: Delay caption display to sync with audio playback
-                        # We transcribed 2 seconds of past audio, so delay showing text
-                        # until that audio actually plays on the client
-                        await asyncio.sleep(BUFFER_DURATION_MS / 1000.0)
+                        # We transcribe buffered audio but need to wait for it to actually play
+                        # Longer delay ensures captions appear when user is hearing those words
+                        await asyncio.sleep(CAPTION_DELAY_MS / 1000.0)
 
                         return text
 
