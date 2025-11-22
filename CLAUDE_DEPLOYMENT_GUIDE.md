@@ -141,7 +141,6 @@ gcloud run services describe gemini-avatar-backend --region=us-central1
 │  URL: wss://gemini-avatar-backend-*.run.app                  │
 │  - Python WebSocket server (main.py)                         │
 │  - Handles Gemini API communication                          │
-│  - STT transcription (Google Cloud Speech-to-Text)           │
 │  - Auto-scales 1-10 instances                                │
 └──────────────────────────┬──────────────────────────────────┘
                            │
@@ -151,14 +150,8 @@ gcloud run services describe gemini-avatar-backend --region=us-central1
 │              GEMINI API                                      │
 │  Model: gemini-2.5-flash-native-audio-preview-09-2025       │
 │  - Voice-to-voice conversation                               │
-│  - Native audio processing                                   │
-└──────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────▼──────────────────────────────────┐
-│         GOOGLE CLOUD SPEECH-TO-TEXT API                      │
-│  - Real-time audio transcription for captions                │
-│  - Serverless (no model downloads)                           │
-│  - Instant initialization                                    │
+│  - Native audio processing (AUDIO-only responses)            │
+│  - Built-in output audio transcription for captions         │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
@@ -207,8 +200,9 @@ gemini-livewire-avatar/
 │   ├── config.json             # Backend configuration
 │   └── core/
 │       ├── websocket_handler.py # WebSocket message handling
-│       ├── transcription.py     # STT with Google Cloud Speech-to-Text
-│       └── session.py           # Session state management
+│       ├── gemini_client.py     # Gemini API session management
+│       ├── session.py           # Session state management
+│       └── auth.py              # Firebase authentication
 │
 ├── cloudbuild.yaml             # Cloud Build configuration
 ├── firebase.json               # Firebase Hosting config
@@ -276,8 +270,6 @@ gemini-livewire-avatar/
 - **Purpose:** Cloud Run source deployment artifacts
 - **Managed By:** Google Cloud Run (don't modify)
 
-**Note:** Previous `avatar-478217-whisper-models` bucket has been deprecated. The system now uses Google Cloud Speech-to-Text API instead of Whisper, eliminating the need for model storage.
-
 ### **5. Service Accounts**
 
 #### **a) 580499038386-compute@developer.gserviceaccount.com**
@@ -285,7 +277,6 @@ gemini-livewire-avatar/
 - **Used By:** Cloud Run backend
 - **Permissions:**
   - Read GEMINI_API_KEY from Secret Manager
-  - Access Google Cloud Speech-to-Text API
   - Write logs to Cloud Logging
 
 #### **b) gemini-live-app@avatar-478217.iam.gserviceaccount.com**
@@ -303,32 +294,14 @@ gemini-livewire-avatar/
 - **Accessed By:** Cloud Run service
 - **Contains:** Gemini API key for generativelanguage.googleapis.com
 
-### **7. Google Cloud Speech-to-Text API**
-**Service:** speech.googleapis.com
-- **Purpose:** Real-time audio transcription for closed captions
-- **Model:** default (fast general model)
-- **Features:**
-  - Serverless (no model downloads required)
-  - Instant initialization (replaces Whisper model)
-  - Audio buffering: Accumulates 2 seconds (10 chunks) before transcription
-  - Caption delay: 4-second delay for audio/caption synchronization
-  - Format: LINEAR16 PCM, 24kHz sample rate, en-US
-  - Auto-punctuation enabled
-- **Billing:** Pay-per-use (billed per 15 seconds of audio)
-- **Why Migration from Whisper:**
-  - Zero cold start delay (no model download)
-  - Better accuracy on short audio chunks
-  - Fully managed infrastructure
-  - Native GCP integration
-
-### **8. Artifact Registry**
+### **7. Artifact Registry**
 **Repository:** `cloud-run-source-deploy`
 - **Format:** Docker
 - **Location:** us-central1
 - **Purpose:** Stores Cloud Run container images
 - **Managed By:** Cloud Run (auto-updated on deploy)
 
-### **9. Cloud Build (CI/CD)**
+### **8. Cloud Build (CI/CD)**
 **Status:** NOT CURRENTLY CONFIGURED (manual deployments only)
 - **Trigger:** None configured (can be set up to auto-deploy on git push)
 - **Build Config:** `cloudbuild.yaml` exists but not actively used
@@ -429,20 +402,20 @@ curl -I https://avatar-478217.web.app
 
 ## How to Deploy Changes
 
-### **Scenario 1: Backend Bug Fix (e.g., Fix STT transcription)**
+### **Scenario 1: Backend Bug Fix (e.g., Fix WebSocket message handling)**
 
 ```bash
 # 1. Make changes locally
 cd C:\Projects\gemini-livewire-avatar
-vim backend/core/transcription.py
+vim backend/core/websocket_handler.py
 
 # 2. Test locally (optional)
 cd backend
 python main.py
 
 # 3. Commit to git (for version control)
-git add backend/core/transcription.py
-git commit -m "Fix transcription VAD filter"
+git add backend/core/websocket_handler.py
+git commit -m "Fix WebSocket message handling"
 git push origin main
 
 # 4. Deploy to Cloud Run
@@ -809,42 +782,34 @@ gcloud run services update gemini-avatar-backend \
 
 ---
 
-### **Transcription Not Working**
+### **Captions Not Appearing**
 
-**Problem:** Closed captions not appearing
+**Problem:** Closed captions not showing Gemini's responses
 
 **Check:**
 ```bash
-# 1. Check if transcription is enabled in code
-grep -n "transcribe_and_send" backend/core/websocket_handler.py
+# 1. Check if output_audio_transcription is enabled in backend config
+grep -n "output_audio_transcription" backend/config/gemini_config.py
 
-# 2. Verify Speech-to-Text API is enabled
-gcloud services list --enabled | grep speech
+# 2. Check if captions are enabled in backend config.json
+grep -n "captions" backend/config.json
 
-# 3. Check Cloud Run logs for transcription errors
+# 3. Check Cloud Run logs for transcription messages
 gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=gemini-avatar-backend" \
   --limit=50 \
-  --format=json | jq -r '.[] | select(.textPayload | contains("transcri"))'
-
-# 4. Check service account has Speech-to-Text permissions
-gcloud projects get-iam-policy avatar-478217 \
-  --flatten="bindings[].members" \
-  --filter="bindings.members:580499038386-compute@developer.gserviceaccount.com"
+  --format=json | jq -r '.[] | select(.textPayload | contains("Transcription"))'
 ```
 
 **Common Issues:**
-- **Caption timing off:** Adjust `CAPTION_DELAY_MS` in backend/core/transcription.py (currently 4000ms)
-- **Only first chunk transcribed:** Check `BUFFER_DURATION_MS` (should be 2000ms = 10 chunks)
-- **Speech-to-Text API disabled:** Run `gcloud services enable speech.googleapis.com --project=avatar-478217`
+- **Captions disabled:** Check `backend/config.json` → `captions.enabled` should be `true`
+- **Frontend not processing:** Check browser console for `transcription_interim` and `transcription` messages
+- **CC toggle off:** Check if CC toggle is activated in frontend UI
 
 **Fix:**
 ```bash
-# Enable Speech-to-Text API if needed
-gcloud services enable speech.googleapis.com --project=avatar-478217
-
-# Re-enable transcription if disabled
-vim backend/core/websocket_handler.py
-# Remove any early return statements in transcribe_and_send()
+# Verify captions are enabled in backend config
+vim backend/config.json
+# Ensure: "captions": { "enabled": true }
 
 # Deploy changes
 cd backend
@@ -1010,45 +975,39 @@ File Modified?
 
 ## Recent Changes & Session History
 
-### **Session 2: Speech-to-Text Migration & UI Improvements (2025-11-20)**
+### **Session 2: Gemini 2.5 Native Audio Setup & UI Improvements (2025-11-20)**
 
-#### **1. Migrated from Whisper to Google Cloud Speech-to-Text API**
+#### **1. Gemini 2.5 Native Audio Implementation**
 
-**Problem:**
-- Whisper model downloading from Hugging Face on every cold start
-- GCS-hosted model loading was hanging indefinitely
-- User explicitly requested: "use Google's native Speech-to-Text API"
+**Architecture:**
+- **Model:** `gemini-2.5-flash-native-audio-preview-09-2025`
+- **Response Modality:** AUDIO only (native audio generation)
+- **Captions:** Gemini's built-in `output_audio_transcription` feature
+- **No external STT:** System does not use Google Cloud Speech-to-Text API or Whisper
 
-**Solution:**
-- Complete rewrite of `backend/core/transcription.py`
-- Replaced `faster-whisper` with `google-cloud-speech`
-- Updated `backend/requirements.txt`:
-  - Removed: `faster-whisper==1.1.0`, `numpy>=1.24.3,<2.0.0`, `google-cloud-storage==2.14.0`
-  - Added: `google-cloud-speech==2.21.0`
-- Enabled `speech.googleapis.com` API in GCP
+**Key Features:**
+- Voice-to-voice conversation with zero transcription lag
+- Native audio processing (no text-to-speech pipeline)
+- Built-in caption generation from Gemini's `output_transcription` field
+- Affective dialog support (adapts tone/expression)
 
-**Benefits:**
-- Zero cold start delay (no model downloads)
-- Instant initialization (serverless)
-- Better accuracy on short audio chunks
-- Fully managed infrastructure
-
-**Key Implementation Details:**
-- Audio buffering: Accumulates 10 chunks (~2 seconds) before transcription
-- Caption delay: 4-second delay to sync captions with audio playback
-- Format: LINEAR16 PCM, 24kHz sample rate, en-US
-- Auto-punctuation enabled
-
-**Files Changed:**
-- `backend/core/transcription.py` - Complete rewrite
-- `backend/requirements.txt` - Dependency changes
-
-**Deployment:**
-```bash
-cd backend
-gcloud run deploy gemini-avatar-backend --source . --region=us-central1
-# Revision: gemini-avatar-backend-00027-q7v
+**Configuration:**
+```json
+// frontend/config.json & backend/config.json
+{
+  "audio": {
+    "responseModalities": ["AUDIO"]  // AUDIO-only, no TEXT
+  },
+  "captions": {
+    "enabled": true  // Uses Gemini's output_audio_transcription
+  }
+}
 ```
+
+**Backend Implementation:**
+- `backend/core/websocket_handler.py` processes `output_transcription` from Gemini
+- Sends `transcription_interim` (chunks) and `transcription` (complete) to frontend
+- No separate STT API calls required
 
 ---
 
@@ -1069,28 +1028,7 @@ gcloud run services update gemini-avatar-backend \
 
 ---
 
-#### **3. Fixed Caption Timing Issues**
-
-**Problem 1:** Only first 3 words transcribed
-- **Root Cause:** Individual audio chunks from Gemini (~200ms) too short for Speech-to-Text
-- **Solution:** Implemented audio buffering (10 chunks = 2 seconds)
-
-**Problem 2:** Captions appearing too early
-- **User Feedback:** "the transcription is too fast! its getting the text long before the audio is done"
-- **First Fix:** Added 2-second delay
-- **User Feedback:** "STT transcriptption still WAY too fast"
-- **Final Fix:** Increased to 4-second delay (`CAPTION_DELAY_MS = 4000`)
-
-**Implementation in `backend/core/transcription.py`:**
-```python
-BUFFER_DURATION_MS = 2000    # Buffer 2 seconds of audio
-CHUNK_DURATION_MS = 200      # Each Gemini chunk
-CAPTION_DELAY_MS = 4000      # 4-second display delay
-```
-
----
-
-#### **4. UI Changes: Mixer Toggle Switch**
+#### **3. UI Changes: Mixer Toggle Switch**
 
 **Original:** Two separate buttons (REC, STOP)
 
@@ -1144,7 +1082,7 @@ firebase deploy --only hosting
 - Set up GCP project (`avatar-478217`)
 - Deployed backend to Cloud Run
 - Deployed frontend to Firebase Hosting
-- Configured Whisper-tiny model for STT (later replaced in Session 2)
+- Configured Gemini 2.5 Flash Native Audio model
 - Set up Cloud Storage buckets for avatar videos
 - Created initial deployment documentation
 
@@ -1162,9 +1100,9 @@ firebase deploy --only hosting
 6. **Project ID:** avatar-478217
 7. **GitHub Repo:** https://github.com/kootru-repo/avatar-cloud
 8. **Auto-deployment:** NOT currently configured (all deployments are manual)
-9. **STT Technology:** Google Cloud Speech-to-Text API (replaced Whisper in Session 2)
+9. **Audio Model:** Gemini 2.5 Flash Native Audio (AUDIO-only responses, built-in caption transcription)
 10. **Required Environment Variables:** `BACKEND_HOST`, `BACKEND_PORT`, `DEBUG`, `REQUIRE_AUTH`, `FIREBASE_PROJECT_ID`
-11. **Latest Backend Revision:** gemini-avatar-backend-00027-q7v (Speech-to-Text + 4s caption delay)
+11. **Captions:** Gemini's native `output_audio_transcription` feature (no external STT required)
 
 **Deployment Workflow:**
 ```bash
@@ -1173,11 +1111,7 @@ git add backend/
 git commit -m "Fix: description"
 git push origin main
 cd backend
-gcloud run deploy gemini-avatar-backend \
-  --source . \
-  --region=us-central1 \
-  --set-env-vars=BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=true,FIREBASE_PROJECT_ID=avatar-478217 \
-  --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
 # Takes 3-5 minutes
 
 # For frontend changes:
@@ -1192,13 +1126,203 @@ git add .
 git commit -m "Fix: description"
 git push origin main
 cd backend
-gcloud run deploy gemini-avatar-backend \
-  --source . \
-  --region=us-central1 \
-  --set-env-vars=BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=true,FIREBASE_PROJECT_ID=avatar-478217 \
-  --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
+cd ..
 firebase deploy --only hosting
 ```
+
+---
+
+## Function Calling Features: Dance Mode Case Study
+
+### Overview
+
+Dance mode demonstrates the complete implementation of an interactive feature using Gemini's Function Calling API. This serves as a template for adding similar capabilities like applause effects, lighting changes, or other triggered animations.
+
+### Architecture Pattern
+
+**Flow:** User Voice → Gemini Function Call → Backend Processing → Frontend Execution
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  USER: "Let's dance!"                                        │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ (Audio input via WebSocket)
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  GEMINI 2.5 FLASH LIVE                                       │
+│  - Processes audio input                                     │
+│  - Recognizes "dance" trigger                                │
+│  - Calls trigger_dance_mode() function                       │
+│  - CONTINUES speaking enthusiastically                       │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ (tool_call message)
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  BACKEND (websocket_handler.py)                              │
+│  - Receives tool_call from Gemini                            │
+│  - Debounces duplicates (2s cooldown)                        │
+│  - Forwards to frontend via WebSocket                        │
+│  - Sends tool_response back to Gemini                        │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ (tool_call WebSocket message)
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  FRONTEND (app.js)                                           │
+│  - Receives tool_call message                                │
+│  - Switches to dance video                                   │
+│  - Plays music at 30% volume                                 │
+│  - Keeps recording active (user can interrupt)               │
+│  - Auto-stops after 10.084 seconds                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Files Modified
+
+#### Backend Changes
+1. **`backend/config/gemini_config.py`** - Function definition
+2. **`backend/whinny_backstory.json`** - Trigger rules
+3. **`backend/core/websocket_handler.py`** - Tool call processing
+4. **`backend/core/session.py`** - Debouncing state
+
+#### Frontend Changes
+1. **`frontend/app.js`** - Tool handler & dance logic
+2. **`frontend/config.json`** - Dance mode configuration
+3. **`frontend/index.html`** - Cache version update
+
+#### Media Files
+1. **`frontend/media/video/dance.webm`** - Dance animation (10.084s)
+2. **`frontend/media/music/dance.mp3`** - Background music (10.084s with 1s fade)
+
+### Implementation Checklist
+
+**Phase 1: Backend Function Definition**
+- [ ] Add function to `config["tools"]` in gemini_config.py
+- [ ] Define clear description (include concurrency requirements)
+- [ ] Add trigger rule to whinny_backstory.json
+- [ ] Use "MUST" language for critical behaviors
+
+**Phase 2: Backend Handler**
+- [ ] Process `tool_call.function_calls` array (plural!)
+- [ ] Implement 2-second debouncing
+- [ ] Forward to frontend with error handling
+- [ ] Send `tool_response` back to Gemini (critical!)
+- [ ] Add comprehensive logging with IDs
+
+**Phase 3: Frontend Handler**
+- [ ] Add case to tool_call message handler
+- [ ] Validate configuration exists
+- [ ] Implement main feature logic
+- [ ] Handle errors gracefully
+- [ ] Provide user feedback
+
+**Phase 4: Media Preparation**
+- [ ] Measure video duration with ffprobe
+- [ ] Edit audio to match with fade out
+- [ ] Verify synchronized durations
+- [ ] Upload to Cloud Storage
+- [ ] Configure public access
+
+**Phase 5: Configuration**
+- [ ] Add feature config to frontend/config.json
+- [ ] Set appropriate volume (0.3 for background)
+- [ ] Configure duration in milliseconds
+- [ ] Add environment-aware paths (local/cloud)
+
+**Phase 6: Deployment**
+- [ ] Update cache version in index.html
+- [ ] Deploy backend to Cloud Run
+- [ ] Deploy frontend to Firebase Hosting
+- [ ] Test end-to-end functionality
+
+### Critical Lessons Learned
+
+#### Issue: SDK Attribute Error
+**Problem:** `'LiveServerToolCall' object has no attribute 'function_call'`
+**Solution:** SDK uses `function_calls` (plural array), not `function_call` (singular)
+
+#### Issue: Gemini Goes Silent
+**Problem:** Gemini stops talking when function is called
+**Solution:** Explicitly instruct in function description: "You MUST continue speaking while calling this function"
+
+#### Issue: Dual Triggering
+**Problem:** Both client-side keyword detection and server-side function calling triggered simultaneously
+**Solution:** Remove ALL client-side keyword detection, rely only on Gemini's function calling
+
+#### Issue: User Can't Interrupt
+**Problem:** Recording stopped during dance
+**Solution:** Keep barge-in monitoring active throughout dance
+
+#### Issue: Audio/Video Desync
+**Problem:** Music played longer than video, causing awkward ending
+**Solution:** Use ffmpeg to cut audio to exact video duration with 1s fade out
+
+#### Issue: Dance Music Too Loud
+**Problem:** User couldn't hear Gemini speaking during dance
+**Solution:** Set volume to 0.3 (30%) and make it configurable
+
+### Audio Editing Commands
+
+**Measure Duration:**
+```bash
+ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 file.webm
+```
+
+**Cut & Fade Audio:**
+```bash
+# Cut to 10.084s with 1s fade out starting at 9.084s
+ffmpeg -i input.mp3 -t 10.084 -af "afade=t=out:st=9.084:d=1" -y output.mp3
+```
+
+**Verify Result:**
+```bash
+ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 output.mp3
+```
+
+### Cloud Storage Upload
+
+```bash
+# Upload media
+gcloud storage cp file.mp3 gs://avatar-478217-videos/music/file.mp3
+gcloud storage cp file.webm gs://avatar-478217-videos/video/file.webm
+
+# Make public
+gcloud storage buckets add-iam-policy-binding gs://avatar-478217-videos \
+  --member=allUsers \
+  --role=roles/storage.objectViewer
+
+# Verify
+gcloud storage ls -L gs://avatar-478217-videos/music/file.mp3
+```
+
+### Testing Protocol
+
+1. **Basic Trigger:** Say "dance" → Verify function called
+2. **Concurrent Audio:** Verify Gemini continues speaking
+3. **User Interrupt:** Speak during dance → Verify barge-in works
+4. **Duration:** Verify dance ends exactly at 10.084s
+5. **Debouncing:** Say "dance dance dance" → Verify only one triggers
+6. **Error Recovery:** Block music URL → Verify graceful failure
+7. **Volume:** Verify music at 30% doesn't overpower Gemini
+8. **State Cleanup:** Verify returns to listening state correctly
+
+### Performance Metrics
+
+- **Backend processing:** <10ms (tool forwarding)
+- **Frontend trigger:** <50ms (dance mode activation)
+- **Music load time:** <500ms (preloaded) or <2s (on-demand)
+- **Total latency:** <200ms from Gemini call to visual start
+
+### Future Enhancement Ideas
+
+Using this pattern, you can implement:
+- **Applause Mode:** Play crowd applause + spotlight effect
+- **Lightning Effects:** Flash screen with thunder sound
+- **Confetti Mode:** Particle animation with celebration music
+- **Encore Mode:** Extended performance with multiple songs
+- **Fade to Black:** Screen fade with dramatic music
+
+Each follows the same pattern: Function definition → Backend handler → Frontend execution → Media synchronization.
 
 ---
 
