@@ -14,7 +14,7 @@
         }
 
         body {
-            font-family: 'Roboto Mono', monospace;
+            font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
             background: #0a0a0a url('media/images/stage.png') center center/cover no-repeat fixed;
             min-height: 100vh;
             height: 100vh;
@@ -55,7 +55,7 @@
             padding: 2vh 2vw;
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            overflow: hidden;
         }
 
         /* Main 3-Column Layout */
@@ -75,12 +75,13 @@
             flex-direction: column;
             gap: 3vh;
             min-width: 140px;
-            max-width: 200px;
+            max-width: 600px;
             justify-content: center;
         }
 
         .center-display {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             flex: 0 0 auto;
@@ -107,12 +108,12 @@
         }
 
         h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(18px, 3vh, 28px);
-            font-weight: 900;
+            font-family: var(--font-family-primary, 'Orbitron', sans-serif);
+            font-size: var(--header-title-font-size, clamp(22px, 3.6vh, 34px));
+            font-weight: var(--header-title-font-weight, 900);
             color: #ff3333;
             text-transform: uppercase;
-            letter-spacing: 3px;
+            letter-spacing: var(--header-title-letter-spacing, 3px);
             text-shadow:
                 0 0 10px rgba(255, 51, 51, 0.8),
                 0 0 20px rgba(255, 51, 51, 0.4);
@@ -120,12 +121,12 @@
         }
 
         .subtitle {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(9px, 1.2vh, 12px);
+            font-family: var(--font-family-primary, 'Orbitron', sans-serif);
+            font-size: var(--header-subtitle-font-size, clamp(11px, 1.44vh, 14px));
             color: #00ccff;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 400;
+            letter-spacing: var(--header-subtitle-letter-spacing, 2px);
+            font-weight: var(--header-subtitle-font-weight, 400);
         }
 
         /* Studio Monitor Display */
@@ -139,6 +140,7 @@
                 0 0 20px rgba(0, 200, 255, 0.3);
             position: relative;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
         }
@@ -173,6 +175,7 @@
             box-shadow:
                 0 0 20px rgba(255, 51, 51, 0.4),
                 inset 0 0 30px rgba(0, 0, 0, 0.8);
+            flex-shrink: 0;
         }
 
         .avatar-video {
@@ -191,9 +194,10 @@
             z-index: 0;
         }
 
-        /* Overlay layers - listening and speaking videos on top */
+        /* Overlay layers - listening, speaking, and dancing videos on top */
         #video-listening,
-        #video-speaking {
+        #video-speaking,
+        #video-dancing {
             opacity: 0;
             z-index: 1;
         }
@@ -202,6 +206,122 @@
         #video-speaking.active {
             opacity: 1;
             z-index: 2;
+        }
+
+        /* Dancing video should be on top when active */
+        #video-dancing.active {
+            opacity: 1;
+            z-index: 3;
+        }
+
+        /* Stage Curtain */
+        .stage-curtain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            transition: transform 3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+
+        .stage-curtain.raised {
+            transform: translateY(-100%);
+        }
+
+        .curtain-panel {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                #8B0000 0%,
+                #A52A2A 10%,
+                #8B0000 20%,
+                #A52A2A 30%,
+                #8B0000 40%,
+                #A52A2A 50%,
+                #8B0000 60%,
+                #A52A2A 70%,
+                #8B0000 80%,
+                #A52A2A 90%,
+                #8B0000 100%
+            );
+            box-shadow:
+                inset 0 0 50px rgba(0, 0, 0, 0.5),
+                0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .curtain-panel.left {
+            left: 0;
+            border-right: 2px solid rgba(139, 0, 0, 0.8);
+        }
+
+        .curtain-panel.right {
+            right: 0;
+            border-left: 2px solid rgba(139, 0, 0, 0.8);
+        }
+
+        /* Curtain pleats effect */
+        .curtain-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 8%,
+                rgba(0, 0, 0, 0.15) 8%,
+                rgba(0, 0, 0, 0.15) 10%,
+                transparent 10%,
+                transparent 18%,
+                rgba(255, 255, 255, 0.05) 18%,
+                rgba(255, 255, 255, 0.05) 20%
+            );
+        }
+
+        /* Gold curtain rod and tassels */
+        .curtain-rod {
+            position: absolute;
+            top: -8px;
+            left: -10px;
+            right: -10px;
+            height: 16px;
+            background: linear-gradient(180deg, #FFD700, #DAA520, #B8860B);
+            border-radius: 8px;
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            z-index: 11;
+        }
+
+        .curtain-tassel {
+            position: absolute;
+            top: 16px;
+            width: 40px;
+            height: 80px;
+            background: linear-gradient(180deg, #DAA520, #B8860B);
+            clip-path: polygon(
+                20% 0%, 80% 0%,
+                90% 40%, 85% 70%,
+                50% 100%,
+                15% 70%, 10% 40%
+            );
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+        }
+
+        .curtain-tassel.left {
+            left: 15%;
+        }
+
+        .curtain-tassel.right {
+            right: 15%;
         }
 
         .status.disconnected {
@@ -231,6 +351,9 @@
             50% { opacity: 0.6; }
         }
 
+        .audio-indicator-text {
+            font-size: var(--debug-console-font-size, clamp(10px, 1.2vh, 12px));
+        }
 
         /* Console Log Display */
         .log-module {
@@ -241,8 +364,8 @@
             padding: 1.2vh 1.5vw;
             max-height: 15vh;
             overflow-y: auto;
-            font-family: 'Roboto Mono', monospace;
-            font-size: clamp(9px, 1.1vh, 11px);
+            font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
+            font-size: var(--status-small-font-size, clamp(9px, 1.1vh, 11px));
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
             flex-shrink: 0;
         }
@@ -284,14 +407,14 @@
 
         /* High-End Mixer Board Buttons */
         .control-btn {
-            font-family: 'Roboto Mono', monospace;
+            font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
             padding: 0;
             border: none;
             border-radius: 8px;
-            font-size: clamp(11px, 1.4vh, 14px);
-            font-weight: 700;
+            font-size: var(--status-medium-font-size, clamp(11px, 1.4vh, 14px));
+            font-weight: var(--status-medium-font-weight, 700);
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: var(--status-medium-letter-spacing, 1.5px);
             cursor: pointer;
             transition: all 0.15s ease;
             position: relative;
@@ -445,11 +568,11 @@
             display: flex;
             justify-content: center;
             width: 100%;
-            font-family: 'Roboto Mono', monospace;
-            font-size: clamp(9px, 1.1vh, 11px);
-            font-weight: 700;
+            font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
+            font-size: var(--status-small-font-size, clamp(9px, 1.1vh, 11px));
+            font-weight: var(--status-small-font-weight, 700);
             text-transform: uppercase;
-            letter-spacing: 1.2px;
+            letter-spacing: var(--status-small-letter-spacing, 1.2px);
             color: #666;
             padding: 0 1vw;
         }
@@ -554,35 +677,6 @@
 
         /* Remove push effect - toggle just slides smoothly */
 
-        .control-btn.btn-send {
-            background:
-                linear-gradient(180deg,
-                    rgba(100, 220, 255, 0.2) 0%,
-                    rgba(0, 204, 255, 0.1) 45%,
-                    rgba(0, 100, 139, 0.3) 50%,
-                    rgba(0, 60, 80, 0.5) 100%),
-                linear-gradient(145deg, #223a3a, #1a2a2a);
-            color: #66ddff;
-            text-shadow: 0 0 8px rgba(0, 204, 255, 0.6);
-            border: 1px solid rgba(0, 204, 255, 0.3);
-        }
-
-        .control-btn.btn-send .btn-led {
-            background: radial-gradient(circle at 30% 30%, #00ccff, #0088aa);
-            box-shadow:
-                0 0 8px #00ccff,
-                0 0 12px rgba(0, 204, 255, 0.6),
-                0 0 3px rgba(0, 0, 0, 0.8) inset;
-        }
-
-        .control-btn.btn-send:hover:not(:disabled) {
-            box-shadow:
-                0 1px 0 rgba(255, 255, 255, 0.15) inset,
-                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
-                0 4px 8px rgba(0, 0, 0, 0.6),
-                0 8px 20px rgba(0, 204, 255, 0.4);
-        }
-
         @keyframes ledPulse {
             0%, 100% {
                 opacity: 1;
@@ -598,40 +692,6 @@
                     0 0 20px rgba(255, 51, 51, 0.8),
                     0 0 3px rgba(0, 0, 0, 0.8) inset;
             }
-        }
-
-        /* Text Input for Messages */
-        .text-input-inline {
-            width: 100%;
-            padding: 1.2vh 1vw;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            color: #00ccff;
-            font-family: 'Roboto Mono', monospace;
-            font-size: clamp(11px, 1.3vh, 13px);
-            resize: none;
-            min-height: 80px;
-            margin-bottom: 1vh;
-            box-shadow:
-                0 2px 4px rgba(0, 0, 0, 0.8) inset,
-                0 -1px 0 rgba(255, 255, 255, 0.05) inset,
-                0 1px 0 rgba(0, 0, 0, 0.5);
-            transition: all 0.2s ease;
-        }
-
-        .text-input-inline:focus {
-            outline: none;
-            border-color: #00ccff;
-            box-shadow:
-                0 2px 4px rgba(0, 0, 0, 0.8) inset,
-                0 -1px 0 rgba(255, 255, 255, 0.05) inset,
-                0 0 0 1px rgba(0, 204, 255, 0.5),
-                0 0 12px rgba(0, 204, 255, 0.3);
-        }
-
-        .text-input-inline::placeholder {
-            color: #444;
         }
 
         /* System Status Display */
@@ -654,21 +714,21 @@
         }
 
         .status-display .status-label {
-            font-size: clamp(9px, 1.1vh, 11px);
+            font-size: var(--toggle-inactive-font-size, clamp(9px, 1.1vh, 11px));
             color: #888;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: var(--toggle-inactive-letter-spacing, 1.5px);
             margin-bottom: 0.6vh;
-            font-weight: 600;
+            font-weight: var(--toggle-inactive-font-weight, 600);
         }
 
         .status-display .status {
             padding: 0.5vh 1.2vw;
             border-radius: 3px;
-            font-size: clamp(10px, 1.2vh, 12px);
-            font-weight: 700;
+            font-size: var(--toggle-active-font-size, clamp(10px, 1.2vh, 12px));
+            font-weight: var(--toggle-active-font-weight, 700);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: var(--toggle-active-letter-spacing, 1px);
             border: 1px solid transparent;
             transition: all 0.3s ease;
             box-shadow:
@@ -676,66 +736,228 @@
                 0 -1px 0 rgba(255, 255, 255, 0.05) inset;
         }
 
-        /* Closed Captions Window */
-        .cc-window {
-            margin-top: 15px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-            overflow: hidden;
+        /* CC Toggle Switch - Horizontal Design */
+        .cc-toggle-container {
+            width: 100%;
+            padding: 2vh 1.5vw;
+            background: linear-gradient(145deg, #0a1a1a, #050a0a);
+            border-radius: 8px;
+            border: 2px solid rgba(0, 200, 255, 0.15);
             box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.6) inset,
-                0 -1px 0 rgba(255, 255, 255, 0.05) inset,
-                0 4px 12px rgba(0, 0, 0, 0.5);
+                0 4px 8px rgba(0, 0, 0, 0.6),
+                0 0 20px rgba(0, 0, 0, 0.4) inset;
         }
 
-        .cc-window-header {
-            background: rgba(0, 0, 0, 0.3);
-            color: rgba(255, 255, 255, 0.7);
-            font-family: 'Roboto Mono', monospace;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            padding: 8px 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            text-align: center;
+        .cc-toggle {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5vh;
+            position: relative;
         }
 
-        .cc-window-content {
-            min-height: 80px;
-            max-height: 150px;
-            overflow-y: auto;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.85);
+        .cc-toggle-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
+            font-size: var(--status-small-font-size, clamp(9px, 1.1vh, 11px));
+            font-weight: var(--status-small-font-weight, 700);
+            text-transform: uppercase;
+            letter-spacing: var(--status-small-letter-spacing, 1.2px);
+            padding: 0 0.5vw;
+        }
+
+        .cc-toggle-label {
+            transition: all 0.3s ease;
+            color: #444;
+        }
+
+        .cc-toggle-label.active {
+            color: #00ccff;
+            text-shadow: 0 0 8px rgba(0, 204, 255, 0.8);
+        }
+
+        .cc-toggle-switch {
+            position: relative;
+            width: 120px;
+            height: 50px;
+            cursor: pointer;
+        }
+
+        .cc-toggle-track {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #0a0a0a, #1a1a1a, #0a0a0a);
+            border-radius: 25px;
+            border: 2px solid rgba(0, 0, 0, 0.8);
+            box-shadow:
+                0 0 10px rgba(0, 0, 0, 0.8) inset,
+                0 2px 0 rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+        }
+
+        .cc-toggle-track::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(0, 204, 255, 0.1) 50%,
+                transparent 100%);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
 
-        .cc-window-content.active {
+        .cc-toggle-switch.active .cc-toggle-track::before {
+            opacity: 1;
+        }
+
+        .cc-toggle-slider {
+            position: absolute;
+            width: 50px;
+            height: 38px;
+            left: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background:
+                linear-gradient(180deg,
+                    rgba(255, 255, 255, 0.2) 0%,
+                    rgba(255, 255, 255, 0.08) 50%,
+                    rgba(0, 0, 0, 0.3) 100%),
+                linear-gradient(90deg, #3a3a3a, #2a2a2a);
+            border-radius: 20px;
+            border: 2px solid rgba(0, 0, 0, 0.6);
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.8),
+                0 1px 0 rgba(255, 255, 255, 0.1) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cc-toggle-slider::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(180deg, #444, #222);
+            border-radius: 2px;
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.2) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+        }
+
+        .cc-toggle-switch.active .cc-toggle-slider {
+            left: calc(100% - 56px);
+            border-color: rgba(0, 204, 255, 0.4);
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.8),
+                0 0 12px rgba(0, 204, 255, 0.4),
+                0 1px 0 rgba(255, 255, 255, 0.1) inset,
+                0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+        }
+
+        .cc-indicator-led {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1a1a1a;
+            border: 1px solid rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.8) inset;
+            transition: all 0.3s ease;
+        }
+
+        .cc-indicator-led.left {
+            left: 15px;
+        }
+
+        .cc-indicator-led.right {
+            right: 15px;
+        }
+
+        .cc-toggle-switch.active .cc-indicator-led.right {
+            background: radial-gradient(circle at 30% 30%, #00ccff, #0088aa);
+            box-shadow:
+                0 0 8px #00ccff,
+                0 0 12px rgba(0, 204, 255, 0.6),
+                0 0 3px rgba(0, 0, 0, 0.8) inset;
+            animation: ccLedPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes ccLedPulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow:
+                    0 0 8px #00ccff,
+                    0 0 12px rgba(0, 204, 255, 0.6),
+                    0 0 3px rgba(0, 0, 0, 0.8) inset;
+            }
+            50% {
+                opacity: 0.7;
+                box-shadow:
+                    0 0 12px #00ccff,
+                    0 0 20px rgba(0, 204, 255, 0.8),
+                    0 0 3px rgba(0, 0, 0, 0.8) inset;
+            }
+        }
+
+        /* Closed Captions Box - Bottom of Console */
+        /* Dimensions configured in frontend/config.json */
+        .cc-box {
+            width: 100%;
+            max-width: 100%;
+            height: calc(var(--cc-font-size, 26px) * var(--cc-line-height, 1.6) + var(--cc-padding, 12px) * 2);
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--cc-border-radius, 4px);
+            padding: var(--cc-padding, 12px);
+            box-shadow:
+                0 1px 2px rgba(0, 0, 0, 0.6) inset,
+                0 -1px 0 rgba(255, 255, 255, 0.05) inset,
+                0 4px 12px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            margin: 2vh auto 0;
+            flex-shrink: 0;
+        }
+
+        .cc-box.active {
             opacity: 1;
         }
 
         .cc-text {
             color: #ffffff;
-            font-family: 'Roboto Mono', monospace;
-            font-size: 13px;
-            line-height: 1.6;
+            font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
+            font-size: var(--cc-font-size, 26px);
+            line-height: var(--cc-line-height, 1.6);
             text-align: left;
-            font-weight: 400;
+            font-weight: var(--cc-font-weight, 400);
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
+            display: inline-block;
+            transition: transform 1.2s ease-out;
         }
 
-        .cc-window-content::-webkit-scrollbar {
-            width: 4px;
+        /* Hide scrollbar completely */
+        .cc-box {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
         }
 
-        .cc-window-content::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        .cc-window-content::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
+        .cc-box::-webkit-scrollbar {
+            display: none; /* Chrome/Safari/Opera */
         }
 
         /* Bottom Controls Section */
@@ -772,12 +994,8 @@
 
             .control-btn {
                 min-height: 50px;
-                font-size: clamp(10px, 1.2vh, 12px);
+                font-size: var(--debug-console-font-size, clamp(10px, 1.2vh, 12px));
                 flex: 1;
-            }
-
-            .text-input-inline {
-                min-height: 60px;
             }
         }
 
@@ -832,7 +1050,7 @@
                     </div>
                 </div>
                 <div class="audio-indicator" id="audioIndicator" style="display: none; padding: 1.5vh; text-align: center; border: 2px solid #ff3333; border-radius: 6px; background: rgba(255, 51, 51, 0.1);">
-                    <span class="audio-indicator-text" style="font-size: clamp(10px, 1.2vh, 12px);">🎤 RECORDING</span>
+                    <span class="audio-indicator-text">🎤 RECORDING</span>
                 </div>
                 <div class="status-display">
                     <div class="status-label">System</div>
@@ -847,23 +1065,35 @@
                         <video id="video-idle" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                         <video id="video-listening" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                         <video id="video-speaking" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
+                        <video id="video-dancing" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
+
+                        <!-- Stage Curtain -->
+                        <div id="stageCurtain" class="stage-curtain">
+                            <div class="curtain-rod"></div>
+                            <div class="curtain-panel left"></div>
+                            <div class="curtain-panel right"></div>
+                            <div class="curtain-tassel left"></div>
+                            <div class="curtain-tassel right"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Right Controls -->
             <div class="right-controls">
-                <textarea id="textInput" class="text-input-inline" placeholder="Type message..."></textarea>
-                <button id="sendTextBtn" class="control-btn btn-send" disabled>
-                    <div class="btn-led"></div>
-                    SEND MESSAGE
-                </button>
-
-                <!-- Closed Captions Window -->
-                <div class="cc-window">
-                    <div class="cc-window-header">CLOSED CAPTIONS</div>
-                    <div id="ccOverlay" class="cc-window-content">
-                        <div id="ccText" class="cc-text"></div>
+                <!-- CC Toggle Switch -->
+                <div class="cc-toggle-container">
+                    <div class="cc-toggle">
+                        <div class="cc-toggle-labels">
+                            <span class="cc-toggle-label active" id="ccLabelOff">OFF</span>
+                            <span class="cc-toggle-label" id="ccLabelOn">CC</span>
+                        </div>
+                        <div class="cc-toggle-switch" id="ccToggle">
+                            <div class="cc-toggle-track"></div>
+                            <div class="cc-indicator-led left"></div>
+                            <div class="cc-toggle-slider"></div>
+                            <div class="cc-indicator-led right"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -875,6 +1105,11 @@
             <div class="log-module" id="log">
                 <div class="log-entry info">System ready. Press REC to start live session...</div>
             </div>
+        </div>
+
+        <!-- Closed Captions Box - Bottom of Console -->
+        <div id="ccOverlay" class="cc-box">
+            <div id="ccText" class="cc-text"></div>
         </div>
     </div>
 

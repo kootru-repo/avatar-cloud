@@ -43,14 +43,29 @@ class GeminiLiveClient {
         this.labelOn = document.getElementById('labelOn');
         this.isToggleActive = false;
         this.isToggleAnimating = false;
-        this.textInput = document.getElementById('textInput');
-        this.sendTextBtn = document.getElementById('sendTextBtn');
         this.logEl = document.getElementById('log');
         this.audioIndicator = document.getElementById('audioIndicator');
         this.ccOverlay = document.getElementById('ccOverlay');
         this.ccText = document.getElementById('ccText');
-        this.ccTimeout = null;  // For auto-hiding CC
-        this.ccEnabled = false;  // Only enable after first audio to avoid showing system messages
+        this.ccTimeout = null;  // For delaying next sentence
+        this.lastCaptionTime = 0;  // Track when last caption was shown
+        this.minCaptionDisplayMs = 5000;  // Minimum 5s display before next caption
+
+        // CC Toggle elements
+        this.ccToggle = document.getElementById('ccToggle');
+        this.ccLabelOff = document.getElementById('ccLabelOff');
+        this.ccLabelOn = document.getElementById('ccLabelOn');
+        this.isCCActive = false;  // CC starts OFF
+
+        // CC interim chunk throttling (loaded from config)
+        this.ccInterimChunkDelayMs = 130;  // Default 130ms delay between chunks
+        this.ccInterimChunkQueue = [];  // Queue of pending interim chunks
+        this.ccInterimChunkTimeout = null;  // Timeout for processing queued chunks
+
+        // CC sliding window (loaded from config)
+        this.ccWordsArray = [];  // Track individual words for sliding window effect
+        this.ccMaxVisibleWords = 16;  // Default: ~2 lines worth of words
+        this.ccIsProcessingFinal = false;  // Track if we're on the final chunk
 
         // Download progress tracking
         this.downloadCountdownInterval = null;
@@ -60,26 +75,35 @@ class GeminiLiveClient {
         this.avatarVideos = {
             idle: document.getElementById('video-idle'),
             listening: document.getElementById('video-listening'),
-            speaking: document.getElementById('video-speaking')
+            speaking: document.getElementById('video-speaking'),
+            dancing: document.getElementById('video-dancing')
         };
 
         // Current active video reference
         this.avatarVideo = null;  // Will be set in initialization
+
+        // Dance mode state
+        this.isDancing = false;
+        this.danceTimeout = null;
+        this.danceAudio = null;
+        this.danceModeConfig = null;
+
+        // Sound effects
+        this.soundEffectsConfig = null;
+
+        // Stage curtain
+        this.stageCurtain = document.getElementById('stageCurtain');
+        this.curtainRaised = false;
+
+        // Preloaded dance music
+        this.preloadedDanceMusic = null;
 
         this.setupEventListeners();
     }
 
     setupEventListeners() {
         this.mixerToggle.addEventListener('click', () => this.toggleConnection());
-        this.sendTextBtn.addEventListener('click', () => this.sendText());
-
-        // Enter to send text
-        this.textInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendText();
-            }
-        });
+        this.ccToggle.addEventListener('click', () => this.toggleCC());
     }
 
     toggleConnection() {
@@ -119,6 +143,40 @@ class GeminiLiveClient {
         }
     }
 
+    toggleCC() {
+        // Toggle CC state
+        this.isCCActive = !this.isCCActive;
+
+        // Update UI
+        if (this.isCCActive) {
+            this.ccToggle.classList.add('active');
+            this.ccLabelOff.classList.remove('active');
+            this.ccLabelOn.classList.add('active');
+            this.log('Closed captions enabled', 'info');
+        } else {
+            this.ccToggle.classList.remove('active');
+            this.ccLabelOff.classList.add('active');
+            this.ccLabelOn.classList.remove('active');
+            // Hide and clear CC window when disabled
+            this.ccOverlay.classList.remove('active');
+            this.ccText.textContent = '';
+            if (this.ccTimeout) {
+                clearTimeout(this.ccTimeout);
+                this.ccTimeout = null;
+            }
+            // Clear interim chunk queue and timeout
+            if (this.ccInterimChunkTimeout) {
+                clearTimeout(this.ccInterimChunkTimeout);
+                this.ccInterimChunkTimeout = null;
+            }
+            this.ccInterimChunkQueue = [];
+            this.ccWordsArray = [];  // Clear sliding window
+            // Reset caption timing
+            this.lastCaptionTime = 0;
+            this.log('Closed captions disabled', 'info');
+        }
+    }
+
     async start() {
         try {
             this.log('Starting connection...', 'info');
@@ -140,10 +198,15 @@ class GeminiLiveClient {
 
             this.isConnected = true;
             this.updateToggleUI(true);
-            this.sendTextBtn.disabled = false;
 
             // Set avatar to listening state
             this.setAvatarState('listening');
+
+            // Play crowd clapping sound effect
+            this.playCrowdClapping();
+
+            // Raise the curtain to reveal the stage
+            this.raiseCurtain();
 
             // Update status to ONLINE
             this.setStatus('connected', 'ONLINE');
@@ -229,6 +292,162 @@ class GeminiLiveClient {
                 console.log('✅ Speaking cycle config loaded:', this.speakingCycleConfig);
                 console.log(`   Min video duration required: ${minRequired}s`);
                 console.log(`   Oscillation range: ${initialForwardDuration - reverseDuration}s to ${initialForwardDuration}s`);
+            }
+
+            // Load closed captions styling configuration
+            if (config.closedCaptions) {
+                const cc = config.closedCaptions;
+                document.documentElement.style.setProperty('--cc-width', `${cc.width}px`);
+                document.documentElement.style.setProperty('--cc-max-width-vh', `${cc.maxWidthVh}vh`);
+                document.documentElement.style.setProperty('--cc-max-width-vw', `${cc.maxWidthVw}vw`);
+                document.documentElement.style.setProperty('--cc-height', `${cc.height}px`);
+                document.documentElement.style.setProperty('--cc-font-size', `${cc.fontSize}px`);
+                document.documentElement.style.setProperty('--cc-padding', `${cc.padding}px`);
+                document.documentElement.style.setProperty('--cc-border-radius', `${cc.borderRadius}px`);
+                document.documentElement.style.setProperty('--cc-line-height', cc.lineHeight);
+
+                // Load interim chunk delay for throttling word-by-word appearance
+                if (cc.interimChunkDelayMs !== undefined) {
+                    this.ccInterimChunkDelayMs = cc.interimChunkDelayMs;
+                }
+
+                // Load max visible words for sliding window
+                if (cc.maxVisibleWords !== undefined) {
+                    this.ccMaxVisibleWords = cc.maxVisibleWords;
+                }
+
+                console.log('✅ Closed captions styling loaded:', cc);
+            }
+
+            // Load dance mode configuration
+            if (config.danceMode) {
+                this.danceModeConfig = config.danceMode;
+                console.log('✅ Dance mode configuration loaded:', this.danceModeConfig);
+            }
+
+            // Load sound effects configuration
+            if (config.soundEffects) {
+                this.soundEffectsConfig = config.soundEffects;
+                console.log('✅ Sound effects configuration loaded:', this.soundEffectsConfig);
+            }
+
+            // Preload dance music
+            if (config.danceMode && config.danceMode.enabled && config.danceMode.musicFile) {
+                let musicPath = config.danceMode.musicFile;
+                if (typeof musicPath === 'object') {
+                    const isLocal = this.isLocalEnvironment();
+                    musicPath = isLocal ? musicPath.local : musicPath.cloud;
+                }
+                console.log('🎵 Preloading dance music:', musicPath);
+                this.preloadedDanceMusic = new Audio(musicPath);
+                this.preloadedDanceMusic.crossOrigin = "anonymous";
+                this.preloadedDanceMusic.preload = "auto";
+                this.preloadedDanceMusic.load();
+                console.log('✅ Dance music preloaded');
+            }
+
+            // Load typography configuration
+            if (config.typography) {
+                const typo = config.typography;
+
+                // Font families
+                if (typo.fontFamily) {
+                    document.documentElement.style.setProperty('--font-family-primary', typo.fontFamily.primary);
+                    document.documentElement.style.setProperty('--font-family-secondary', typo.fontFamily.secondary);
+                }
+
+                // Header styles
+                if (typo.header) {
+                    if (typo.header.title) {
+                        const title = typo.header.title;
+                        document.documentElement.style.setProperty(
+                            '--header-title-font-size',
+                            `clamp(${title.fontSizeMin}px, ${title.fontSizePreferred}, ${title.fontSizeMax}px)`
+                        );
+                        document.documentElement.style.setProperty('--header-title-font-weight', title.fontWeight);
+                        document.documentElement.style.setProperty('--header-title-letter-spacing', `${title.letterSpacing}px`);
+                    }
+                    if (typo.header.subtitle) {
+                        const subtitle = typo.header.subtitle;
+                        document.documentElement.style.setProperty(
+                            '--header-subtitle-font-size',
+                            `clamp(${subtitle.fontSizeMin}px, ${subtitle.fontSizePreferred}, ${subtitle.fontSizeMax}px)`
+                        );
+                        document.documentElement.style.setProperty('--header-subtitle-font-weight', subtitle.fontWeight);
+                        document.documentElement.style.setProperty('--header-subtitle-letter-spacing', `${subtitle.letterSpacing}px`);
+                    }
+                }
+
+                // Status styles
+                if (typo.status) {
+                    if (typo.status.small) {
+                        const small = typo.status.small;
+                        document.documentElement.style.setProperty(
+                            '--status-small-font-size',
+                            `clamp(${small.fontSizeMin}px, ${small.fontSizePreferred}, ${small.fontSizeMax}px)`
+                        );
+                        document.documentElement.style.setProperty('--status-small-font-weight', small.fontWeight);
+                        document.documentElement.style.setProperty('--status-small-letter-spacing', `${small.letterSpacing}px`);
+                    }
+                    if (typo.status.medium) {
+                        const medium = typo.status.medium;
+                        document.documentElement.style.setProperty(
+                            '--status-medium-font-size',
+                            `clamp(${medium.fontSizeMin}px, ${medium.fontSizePreferred}, ${medium.fontSizeMax}px)`
+                        );
+                        document.documentElement.style.setProperty('--status-medium-font-weight', medium.fontWeight);
+                        document.documentElement.style.setProperty('--status-medium-letter-spacing', `${medium.letterSpacing}px`);
+                    }
+                    if (typo.status.large) {
+                        const large = typo.status.large;
+                        document.documentElement.style.setProperty(
+                            '--status-large-font-size',
+                            `clamp(${large.fontSizeMin}px, ${large.fontSizePreferred}, ${large.fontSizeMax}px)`
+                        );
+                        document.documentElement.style.setProperty('--status-large-font-weight', large.fontWeight);
+                        document.documentElement.style.setProperty('--status-large-letter-spacing', `${large.letterSpacing}px`);
+                    }
+                }
+
+                // Toggle styles
+                if (typo.toggle) {
+                    if (typo.toggle.inactive) {
+                        const inactive = typo.toggle.inactive;
+                        document.documentElement.style.setProperty(
+                            '--toggle-inactive-font-size',
+                            `clamp(${inactive.fontSizeMin}px, ${inactive.fontSizePreferred}, ${inactive.fontSizeMax}px)`
+                        );
+                        document.documentElement.style.setProperty('--toggle-inactive-font-weight', inactive.fontWeight);
+                        document.documentElement.style.setProperty('--toggle-inactive-letter-spacing', `${inactive.letterSpacing}px`);
+                    }
+                    if (typo.toggle.active) {
+                        const active = typo.toggle.active;
+                        document.documentElement.style.setProperty(
+                            '--toggle-active-font-size',
+                            `clamp(${active.fontSizeMin}px, ${active.fontSizePreferred}, ${active.fontSizeMax}px)`
+                        );
+                        document.documentElement.style.setProperty('--toggle-active-font-weight', active.fontWeight);
+                        document.documentElement.style.setProperty('--toggle-active-letter-spacing', `${active.letterSpacing}px`);
+                    }
+                }
+
+                // CC text styles
+                if (typo.closedCaptions) {
+                    const ccTypo = typo.closedCaptions;
+                    document.documentElement.style.setProperty('--cc-font-weight', ccTypo.fontWeight);
+                    // fontSize and lineHeight already handled by closedCaptions config above
+                }
+
+                // Debug console styles
+                if (typo.debugConsole) {
+                    const debug = typo.debugConsole;
+                    document.documentElement.style.setProperty(
+                        '--debug-console-font-size',
+                        `clamp(${debug.fontSizeMin}px, ${debug.fontSizePreferred}, ${debug.fontSizeMax}px)`
+                    );
+                }
+
+                console.log('✅ Typography configuration loaded:', typo);
             }
 
             // Note: Videos are pre-loaded in the initialization code (lines 740-750)
@@ -450,6 +669,12 @@ class GeminiLiveClient {
 
             // Fast path for audio (most common message)
             if (type === 'audio') {
+                // DANCE MODE GUARD: Ignore audio when dancing
+                if (this.isDancing) {
+                    console.log('   💃 Skipping audio chunk (dance mode active)');
+                    return;
+                }
+
                 // BARGE-IN GUARD: Ignore audio if we're in interrupted state
                 if (this.isInterrupted) {
                     console.log('   ⏭️ Skipping audio chunk (interrupted state)');
@@ -463,12 +688,6 @@ class GeminiLiveClient {
                 if (this.interruptTimeout) {
                     clearTimeout(this.interruptTimeout);
                     this.interruptTimeout = null;
-                }
-
-                // Enable CC after first audio chunk (prevents showing system messages)
-                if (!this.ccEnabled) {
-                    this.ccEnabled = true;
-                    console.log('✅ Closed captions enabled');
                 }
 
                 // ASYNC COORDINATION: Start video first, then audio
@@ -502,12 +721,31 @@ class GeminiLiveClient {
 
                 case 'text':
                     console.log(`💬 Gemini: ${message.data}`);
+                    // Check for DANCE_MODE trigger (case-insensitive)
+                    const textData = message.data ? message.data.trim().toUpperCase() : '';
+                    if (textData === 'DANCE_MODE') {
+                        console.log('🎯 DANCE_MODE trigger detected in text!');
+                        // Stop any playing audio (Gemini might have spoken "DANCE_MODE")
+                        if (this.audioPlayer) {
+                            this.audioPlayer.stop();
+                        }
+                        this.triggerDanceMode();
+                    }
                     // Don't show text messages in CC - only STT transcriptions
                     break;
 
+                case 'transcription_interim':
+                    // Don't show captions during dance mode
+                    if (!this.isDancing) {
+                        // Real-time transcription chunk (interim, shown immediately with lower opacity)
+                        this.updateClosedCaptions(message.data, false);
+                    }
+                    break;
+
                 case 'transcription':
-                    // Backend faster-whisper transcription for ultra-fast CC
-                    if (this.ccEnabled) {
+                    // Don't show captions during dance mode
+                    if (!this.isDancing) {
+                        // Complete transcription (final, shown with full opacity)
                         this.updateClosedCaptions(message.data, true);
                     }
                     break;
@@ -590,25 +828,6 @@ class GeminiLiveClient {
         }
     }
 
-    sendText() {
-        const text = this.textInput.value.trim();
-        if (!text || !this.isConnected) return;
-
-        try {
-            // SDK-COMPLIANT: Send text message to backend
-            this.ws.send(JSON.stringify({
-                type: 'text',
-                data: text
-            }));
-
-            this.log(`📤 Sent: ${text}`, 'info');
-            this.textInput.value = '';
-
-        } catch (error) {
-            this.log(`Error sending text: ${error.message}`, 'error');
-        }
-    }
-
     stop() {
         this.log('Stopping...', 'info');
         this.cleanup();
@@ -617,6 +836,11 @@ class GeminiLiveClient {
     cleanup() {
         // Stop video cycling
         this.stopVideoSpeakingCycle();
+
+        // Stop dance mode if active
+        if (this.isDancing) {
+            this.stopDanceMode(false);
+        }
 
         // Clear any pending interrupt timeout
         if (this.interruptTimeout) {
@@ -650,11 +874,7 @@ class GeminiLiveClient {
         this.isToggleAnimating = false;  // Reset animation flag
 
         this.updateToggleUI(false);
-        this.sendTextBtn.disabled = true;
         this.audioIndicator.classList.remove('active');
-
-        // Reset CC enabled flag
-        this.ccEnabled = false;
 
         // Clear closed captions
         this.clearClosedCaptions();
@@ -669,6 +889,9 @@ class GeminiLiveClient {
         // Set avatar back to idle
         this.setAvatarState('idle');
 
+        // Lower the curtain to hide the stage
+        this.lowerCurtain();
+
         this.setStatus('disconnected', 'Disconnected');
         this.log('Stopped', 'info');
     }
@@ -678,49 +901,344 @@ class GeminiLiveClient {
         this.statusEl.textContent = text;
     }
 
+    raiseCurtain() {
+        if (!this.stageCurtain || this.curtainRaised) return;
+
+        console.log('🎭 Raising stage curtain...');
+        this.stageCurtain.classList.add('raised');
+        this.curtainRaised = true;
+    }
+
+    lowerCurtain() {
+        if (!this.stageCurtain || !this.curtainRaised) return;
+
+        console.log('🎭 Lowering stage curtain...');
+        this.stageCurtain.classList.remove('raised');
+        this.curtainRaised = false;
+    }
+
+    playCrowdClapping() {
+        if (!this.soundEffectsConfig || !this.soundEffectsConfig.crowdClapping) {
+            console.log('⚠️ Crowd clapping sound effect not configured');
+            return;
+        }
+
+        // Get environment-aware sound URL
+        let soundPath = this.soundEffectsConfig.crowdClapping;
+        if (typeof soundPath === 'object') {
+            const isLocal = this.isLocalEnvironment();
+            soundPath = isLocal ? soundPath.local : soundPath.cloud;
+        }
+
+        console.log(`👏 Playing crowd clapping from: ${soundPath}`);
+
+        // Play crowd clapping
+        const crowdAudio = new Audio(soundPath);
+        crowdAudio.volume = 0.7; // Slightly lower volume so it doesn't overpower
+        crowdAudio.crossOrigin = "anonymous";
+
+        crowdAudio.play().then(() => {
+            console.log('👏 Crowd clapping playback started');
+        }).catch(e => {
+            console.error('❌ Failed to play crowd clapping:', e);
+        });
+    }
+
 
     updateClosedCaptions(text, isFinal = false) {
         if (!this.ccText || !this.ccOverlay) return;
 
-        // Clear any existing timeout
-        if (this.ccTimeout) {
-            clearTimeout(this.ccTimeout);
-        }
+        // Don't show captions if CC toggle is off
+        if (!this.isCCActive) return;
 
-        // Update text content
-        // Add visual indicator for interim vs final results
-        this.ccText.textContent = text;
-
-        // Style differently for interim results (lighter color)
+        // For interim results, queue chunks and display with configured delay
         if (!isFinal) {
-            this.ccText.style.opacity = '0.8';
-        } else {
-            this.ccText.style.opacity = '1';
+            // Add chunk to queue
+            this.ccInterimChunkQueue.push(text);
+
+            // Start processing queue if not already processing
+            if (!this.ccInterimChunkTimeout) {
+                this.processInterimChunkQueue();
+            }
+            return;
         }
 
-        // Show overlay
-        this.ccOverlay.classList.add('active');
+        // For final results, replace interim text IMMEDIATELY
+        // Final transcription should show right away (no 5s delay - that's only for NEW sentences)
 
-        // Auto-hide after 5 seconds for final results
-        if (isFinal) {
-            this.ccTimeout = setTimeout(() => {
-                this.ccOverlay.classList.remove('active');
-            }, 5000);
+        // Clear interim chunk queue and timeout
+        this.ccInterimChunkQueue = [];
+        if (this.ccInterimChunkTimeout) {
+            clearTimeout(this.ccInterimChunkTimeout);
+            this.ccInterimChunkTimeout = null;
         }
-    }
 
-    clearClosedCaptions() {
-        if (!this.ccOverlay) return;
-
+        // Clear any existing timeout
         if (this.ccTimeout) {
             clearTimeout(this.ccTimeout);
             this.ccTimeout = null;
         }
 
+        // Apply sliding window to final transcription to prevent shift
+        const finalWords = text.trim().split(/\s+/).filter(word => word.length > 0);
+
+        // Only show last N words (same as interim chunks)
+        if (finalWords.length > this.ccMaxVisibleWords) {
+            const visibleWords = finalWords.slice(-this.ccMaxVisibleWords);
+            this.ccWordsArray = visibleWords;
+            this.ccText.textContent = visibleWords.join(' ');
+        } else {
+            this.ccWordsArray = finalWords;
+            this.ccText.textContent = text;
+        }
+
+        this.ccText.style.opacity = '1';  // Full opacity for final
+        this.ccOverlay.classList.add('active');
+        this.lastCaptionTime = Date.now();
+    }
+
+    processInterimChunkQueue() {
+        // No chunks to process
+        if (this.ccInterimChunkQueue.length === 0) {
+            this.ccInterimChunkTimeout = null;
+            return;
+        }
+
+        // Already processing - don't start another animation
+        if (this.ccInterimChunkTimeout) {
+            return;
+        }
+
+        // Get next chunk from queue
+        const chunk = this.ccInterimChunkQueue.shift();
+
+        // Check if there are more chunks coming after this one
+        const isLastChunk = this.ccInterimChunkQueue.length === 0;
+
+        // WORD-BY-WORD DISPLAY: Split chunk into individual words
+        const newWords = chunk.trim().split(/\s+/).filter(word => word.length > 0);
+
+        // Add each word with a delay for smooth scrolling effect
+        let wordIndex = 0;
+        const addNextWord = () => {
+            if (wordIndex < newWords.length) {
+                const isLastWord = isLastChunk && (wordIndex === newWords.length - 1);
+
+                // Add one word at a time
+                this.ccWordsArray.push(newWords[wordIndex]);
+
+                // Maintain sliding window - remove oldest words if exceeds max
+                const shouldScroll = this.ccWordsArray.length > this.ccMaxVisibleWords && !isLastWord;
+                if (shouldScroll) {
+                    this.ccWordsArray.shift();
+                }
+
+                // Update text content
+                this.ccText.textContent = this.ccWordsArray.join(' ');
+                this.ccText.style.opacity = '0.8';  // Lower opacity for interim
+                this.ccOverlay.classList.add('active');
+
+                // Smooth scroll animation: measure text width and slide left
+                // Only scroll if we're not on the last word
+                if (shouldScroll) {
+                    requestAnimationFrame(() => {
+                        // Get the width of one word (approximate)
+                        const tempSpan = document.createElement('span');
+                        tempSpan.style.font = window.getComputedStyle(this.ccText).font;
+                        tempSpan.style.visibility = 'hidden';
+                        tempSpan.style.position = 'absolute';
+                        tempSpan.textContent = newWords[wordIndex] + ' ';
+                        document.body.appendChild(tempSpan);
+                        const wordWidth = tempSpan.offsetWidth;
+                        document.body.removeChild(tempSpan);
+
+                        // Get current transform
+                        const currentTransform = this.ccText.style.transform || 'translateX(0px)';
+                        const currentX = parseFloat(currentTransform.match(/-?\d+\.?\d*/)?.[0] || 0);
+
+                        // Slide left by the width of the new word
+                        this.ccText.style.transform = `translateX(${currentX - wordWidth}px)`;
+                    });
+                }
+
+                wordIndex++;
+
+                // Schedule next word with tracked timeout
+                this.ccInterimChunkTimeout = setTimeout(addNextWord, this.ccInterimChunkDelayMs);
+            } else {
+                // All words from this chunk added, process next chunk
+                this.ccInterimChunkTimeout = null;
+                if (this.ccInterimChunkQueue.length > 0) {
+                    this.processInterimChunkQueue();
+                }
+            }
+        };
+
+        // Start adding words
+        this.ccInterimChunkTimeout = setTimeout(addNextWord, 0);
+    }
+
+    clearClosedCaptions() {
+        if (!this.ccOverlay) return;
+
+        // Clear all CC timeouts and queues
+        if (this.ccTimeout) {
+            clearTimeout(this.ccTimeout);
+            this.ccTimeout = null;
+        }
+
+        if (this.ccInterimChunkTimeout) {
+            clearTimeout(this.ccInterimChunkTimeout);
+            this.ccInterimChunkTimeout = null;
+        }
+
+        this.ccInterimChunkQueue = [];
+        this.ccWordsArray = [];  // Clear sliding window
+
         this.ccOverlay.classList.remove('active');
         if (this.ccText) {
             this.ccText.textContent = '';
+            this.ccText.style.transform = 'translateX(0px)';  // Reset scroll position
         }
+    }
+
+    triggerDanceMode() {
+        console.log('🎯 triggerDanceMode() called');
+        console.log('   danceModeConfig:', this.danceModeConfig);
+        console.log('   preloadedDanceMusic:', this.preloadedDanceMusic);
+
+        if (!this.danceModeConfig || !this.danceModeConfig.enabled) {
+            console.log('⚠️ Dance mode not enabled in config');
+            return;
+        }
+
+        if (this.isDancing) {
+            console.log('⚠️ Already dancing!');
+            return;
+        }
+
+        console.log('💃 Triggering dance mode!');
+        this.isDancing = true;
+
+        // Stop audio playback (mute conversation)
+        if (this.audioPlayer) {
+            this.audioPlayer.stop();
+        }
+
+        // Stop recording temporarily
+        const wasRecording = this.isRecording;
+        if (this.audioRecorder && wasRecording) {
+            this.audioRecorder.stopBargeInMonitoring();
+        }
+
+        // Switch to dancing video
+        this.setAvatarState('dancing');
+
+        // Get environment-aware music URL
+        let musicPath = this.danceModeConfig.musicFile;
+        if (typeof musicPath === 'object') {
+            // New format: object with local/cloud URLs
+            const isLocal = this.isLocalEnvironment();
+            musicPath = isLocal ? musicPath.local : musicPath.cloud;
+        }
+
+        console.log(`🎵 Loading dance music from: ${musicPath}`);
+
+        // Use preloaded music if available, otherwise create new Audio
+        if (this.preloadedDanceMusic && this.preloadedDanceMusic.src.includes(musicPath)) {
+            console.log('🎵 Using preloaded dance music');
+            this.danceAudio = this.preloadedDanceMusic;
+            this.danceAudio.currentTime = 0;  // Reset to beginning
+        } else {
+            console.log('🎵 Loading dance music on demand');
+            this.danceAudio = new Audio(musicPath);
+            this.danceAudio.crossOrigin = "anonymous";
+            this.danceAudio.preload = "auto";
+        }
+
+        this.danceAudio.volume = 1.0;
+
+        // Add event listeners for debugging
+        this.danceAudio.addEventListener('canplay', () => {
+            console.log('✅ Dance music ready to play');
+        });
+
+        this.danceAudio.addEventListener('playing', () => {
+            console.log('🎵 Dance music is now playing');
+        });
+
+        this.danceAudio.addEventListener('error', (e) => {
+            console.error('❌ Dance music error:', e);
+            console.error('   Error details:', this.danceAudio.error);
+        });
+
+        this.danceAudio.addEventListener('loadeddata', () => {
+            console.log('📦 Dance music loaded, attempting playback...');
+        });
+
+        // CRITICAL: Load the audio first, then play
+        this.danceAudio.load();
+
+        // Start playback with detailed error handling
+        const playPromise = this.danceAudio.play();
+
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log(`✅ Dance music playback started: ${musicPath}`);
+            }).catch(e => {
+                console.error('❌ Failed to play dance music:', e);
+                console.error('   Error name:', e.name);
+                console.error('   Error message:', e.message);
+
+                // Try to resume AudioContext if suspended
+                if (this.audioPlayer && this.audioPlayer.audioContext) {
+                    console.log('🔄 Attempting to resume AudioContext...');
+                    this.audioPlayer.audioContext.resume().then(() => {
+                        console.log('✅ AudioContext resumed, retrying dance music...');
+                        this.danceAudio.play().catch(retryError => {
+                            console.error('❌ Retry also failed:', retryError);
+                        });
+                    });
+                }
+            });
+        }
+
+        console.log(`💃 Dance mode active for ${this.danceModeConfig.duration}ms`);
+
+        // Return to listening after duration
+        this.danceTimeout = setTimeout(() => {
+            this.stopDanceMode(wasRecording);
+        }, this.danceModeConfig.duration);
+    }
+
+    stopDanceMode(resumeRecording = true) {
+        if (!this.isDancing) return;
+
+        console.log('🛑 Stopping dance mode');
+        this.isDancing = false;
+
+        // Clear timeout
+        if (this.danceTimeout) {
+            clearTimeout(this.danceTimeout);
+            this.danceTimeout = null;
+        }
+
+        // Stop music
+        if (this.danceAudio) {
+            this.danceAudio.pause();
+            this.danceAudio.currentTime = 0;
+            this.danceAudio = null;
+        }
+
+        // Return to listening state
+        this.setAvatarState('listening');
+
+        // Resume recording if it was active
+        if (resumeRecording && this.audioRecorder) {
+            console.log('🎤 Resuming recording after dance');
+        }
+
+        console.log('✅ Dance mode complete');
     }
 
     handleDownloadProgress(message) {
@@ -1055,6 +1573,22 @@ class GeminiLiveClient {
                 console.log('⚡ Speaking video already warm, starting cycle');
                 this.startVideoSpeakingCycle();
             }
+        } else if (state === 'dancing') {
+            // Handle dancing state - simple loop, no cycling
+            this.stopVideoSpeakingCycle();
+
+            // Ensure dancing video loops normally and is playing
+            this.avatarVideo.loop = true;
+            this.avatarVideo.playbackRate = 1.0;
+
+            // Start playing the dancing video
+            if (this.avatarVideo.paused) {
+                this.avatarVideo.play().then(() => {
+                    console.log('💃 Dancing video started');
+                }).catch(e => {
+                    console.error('❌ Failed to play dancing video:', e);
+                });
+            }
         } else {
             // Stop cycling when returning to idle or listening
             this.stopVideoSpeakingCycle();
@@ -1140,16 +1674,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Load all videos into their respective elements
                 const videos = window.geminiClient.avatarVideos;
 
-                if (videos.idle && videos.listening && videos.speaking) {
-                    // Set sources for all three video elements (environment-aware URLs)
+                if (videos.idle && videos.listening && videos.speaking && videos.dancing) {
+                    // Set sources for all video elements (environment-aware URLs)
                     videos.idle.src = window.geminiClient.getVideoUrl('idle');
                     videos.listening.src = window.geminiClient.getVideoUrl('listening');
                     videos.speaking.src = window.geminiClient.getVideoUrl('speaking');
+                    videos.dancing.src = window.geminiClient.getVideoUrl('dancing');
 
                     console.log(`📹 Video URLs (${window.geminiClient.isLocalEnvironment() ? 'local' : 'cloud'}):`);
                     console.log(`   Idle: ${videos.idle.src}`);
                     console.log(`   Listening: ${videos.listening.src}`);
                     console.log(`   Speaking: ${videos.speaking.src}`);
+                    console.log(`   Dancing: ${videos.dancing.src}`);
 
                     // Pre-load all videos for instant state switching (no loading delays!)
                     Object.values(videos).forEach(video => {

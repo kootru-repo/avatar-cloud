@@ -42,12 +42,14 @@
       "local": {
         "idle": "media/video/idle.webm",
         "listening": "media/video/idle.webm",
-        "speaking": "media/video/talking.webm"
+        "speaking": "media/video/talking.webm",
+        "dancing": "media/video/dance.webm"
       },
       "cloud": {
         "idle": "https://storage.googleapis.com/avatar-478217-videos/video/idle.webm",
         "listening": "https://storage.googleapis.com/avatar-478217-videos/video/idle.webm",
         "speaking": "https://storage.googleapis.com/avatar-478217-videos/video/talking.webm",
+        "dancing": "https://storage.googleapis.com/avatar-478217-videos/video/dance.webm",
         "_comment": "Update bucket name after: gsutil mb gs://avatar-478217-videos && gsutil -m cp frontend/media/video/*.webm gs://avatar-478217-videos/video/"
       }
     },
@@ -189,6 +191,22 @@
     "marqueeScrollSpeed": 3,
     "avatarStatusUpdateInterval": 100
   },
+  "danceMode": {
+    "enabled": true,
+    "musicFile": {
+      "local": "media/music/Song of Harmonia.mp3",
+      "cloud": "https://storage.googleapis.com/avatar-478217-videos/music/Song of Harmonia.mp3"
+    },
+    "duration": 10000,
+    "_comment": "Dance mode triggered by dance-related keywords. Plays music for specified duration (ms) while showing dance video."
+  },
+  "soundEffects": {
+    "crowdClapping": {
+      "local": "media/music/crowd-clapping.mp3",
+      "cloud": "https://storage.googleapis.com/avatar-478217-videos/music/crowd-clapping.mp3"
+    },
+    "_comment": "Sound effects triggered by various events"
+  },
   "performance": {
     "maxChunkHistory": 100,
     "maxResponseHistory": 100,
@@ -202,5 +220,92 @@
     "screenShare": true,
     "metrics": true,
     "debugConsole": false
+  },
+  "closedCaptions": {
+    "_comment": "Closed captions box styling below video. All dimensions configurable here.",
+    "width": 820,
+    "maxWidthVh": 72,
+    "maxWidthVw": 72,
+    "height": 108,
+    "fontSize": 26,
+    "padding": 12,
+    "borderRadius": 4,
+    "lineHeight": 1.6,
+    "interimChunkDelayMs": 500,
+    "_comment_delay": "Delay between words (ms). Controls word appearance rate. 500ms = comfortable reading pace.",
+    "maxVisibleWords": 16,
+    "_comment_maxWords": "Maximum words to display (maintains ~2 lines). Old words scroll out as new arrive for sliding window effect."
+  },
+  "typography": {
+    "_comment": "Centralized font settings. All font sizes use clamp(min, preferred, max) for responsive scaling.",
+    "fontFamily": {
+      "primary": "'Orbitron', sans-serif",
+      "secondary": "'Roboto Mono', monospace"
+    },
+    "header": {
+      "title": {
+        "fontSizeMin": 22,
+        "fontSizePreferred": "3.6vh",
+        "fontSizeMax": 34,
+        "fontWeight": 900,
+        "letterSpacing": 3
+      },
+      "subtitle": {
+        "fontSizeMin": 11,
+        "fontSizePreferred": "1.44vh",
+        "fontSizeMax": 14,
+        "fontWeight": 400,
+        "letterSpacing": 2
+      }
+    },
+    "status": {
+      "small": {
+        "fontSizeMin": 9,
+        "fontSizePreferred": "1.1vh",
+        "fontSizeMax": 11,
+        "fontWeight": 700,
+        "letterSpacing": 1.2
+      },
+      "medium": {
+        "fontSizeMin": 11,
+        "fontSizePreferred": "1.4vh",
+        "fontSizeMax": 14,
+        "fontWeight": 700,
+        "letterSpacing": 1.5
+      },
+      "large": {
+        "fontSizeMin": 10,
+        "fontSizePreferred": "1.2vh",
+        "fontSizeMax": 12,
+        "fontWeight": 700,
+        "letterSpacing": 1
+      }
+    },
+    "toggle": {
+      "inactive": {
+        "fontSizeMin": 9,
+        "fontSizePreferred": "1.1vh",
+        "fontSizeMax": 11,
+        "fontWeight": 600,
+        "letterSpacing": 1.5
+      },
+      "active": {
+        "fontSizeMin": 10,
+        "fontSizePreferred": "1.2vh",
+        "fontSizeMax": 12,
+        "fontWeight": 700,
+        "letterSpacing": 1
+      }
+    },
+    "closedCaptions": {
+      "fontSize": 26,
+      "fontWeight": 400,
+      "lineHeight": 1.6
+    },
+    "debugConsole": {
+      "fontSizeMin": 10,
+      "fontSizePreferred": "1.2vh",
+      "fontSizeMax": 12
+    }
   }
 }

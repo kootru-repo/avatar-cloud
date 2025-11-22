@@ -7,6 +7,75 @@
 
 ---
 
+## 🚨 CRITICAL: FIREBASE_PROJECT_ID ENVIRONMENT VARIABLE
+
+**⚠️ READ THIS BEFORE EVERY BACKEND DEPLOYMENT ⚠️**
+
+### The #1 Recurring Deployment Failure
+
+**PROBLEM:** After backend deployment succeeds, connections immediately fail with:
+```
+❌ Blocked connection from unauthorized origin: https://avatar-478217.web.app
+   Allowed origins: (empty)
+```
+
+**ROOT CAUSE:** The `FIREBASE_PROJECT_ID` environment variable is missing from Cloud Run.
+
+**WHY IT KEEPS HAPPENING:** Cloud Run does NOT automatically preserve environment variables between deployments. If not explicitly included in `--set-env-vars`, they are LOST.
+
+### ✅ SOLUTION - Always Use This Deploy Command:
+
+```bash
+cd backend
+gcloud run deploy gemini-avatar-backend \
+  --source . \
+  --region=us-central1 \
+  --allow-unauthenticated \
+  --min-instances=1 \
+  --max-instances=10 \
+  --timeout=300 \
+  --memory=512Mi \
+  --cpu=1 \
+  --set-env-vars=BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 \
+  --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest \
+  --port=8080
+```
+
+**KEY:** `FIREBASE_PROJECT_ID=avatar-478217` MUST be in `--set-env-vars` EVERY TIME.
+
+### After EVERY Deployment, Verify:
+
+```bash
+# Check environment variable exists
+gcloud run services describe gemini-avatar-backend \
+  --region us-central1 \
+  --format="value(spec.template.spec.containers[0].env)" | grep FIREBASE
+
+# Expected output: {'name': 'FIREBASE_PROJECT_ID', 'value': 'avatar-478217'}
+```
+
+### If Connection Fails After Deploy:
+
+```bash
+# Quick fix - add the missing variable
+gcloud run services update gemini-avatar-backend \
+  --region us-central1 \
+  --set-env-vars FIREBASE_PROJECT_ID=avatar-478217
+
+# This creates a new revision with the variable
+# Takes ~30 seconds
+```
+
+### Why This Variable Matters:
+
+The backend uses `FIREBASE_PROJECT_ID` to construct allowed origins:
+- If set to `avatar-478217` → allows `https://avatar-478217.web.app`
+- If missing → allowed origins list is empty → all connections blocked
+
+**REMEMBER:** Check this EVERY deployment. This issue has occurred multiple times.
+
+---
+
 ## Table of Contents
 1. [Quick Reference](#quick-reference)
 2. [Architecture Overview](#architecture-overview)
@@ -175,10 +244,12 @@ gemini-livewire-avatar/
   - `BACKEND_HOST=0.0.0.0`
   - `BACKEND_PORT=8080`
   - `DEBUG=false`
-  - `REQUIRE_AUTH=true`
-  - `FIREBASE_PROJECT_ID=avatar-478217` (allows frontend origin)
+  - `REQUIRE_AUTH=false`
+  - `FIREBASE_PROJECT_ID=avatar-478217` **⚠️ CRITICAL - Must be in every deploy!**
 - **Secrets Mounted:**
   - `GEMINI_API_KEY` (Secret Manager)
+
+**⚠️ DEPLOYMENT WARNING:** The `FIREBASE_PROJECT_ID` environment variable is frequently lost during deployments. ALWAYS verify it's present after deploying. See the warning at the top of this document.
 
 ### **3. Firebase Hosting**
 **Site:** `avatar-478217`
@@ -313,7 +384,7 @@ gcloud run deploy gemini-avatar-backend \
   --timeout=300 \
   --memory=512Mi \
   --cpu=1 \
-  --set-env-vars=BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=true,FIREBASE_PROJECT_ID=avatar-478217 \
+  --set-env-vars=BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 \
   --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest \
   --port=8080
 ```

@@ -13,5 +13,6 @@ aiohttp==3.9.1
 # Firebase Authentication (for user token verification in cloud)
 firebase-admin==6.5.0
 
-# Real-time audio transcription using Google Cloud Speech-to-Text
-google-cloud-speech==2.21.0
+# Optional: Google Cloud Speech-to-Text (only needed if using 'google-cloud-stt' as captions.source)
+# Default is Gemini's built-in transcription (no additional dependency required)
+# google-cloud-speech==2.21.0

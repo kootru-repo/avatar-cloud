@@ -11,32 +11,59 @@ import base64
 import traceback
 import uuid
 from typing import Any, Optional
+from pathlib import Path
 from google.genai import types
 
 from core.session import (
     create_session, remove_session, SessionState, update_session_activity
 )
 from core.gemini_client import create_gemini_session
-from config.prompts import get_backstory_for_kv_cache
-from core.transcription import get_transcriber, MAX_WORDS_PER_CAPTION, CAPTION_DISPLAY_DURATION_MS
+from config.prompts import get_kv_cache_preload
 
 logger = logging.getLogger(__name__)
 
-# SDK-COMPLIANT: Audio format specifications from official docs
-AUDIO_SAMPLE_RATE_INPUT = 16000  # 16kHz input
-AUDIO_SAMPLE_RATE_OUTPUT = 24000  # 24kHz output
-AUDIO_MIME_TYPE_INPUT = "audio/pcm"  # SDK standard format
-AUDIO_MIME_TYPE_OUTPUT = "audio/pcm"
-AUDIO_CHUNK_SIZE_BYTES = 3200  # 100ms at 16kHz mono 16-bit PCM
+
+def load_config() -> dict:
+    """Load backend configuration."""
+    try:
+        config_path = Path(__file__).parent.parent / 'config.json'
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        return {}
+    except Exception as e:
+        logger.error(f"Failed to load config: {e}")
+        return {}
+
+
+# Load caption configuration
+_config = load_config()
+_captions_config = _config.get("captions", {})
+CAPTIONS_ENABLED = _captions_config.get("enabled", True)
+
+logger.info(f"Caption configuration: enabled={CAPTIONS_ENABLED} (Gemini built-in transcription, full sentence display)")
+
+# Audio configuration
+_audio_config = _config.get("audio", {})
+AUDIO_SAMPLE_RATE_INPUT = _audio_config.get("inputSampleRate", 16000)
+AUDIO_SAMPLE_RATE_OUTPUT = _audio_config.get("outputSampleRate", 24000)
+AUDIO_MIME_TYPE_INPUT = _audio_config.get("mimeTypeInput", "audio/pcm")
+AUDIO_MIME_TYPE_OUTPUT = _audio_config.get("mimeTypeOutput", "audio/pcm")
+AUDIO_CHUNK_SIZE_BYTES = _audio_config.get("chunkSizeBytes", 3200)
 
 # Security: Size limits
 MAX_AUDIO_SIZE_BYTES = 10 * 1024 * 1024  # 10MB per chunk
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024   # 5MB per image
 MAX_TEXT_LENGTH = 100000  # 100K characters
 
-# Operation timeouts (optimized for low-latency)
-SEND_TIMEOUT_SECONDS = 5  # Reduced from 30s for faster failure detection
-SETUP_TIMEOUT_SECONDS = 10
+# Timeout configuration
+_timeout_config = _config.get("timeouts", {})
+SEND_TIMEOUT_SECONDS = _timeout_config.get("sendTimeoutSeconds", 5)
+SETUP_TIMEOUT_SECONDS = _timeout_config.get("setupTimeoutSeconds", 10)
+
+# Log loaded configuration
+logger.info(f"Audio config: input={AUDIO_SAMPLE_RATE_INPUT}Hz, output={AUDIO_SAMPLE_RATE_OUTPUT}Hz, chunk_size={AUDIO_CHUNK_SIZE_BYTES}B")
+logger.info(f"Timeout config: send={SEND_TIMEOUT_SECONDS}s, setup={SETUP_TIMEOUT_SECONDS}s")
 
 # Valid message types
 VALID_MESSAGE_TYPES = {"audio", "image", "text", "end", "tool_response", "interrupt"}
@@ -73,42 +100,6 @@ async def send_error_message(websocket: Any, error_data: dict) -> None:
         }))
     except Exception as e:
         logger.error(f"Failed to send error message: {e}")
-
-
-async def transcribe_and_send(websocket: Any, audio_base64: str) -> None:
-    """
-    Asynchronously transcribe audio chunk and send to client.
-    Runs in parallel with audio playback for ultra-fast captions.
-    Splits long transcriptions into word chunks with configurable display duration.
-    Silently skips if transcription is unavailable.
-    """
-    try:
-        # Pass websocket for download progress updates
-        transcriber = await get_transcriber(websocket)
-        if transcriber is None:
-            # Transcription unavailable (model failed to load)
-            return
-
-        text = await transcriber.transcribe_audio_chunk(audio_base64)
-
-        if text:
-            # Split text into word chunks based on config
-            chunks = transcriber.split_into_word_chunks(text, MAX_WORDS_PER_CAPTION)
-
-            # Send chunks sequentially with display duration delay
-            for i, chunk in enumerate(chunks):
-                await websocket.send(json.dumps({
-                    "type": "transcription",
-                    "data": chunk
-                }))
-
-                # Add delay between chunks (except after last chunk)
-                if i < len(chunks) - 1:
-                    await asyncio.sleep(CAPTION_DISPLAY_DURATION_MS / 1000.0)
-
-    except Exception as e:
-        # Don't let transcription errors affect audio playback
-        logger.debug(f"Transcription skipped: {e}")
 
 
 async def cleanup_session(session: Optional[SessionState], session_id: str) -> None:
@@ -211,6 +202,10 @@ async def handle_client_messages(websocket: Any, session: SessionState, session_
                     # Client detected barge-in locally and wants to stop audio immediately
                     logger.info("🛑 Client interrupt signal received")
                     session.client_interrupted = True
+                    # Clear any accumulated transcription from interrupted turn
+                    if session.output_transcriptions:
+                        logger.info(f"🗑️ Clearing {len(session.output_transcriptions)} transcription chunks (interrupt)")
+                    session.output_transcriptions.clear()
                 elif msg_type == "end":
                     # Client VAD detected end - server VAD handles this automatically
                     logger.debug("Client VAD detected silence (server VAD active)")
@@ -249,6 +244,12 @@ async def handle_audio_input(session: SessionState, data: dict, websocket: Any) 
         if session.client_interrupted:
             logger.info("🔄 Resetting interrupt flag (new audio input)")
             session.client_interrupted = False
+
+        # Clear transcription accumulator only when starting a NEW turn (not during active response)
+        # This prevents clearing chunks that are still arriving from the current turn
+        if session.output_transcriptions and not session.is_receiving_response:
+            logger.info(f"🗑️ Clearing {len(session.output_transcriptions)} transcription chunks (new turn starting)")
+            session.output_transcriptions.clear()
 
         # OFFICIAL GOOGLE PATTERN from src/project-livewire/server/core/websocket_handler.py:150-153
         # Use send() with input dict containing data and mime_type
@@ -436,6 +437,16 @@ async def process_server_content(websocket: Any, session: SessionState, server_c
     SDK-COMPLIANT: Process server_content including audio, text, and interruptions.
     """
     try:
+        # Skip forwarding initial greeting from KV cache preload
+        if session.skip_initial_greeting:
+            # Check for turn_complete to know when KV cache processing is done
+            if hasattr(server_content, 'turn_complete') and server_content.turn_complete:
+                logger.info("✅ KV cache greeting consumed (not forwarded)")
+                session.skip_initial_greeting = False
+            else:
+                logger.debug("⏭️ Skipping initial greeting content")
+            return
+
         # SDK-COMPLIANT: Check for interruption
         if hasattr(server_content, 'interrupted') and server_content.interrupted:
             logger.info("⚠️ Interruption detected")
@@ -473,9 +484,6 @@ async def process_server_content(websocket: Any, session: SessionState, server_c
                     # Use string concatenation instead of json.dumps for simple messages (faster)
                     await websocket.send(f'{{"type":"audio","data":"{audio_base64}"}}')
 
-                    # Start async transcription (non-blocking, runs in parallel)
-                    asyncio.create_task(transcribe_and_send(websocket, audio_base64))
-
                 # SDK-COMPLIANT: Handle text
                 else:
                     text = getattr(part, 'text', None)
@@ -486,9 +494,48 @@ async def process_server_content(websocket: Any, session: SessionState, server_c
                             "data": text
                         }))
 
+        # GEMINI TRANSCRIPTION: Send chunks in real-time AND accumulate
+        # Reference: Gemini Live API sends transcription "in chunks, mirroring the spoken words"
+        # Strategy: Send each chunk immediately for real-time display, also accumulate for final text
+        if CAPTIONS_ENABLED and hasattr(server_content, 'output_transcription'):
+            output_transcription = server_content.output_transcription
+            if output_transcription and hasattr(output_transcription, 'text'):
+                text = output_transcription.text.strip()
+                if text:
+                    logger.info(f"📝 Transcription chunk #{len(session.output_transcriptions) + 1}: '{text}'")
+                    # Accumulate for final complete text
+                    session.output_transcriptions.append(text)
+                    # Send chunk immediately for real-time display
+                    await websocket.send(json.dumps({
+                        "type": "transcription_interim",
+                        "data": text
+                    }))
+
+        # Check if model_turn has text parts (alternative to output_transcription)
+        if CAPTIONS_ENABLED and model_turn:
+            for part in model_turn.parts:
+                if not hasattr(part, 'inline_data'):  # Not audio
+                    text = getattr(part, 'text', None)
+                    if text:
+                        logger.info(f"📄 Model text part: '{text}'")
+
         # SDK-COMPLIANT: Handle turn_complete
         if hasattr(server_content, 'turn_complete') and server_content.turn_complete:
-            logger.info("✅ Turn complete")
+            logger.info(f"✅ Turn complete - accumulated {len(session.output_transcriptions)} transcription chunks")
+
+            # Send accumulated transcription as complete sentence
+            if CAPTIONS_ENABLED and session.output_transcriptions:
+                complete_text = ' '.join(session.output_transcriptions)
+                logger.info(f"📝 Complete transcription ({len(complete_text)} chars): '{complete_text}'")
+                await websocket.send(json.dumps({
+                    "type": "transcription",
+                    "data": complete_text
+                }))
+                # Clear accumulator for next turn
+                session.output_transcriptions.clear()
+            elif CAPTIONS_ENABLED:
+                logger.warning("⚠️ Turn complete but no transcription chunks accumulated!")
+
             await websocket.send(json.dumps({
                 "type": "turn_complete"
             }))
@@ -544,31 +591,31 @@ async def handle_client(websocket: Any) -> None:
         async with gemini_session_context as gemini_session:
             session.genai_session = gemini_session
 
-            # KV CACHE PRELOADING: Send backstory to load it into KV cache
-            backstory_text = get_backstory_for_kv_cache()
-            if backstory_text:
+            # KV CACHE PRELOADING: Send backstory and set-list to load into KV cache
+            kv_cache_text = get_kv_cache_preload()
+            if kv_cache_text:
                 try:
-                    logger.info(f"📝 Preloading backstory into KV cache ({len(backstory_text)} chars)")
+                    logger.info(f"📝 Preloading content into KV cache ({len(kv_cache_text)} chars)")
                     await asyncio.wait_for(
-                        gemini_session.send(input=backstory_text, end_of_turn=True),
+                        gemini_session.send(input=kv_cache_text, end_of_turn=True),
                         timeout=SEND_TIMEOUT_SECONDS
                     )
-                    logger.info("✅ Backstory preloaded into KV cache")
+                    logger.info("✅ KV cache preload complete")
 
                     # Wait for and consume the model's acknowledgment response
-                    # This ensures the backstory is fully processed before user interaction
+                    # This ensures the content is fully processed before user interaction
                     async for response in gemini_session.receive():
-                        # Check for turn_complete to know backstory is processed
+                        # Check for turn_complete to know preload is processed
                         server_content = getattr(response, 'server_content', None)
                         if server_content and hasattr(server_content, 'turn_complete') and server_content.turn_complete:
-                            logger.info("✅ Backstory processing complete")
+                            logger.info("✅ KV cache processing complete")
                             break
                         # Stop after first response cycle
                         if server_content:
                             break
 
                 except Exception as e:
-                    logger.warning(f"⚠️ Failed to preload backstory: {e}")
+                    logger.warning(f"⚠️ Failed to preload KV cache: {e}")
                     # Continue anyway - system instructions still have the persona
 
             # Send ready to client

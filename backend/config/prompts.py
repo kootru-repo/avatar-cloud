@@ -150,5 +150,87 @@ Anything outside this backstory is unknown to you - deflect with humor and redir
     return formatted
 
 
+def load_set_list() -> dict:
+    """Load set list from JSON file."""
+    try:
+        # Try backend directory first (for cloud deployment)
+        backend_setlist_path = Path(__file__).parent.parent / 'set-list.json'
+        if backend_setlist_path.exists():
+            with open(backend_setlist_path, 'r', encoding='utf-8') as f:
+                set_list = json.load(f)
+                logger.info(f"✅ Set list loaded from backend ({len(set_list.get('set_list', {}))} sets)")
+                return set_list
+
+        logger.warning("Set list file not found")
+        return {}
+
+    except Exception as e:
+        logger.error(f"Failed to load set list: {e}")
+        return {}
+
+
+def get_setlist_for_kv_cache() -> str:
+    """Get full set list formatted for KV cache preloading."""
+    set_list = load_set_list()
+    if not set_list:
+        return ""
+
+    # Format as structured text for KV cache
+    formatted = f"""PERFORMANCE SET LIST - MEMORIZE THIS COMPLETELY
+
+This is your complete repertoire for tonight's show. You perform these songs across 3 sets:
+
+{json.dumps(set_list, indent=2)}
+
+You know every detail about these songs - the artists, years, albums, and band members. When discussing the show, reference specific songs from this set list. You're especially proud of the medleys: Prince Medley, Bruno Medley, Linkin Park Medley, and Bad Medley. Each set builds energy from classic rock to modern hits."""
+
+    return formatted
+
+
+def load_config() -> dict:
+    """Load backend configuration."""
+    try:
+        config_path = Path(__file__).parent.parent / 'config.json'
+        if config_path.exists():
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return {}
+    except Exception as e:
+        logger.error(f"Failed to load config: {e}")
+        return {}
+
+
+def get_kv_cache_preload() -> str:
+    """Get combined KV cache preload content based on config."""
+    config = load_config()
+    kv_config = config.get('kvCache', {})
+
+    if not kv_config.get('enabled', True):
+        return ""
+
+    preload_parts = []
+
+    # Load backstory if enabled
+    if kv_config.get('preloadBackstory', True):
+        backstory = get_backstory_for_kv_cache()
+        if backstory:
+            preload_parts.append(backstory)
+
+    # Load set list if enabled
+    if kv_config.get('preloadSetList', True):
+        setlist = get_setlist_for_kv_cache()
+        if setlist:
+            preload_parts.append(setlist)
+
+    # Combine all parts with separator
+    if preload_parts:
+        combined = "\n\n" + "="*80 + "\n\n"
+        combined = combined.join(preload_parts)
+        logger.info(f"✅ KV cache preload prepared: {len(preload_parts)} sections, {len(combined)} total chars")
+        return combined
+
+    return ""
+
+
 # Load system instructions on module import
 SYSTEM_INSTRUCTIONS = load_system_instructions()

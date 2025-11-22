@@ -17,6 +17,7 @@ class SessionState:
     genai_session: Optional[Any] = None
     received_model_response: bool = False
     client_interrupted: bool = False  # Client-side barge-in detected
+    skip_initial_greeting: bool = True  # Skip forwarding the KV cache preload response
 
     # Session metadata
     created_at: datetime = field(default_factory=datetime.now)
@@ -25,6 +26,9 @@ class SessionState:
 
     # SDK-COMPLIANT: Usage tracking
     total_tokens: int = 0
+
+    # Transcription accumulation (output_audio_transcription chunks)
+    output_transcriptions: list = field(default_factory=list)
 
 
 # SDK-COMPLIANT: Global session storage with thread-safe access
