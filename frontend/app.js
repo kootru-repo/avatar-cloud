@@ -1350,6 +1350,15 @@ class GeminiLiveClient {
         // Return to listening state
         this.setAvatarState('listening');
 
+        // CRITICAL: Reset dance video to frame 0 and pause it
+        // This ensures the next dance always starts from the beginning
+        const danceVideo = this.avatarVideos['dancing'];
+        if (danceVideo) {
+            danceVideo.pause();
+            danceVideo.currentTime = 0;
+            console.log('💃 Dance video reset to frame 0 and paused');
+        }
+
         // Resume recording if it was active
         // Fixed: Issue #64 - actually resume barge-in monitoring
         if (resumeRecording && this.audioRecorder) {
@@ -1807,10 +1816,13 @@ class GeminiLiveClient {
             this.avatarVideo.loop = true;
             this.avatarVideo.playbackRate = 1.0;
 
+            // CRITICAL: Reset to frame 0 for consistent start
+            this.avatarVideo.currentTime = 0;
+
             // Start playing the dancing video
             if (this.avatarVideo.paused) {
                 this.avatarVideo.play().then(() => {
-                    console.log('💃 Dancing video started');
+                    console.log('💃 Dancing video started from frame 0');
                 }).catch(e => {
                     console.error('❌ Failed to play dancing video:', e);
                 });
