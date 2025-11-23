@@ -1,13 +1,19 @@
 # Cloud Build Configuration for Gemini Live Avatar
 # Automatically builds and deploys backend to Cloud Run on push to main branch
 #
+# PATH FILTERING: This build only triggers on backend-related changes
+# - Includes: backend/**, cloudbuild.yaml
+# - Excludes: frontend/**, docs/**, etc.
+# This prevents unnecessary Cloud Run deployments when only frontend code changes
+#
 # Setup:
 # 1. Connect GitHub repo to Cloud Build:
 #    gcloud builds triggers create github \
 #      --repo-name=gemini-livewire-avatar \
 #      --repo-owner=YOUR-GITHUB-USERNAME \
 #      --branch-pattern=^main$ \
-#      --build-config=cloudbuild.yaml
+#      --build-config=cloudbuild.yaml \
+#      --included-files='backend/**,cloudbuild.yaml'
 #
 # 2. Grant Cloud Build service account permissions:
 #    PROJECT_NUMBER=$(gcloud projects describe YOUR-PROJECT-ID --format='value(projectNumber)')
@@ -19,6 +25,13 @@
 #      ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
 #      --member=serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com \
 #      --role=roles/iam.serviceAccountUser
+
+# File path filters - only trigger on backend changes
+# Note: These filters work when specified in the trigger config (see setup above)
+# or can be enforced at the YAML level for manual builds
+includedFiles:
+  - 'backend/**'
+  - 'cloudbuild.yaml'
 
 steps:
   # Step 1: Build the Docker container
