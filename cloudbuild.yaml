@@ -74,7 +74,7 @@ steps:
 # Configure logging
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'N1_HIGHCPU_8'
+  machineType: 'E2_HIGHCPU_8'
 
 # Timeout for entire build (10 minutes)
 timeout: 600s
