@@ -128,7 +128,7 @@ gcloud run services describe gemini-avatar-backend --region=us-central1
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │                   FIREBASE HOSTING                           │
-│  - Serves frontend (index.html, app.js, config.json)        │
+│  - Serves frontend (index.html, app.js, frontend_config.json) │
 │  - Global CDN distribution                                   │
 │  - SSL/TLS automatic                                         │
 └──────────────────────────┬──────────────────────────────────┘
@@ -186,7 +186,7 @@ gemini-livewire-avatar/
 │   ├── app.js                  # Main application logic
 │   ├── audio-player.js         # Audio playback handling
 │   ├── audio-recorder.js       # Microphone recording + barge-in
-│   ├── config.json             # Frontend configuration
+│   ├── frontend_config.json   # Frontend configuration
 │   └── media/
 │       ├── images/stage.png    # Background image
 │       └── video/              # Avatar videos (local dev only)
@@ -197,7 +197,7 @@ gemini-livewire-avatar/
 │   ├── main.py                 # FastAPI + WebSocket server
 │   ├── requirements.txt        # Python dependencies
 │   ├── Dockerfile              # Container definition
-│   ├── config.json             # Backend configuration
+│   ├── backend_config.json    # Backend configuration
 │   └── core/
 │       ├── websocket_handler.py # WebSocket message handling
 │       ├── gemini_client.py     # Gemini API session management
@@ -526,7 +526,7 @@ gcloud storage cp frontend/media/video/new-animation.webm \
 gcloud storage ls gs://avatar-478217-videos/video/
 
 # Update frontend config
-vim frontend/config.json
+vim frontend/frontend_config.json
 # Add "new-animation": "https://storage.googleapis.com/avatar-478217-videos/video/new-animation.webm"
 
 # Deploy frontend
@@ -559,9 +559,9 @@ gcloud run services describe gemini-avatar-backend \
 
 ## Configuration Files
 
-### **1. frontend/config.json**
+### **1. frontend/frontend_config.json**
 **Purpose:** Frontend application configuration
-**Location:** `frontend/config.json`
+**Location:** `frontend/frontend_config.json`
 **Deployed To:** Firebase Hosting
 **Updated By:** Manual edit + `firebase deploy --only hosting`
 
@@ -600,9 +600,9 @@ gcloud run services describe gemini-avatar-backend \
 
 ---
 
-### **2. backend/config.json**
+### **2. backend/backend_config.json**
 **Purpose:** Backend application configuration
-**Location:** `backend/config.json`
+**Location:** `backend/backend_config.json`
 **Deployed To:** Cloud Run (via Cloud Build)
 **Updated By:** Git commit + push (auto-deploys)
 
@@ -771,7 +771,7 @@ vim frontend/index.html
 curl https://gemini-avatar-backend-580499038386.us-central1.run.app/health
 
 # 2. Check WebSocket URL in frontend config
-cat frontend/config.json | grep wsUrl
+cat frontend/frontend_config.json | grep wsUrl
 
 # 3. Check Cloud Run service URL
 gcloud run services describe gemini-avatar-backend \
@@ -787,7 +787,7 @@ gcloud run services describe gemini-avatar-backend \
 **Fix:**
 ```bash
 # Update frontend config with correct backend URL
-vim frontend/config.json
+vim frontend/frontend_config.json
 # Set: "cloud": "wss://CORRECT-BACKEND-URL.run.app"
 
 # Deploy frontend
@@ -810,8 +810,8 @@ gcloud run services update gemini-avatar-backend \
 # 1. Check if output_audio_transcription is enabled in backend config
 grep -n "output_audio_transcription" backend/config/gemini_config.py
 
-# 2. Check if captions are enabled in backend config.json
-grep -n "captions" backend/config.json
+# 2. Check if captions are enabled in backend backend_config.json
+grep -n "captions" backend/backend_config.json
 
 # 3. Check Cloud Run logs for transcription messages
 gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=gemini-avatar-backend" \
@@ -820,14 +820,14 @@ gcloud logging read "resource.type=cloud_run_revision AND resource.labels.servic
 ```
 
 **Common Issues:**
-- **Captions disabled:** Check `backend/config.json` → `captions.enabled` should be `true`
+- **Captions disabled:** Check `backend/backend_config.json` → `captions.enabled` should be `true`
 - **Frontend not processing:** Check browser console for `transcription_interim` and `transcription` messages
 - **CC toggle off:** Check if CC toggle is activated in frontend UI
 
 **Fix:**
 ```bash
 # Verify captions are enabled in backend config
-vim backend/config.json
+vim backend/backend_config.json
 # Ensure: "captions": { "enabled": true }
 
 # Deploy changes
@@ -1012,7 +1012,7 @@ File Modified?
 
 **Configuration:**
 ```json
-// frontend/config.json & backend/config.json
+// frontend/frontend_config.json & backend/backend_config.json
 {
   "audio": {
     "responseModalities": ["AUDIO"]  // AUDIO-only, no TEXT
@@ -1206,7 +1206,7 @@ Dance mode demonstrates the complete implementation of an interactive feature us
 
 #### Frontend Changes
 1. **`frontend/app.js`** - Tool handler & dance logic
-2. **`frontend/config.json`** - Dance mode configuration
+2. **`frontend/frontend_config.json`** - Dance mode configuration
 3. **`frontend/index.html`** - Cache version update
 
 #### Media Files
@@ -1243,7 +1243,7 @@ Dance mode demonstrates the complete implementation of an interactive feature us
 - [ ] Configure public access
 
 **Phase 5: Configuration**
-- [ ] Add feature config to frontend/config.json
+- [ ] Add feature config to frontend/frontend_config.json
 - [ ] Set appropriate volume (0.3 for background)
 - [ ] Configure duration in milliseconds
 - [ ] Add environment-aware paths (local/cloud)

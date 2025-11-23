@@ -54,8 +54,10 @@ htmlcov/
 service-account-key.json
 *-service-account-key.json
 *.json
-!config.json
-!frontend/config.json
+!frontend_config.json
+!frontend/frontend_config.json
+!backend_config.json
+!backend/backend_config.json
 !package.json
 !tsconfig.json
 

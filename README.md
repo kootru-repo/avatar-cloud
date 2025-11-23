@@ -159,7 +159,7 @@ gemini-livewire-avatar/
 ├── RUN_FRONTEND.bat        # Frontend only
 ├── .env                    # Backend config
 ├── frontend/
-│   ├── config.json         # Reference (not used by minimal)
+│   ├── frontend_config.json # Reference (not used by minimal)
 │   ├── media/video/        # Avatar videos
 │   └── minimal/            # Minimal implementation
 │       ├── index.html
