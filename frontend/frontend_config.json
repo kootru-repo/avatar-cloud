@@ -190,7 +190,7 @@
   "ui": {
     "defaultSystemInstructions": "",
     "_comment_systemInstructions": "Leave empty to use backstory-based persona from docs/whinny_backstory.json. The persona will be loaded automatically with strict character boundaries.",
-    "marqueeScrollSpeed": 3,
+    "marqueeScrollSpeed": 1.5,
     "avatarStatusUpdateInterval": 100
   },
   "danceMode": {
@@ -199,9 +199,9 @@
       "local": "media/music/dance.mp3",
       "cloud": "https://storage.googleapis.com/avatar-478217-videos/music/dance.mp3"
     },
-    "duration": 10084,
+    "duration": 8584,
     "volume": 0.3,
-    "_comment": "Dance mode triggered by Gemini function calling (trigger_dance_mode). Duration matches video exactly (10.084s) with 1s fade out. Plays background music at specified volume (0.0-1.0) while showing dance video. Gemini continues speaking during dance."
+    "_comment": "Dance mode triggered by Gemini function calling (trigger_dance_mode). Duration matches video exactly (8.584s) with 1s fade out. Plays background music at specified volume (0.0-1.0) while showing dance video. Gemini continues speaking during dance."
   },
   "goodbyeMode": {
     "enabled": true,
