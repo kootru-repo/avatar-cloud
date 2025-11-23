@@ -78,7 +78,7 @@ async def create_gemini_session():
     - Uses API key for authentication
     - Uses exponential backoff with jitter for retries
 
-    Voice is configured via frontend/config.json → geminiVoice.voiceName
+    Voice is configured via frontend/frontend_config.json → geminiVoice.voiceName
 
     Returns:
         Async context manager for Live session
@@ -104,7 +104,7 @@ async def create_gemini_session():
             # SDK-COMPLIANT: Get shared client instance
             client = get_sdk_client()
 
-            # SDK-COMPLIANT: Get configuration (voice from config.json)
+            # SDK-COMPLIANT: Get configuration (voice from frontend_config.json)
             config = get_gemini_config()
 
             logger.info(f"Connecting to Google AI Live API...")

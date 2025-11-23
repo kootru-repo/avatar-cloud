@@ -46,7 +46,7 @@ class ApiConfig:
     """
 
     def __init__(self):
-        # Load config.json
+        # Load backend_config.json or frontend_config.json
         config = load_config_json()
         backend_config = config.get('backend', {})
 
@@ -54,7 +54,7 @@ class ApiConfig:
         self.use_vertex = False
 
         # API Key authentication
-        # Try environment variables first, then config.json
+        # Try environment variables first, then config files
         self.api_key = (
             os.getenv('GEMINI_API_KEY') or
             os.getenv('GOOGLE_API_KEY') or
@@ -77,28 +77,28 @@ class ApiConfig:
             'gemini-live-2.5-flash-preview-native-audio-09-2025'
         )
 
-        # Override with config.json if available
+        # Override with config file if available
         if config.get('api', {}).get('model'):
             self.model = config['api']['model']
-            logger.info(f"Using model from config.json: {self.model}")
+            logger.info(f"Using model from config file: {self.model}")
 
-        # Voice configuration - ONLY from config.json (no fallbacks)
+        # Voice configuration - ONLY from config files (no fallbacks)
         gemini_voice_config = config.get('geminiVoice', {})
         if not gemini_voice_config.get('enabled', True):
             raise ConfigurationError(
-                "geminiVoice.enabled must be true in config.json. "
+                "geminiVoice.enabled must be true in config file. "
                 "Voice configuration is required."
             )
 
         self.voice = gemini_voice_config.get('voiceName')
         if not self.voice:
             raise ConfigurationError(
-                "geminiVoice.voiceName is required in config.json. "
+                "geminiVoice.voiceName is required in config file. "
                 "Valid voices: Puck, Charon, Kore, Fenrir, Aoede, Zubenelgenubi, "
                 "Orion, Pegasus, Vega, Algenib, Alkaid, Altair, Castor, Polaris"
             )
 
-        logger.info(f"Voice from config.json: {self.voice}")
+        logger.info(f"Voice from config file: {self.voice}")
 
         # Affective dialog configuration
         self.affective_dialog = config.get('geminiVoice', {}).get('affectiveDialog', True)

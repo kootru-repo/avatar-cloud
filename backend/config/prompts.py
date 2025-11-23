@@ -99,9 +99,9 @@ Remember: You're not here to answer general questions. You're here to be Whinny 
 def load_system_instructions() -> str:
     """Load system instructions with character backstory."""
     try:
-        # Try loading custom instructions from config.json first
+        # Try loading custom instructions from frontend_config.json first
         import json
-        config_path = Path(__file__).parent.parent.parent / 'frontend' / 'config.json'
+        config_path = Path(__file__).parent.parent.parent / 'frontend' / 'frontend_config.json'
 
         if config_path.exists():
             with open(config_path, 'r') as f:
@@ -110,7 +110,7 @@ def load_system_instructions() -> str:
 
                 # If custom instructions exist and don't mention using backstory, use them
                 if instructions and 'backstory' not in instructions.lower():
-                    logger.info(f"✅ Using custom system instructions from config.json")
+                    logger.info(f"✅ Using custom system instructions from frontend_config.json")
                     return instructions
 
         # Load backstory and create persona instructions
@@ -190,7 +190,7 @@ You know every detail about these songs - the artists, years, albums, and band m
 def load_config() -> dict:
     """Load backend configuration."""
     try:
-        config_path = Path(__file__).parent.parent / 'config.json'
+        config_path = Path(__file__).parent.parent / 'backend_config.json'
         if config_path.exists():
             with open(config_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
