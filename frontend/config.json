@@ -194,11 +194,12 @@
   "danceMode": {
     "enabled": true,
     "musicFile": {
-      "local": "media/music/Song of Harmonia.mp3",
-      "cloud": "https://storage.googleapis.com/avatar-478217-videos/music/Song of Harmonia.mp3"
+      "local": "media/music/dance.mp3",
+      "cloud": "https://storage.googleapis.com/avatar-478217-videos/music/dance.mp3"
     },
-    "duration": 10000,
-    "_comment": "Dance mode triggered by dance-related keywords. Plays music for specified duration (ms) while showing dance video."
+    "duration": 10084,
+    "volume": 0.3,
+    "_comment": "Dance mode triggered by Gemini function calling (trigger_dance_mode). Duration matches video exactly (10.084s) with 1s fade out. Plays background music at specified volume (0.0-1.0) while showing dance video. Gemini continues speaking during dance."
   },
   "soundEffects": {
     "crowdClapping": {

@@ -402,13 +402,68 @@ async def handle_gemini_responses(websocket: Any, session: SessionState) -> None
                     # SDK-COMPLIANT: Handle tool_call (function calling)
                     if hasattr(response, 'tool_call') and response.tool_call:
                         logger.info(f"🔧 Tool call received: {response.tool_call}")
-                        await websocket.send(json.dumps({
-                            "type": "tool_call",
-                            "data": {
-                                "name": response.tool_call.function_call.name,
-                                "args": response.tool_call.function_call.args
-                            }
-                        }))
+                        # SDK structure: tool_call.function_calls is an array
+                        for function_call in response.tool_call.function_calls:
+                            logger.info(f"   Calling function: {function_call.name} (id={function_call.id})")
+
+                            # Fixed: Issue #56 - debounce rapid duplicate tool calls (2 second cooldown)
+                            from datetime import datetime, timedelta
+                            now = datetime.now()
+                            should_skip = False
+                            if (session.last_tool_call_name == function_call.name and
+                                session.last_tool_call_time and
+                                (now - session.last_tool_call_time).total_seconds() < 2.0):
+                                logger.warning(f"   ⚠️ Skipping duplicate tool call within cooldown: {function_call.name}")
+                                should_skip = True
+                            else:
+                                session.last_tool_call_name = function_call.name
+                                session.last_tool_call_time = now
+
+                            if should_skip:
+                                # Still send tool_response to acknowledge
+                                tool_response = types.LiveClientToolResponse(
+                                    function_responses=[
+                                        types.FunctionResponse(
+                                            id=function_call.id,
+                                            name=function_call.name,
+                                            response={"success": False, "reason": "Duplicate call within cooldown"}
+                                        )
+                                    ]
+                                )
+                                await session.genai_session.send(tool_response)
+                                continue
+                            # Fixed: Issue #54 - add error handling for tool forwarding
+                            try:
+                                # Fixed: Issue #69 - add timestamp for debugging
+                                await websocket.send(json.dumps({
+                                    "type": "tool_call",
+                                    "data": {
+                                        "name": function_call.name,
+                                        "args": function_call.args,
+                                        "id": function_call.id,
+                                        "timestamp": now.isoformat()
+                                    }
+                                }))
+                                logger.info(f"   ✅ Tool call forwarded to frontend: {function_call.name}")
+                            except Exception as e:
+                                logger.error(f"   ❌ Failed to forward tool call to frontend: {e}")
+                                # Continue to send tool_response even if frontend forwarding failed
+                                # This prevents Gemini from waiting indefinitely
+
+                            # SDK-COMPLIANT: Send tool_response back to Gemini
+                            # This acknowledges the tool execution and prevents re-triggering
+                            # Fixed: Issue #34 - added logging for successful tool execution
+                            tool_response = types.LiveClientToolResponse(
+                                function_responses=[
+                                    types.FunctionResponse(
+                                        id=function_call.id,
+                                        name=function_call.name,
+                                        response={"success": True}
+                                    )
+                                ]
+                            )
+                            await session.genai_session.send(tool_response)
+                            logger.info(f"   ✅ Tool response sent to Gemini: success=True (id={function_call.id})")
 
                     # SDK-COMPLIANT: Handle usage_metadata
                     if hasattr(response, 'usage_metadata') and response.usage_metadata:

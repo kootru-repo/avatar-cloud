@@ -694,9 +694,16 @@ class GeminiLiveClient {
                 // This prevents interference between video decoder initialization and audio processing
                 this.setAvatarState('speaking');
 
-                // Start barge-in monitoring when audio starts playing
+                // DELAY barge-in monitoring to allow text messages to arrive first
+                // This prevents interrupting before dance triggers can be detected
                 if (this.audioRecorder && !this.isInterrupted) {
-                    this.audioRecorder.startBargeInMonitoring();
+                    console.log('⏰ Delaying barge-in monitoring for 2 seconds...');
+                    setTimeout(() => {
+                        if (this.audioRecorder && !this.isInterrupted && this.currentAvatarState === 'speaking') {
+                            this.audioRecorder.startBargeInMonitoring();
+                            console.log('✅ Barge-in monitoring started (after delay)');
+                        }
+                    }, 2000);  // 2 second delay
                 }
 
                 // Resume video if it was paused during sentence break
@@ -721,17 +728,8 @@ class GeminiLiveClient {
 
                 case 'text':
                     console.log(`💬 Gemini: ${message.data}`);
-                    // Check for DANCE_MODE trigger (case-insensitive)
-                    const textData = message.data ? message.data.trim().toUpperCase() : '';
-                    if (textData === 'DANCE_MODE') {
-                        console.log('🎯 DANCE_MODE trigger detected in text!');
-                        // Stop any playing audio (Gemini might have spoken "DANCE_MODE")
-                        if (this.audioPlayer) {
-                            this.audioPlayer.stop();
-                        }
-                        this.triggerDanceMode();
-                    }
-                    // Don't show text messages in CC - only STT transcriptions
+                    // Text messages are not displayed (AUDIO-only model)
+                    // Dance mode is now triggered via function calling (tool_call)
                     break;
 
                 case 'transcription_interim':
@@ -743,6 +741,9 @@ class GeminiLiveClient {
                     break;
 
                 case 'transcription':
+                    // Dance mode is now triggered via Gemini function calling (server-side)
+                    // Client-side keyword detection removed to prevent dual triggering
+
                     // Don't show captions during dance mode
                     if (!this.isDancing) {
                         // Complete transcription (final, shown with full opacity)
@@ -810,7 +811,17 @@ class GeminiLiveClient {
                     break;
 
                 case 'tool_call':
-                    this.log(`🔧 Tool call: ${message.data.name}`, 'info');
+                    // Fixed: Issue #12, #35 - log tool call ID for tracking
+                    const toolId = message.data.id || 'no-id';
+                    const toolName = message.data.name;
+                    console.log(`🔧 Tool call received: ${toolName} (id: ${toolId})`, message.data);
+                    this.log(`🔧 Tool call: ${toolName}`, 'info');
+
+                    // Handle dance mode tool call
+                    if (toolName === 'trigger_dance_mode') {
+                        console.log(`🎯 Dance mode tool called by Gemini! (id: ${toolId})`);
+                        this.triggerDanceMode();
+                    }
                     break;
 
                 case 'error':
@@ -1102,13 +1113,41 @@ class GeminiLiveClient {
         }
     }
 
+    // Client-side dance detection removed - now using Gemini function calling (server-side)
+    // This prevents dual triggering and allows Gemini to control when dance mode activates
+
     triggerDanceMode() {
         console.log('🎯 triggerDanceMode() called');
         console.log('   danceModeConfig:', this.danceModeConfig);
         console.log('   preloadedDanceMusic:', this.preloadedDanceMusic);
+        console.log('   isDancing:', this.isDancing);
 
-        if (!this.danceModeConfig || !this.danceModeConfig.enabled) {
-            console.log('⚠️ Dance mode not enabled in config');
+        if (!this.danceModeConfig) {
+            const errorMsg = '❌ Dance mode config is null/undefined';
+            console.error(errorMsg);
+            this.log(errorMsg, 'error');  // Fixed: Issue #27 - show errors to user
+            return;
+        }
+
+        if (!this.danceModeConfig.enabled) {
+            const errorMsg = '❌ Dance mode is disabled in config';
+            console.error(errorMsg);
+            this.log(errorMsg, 'error');  // Fixed: Issue #27 - show errors to user
+            return;
+        }
+
+        // Fixed: Issue #67 - validate dance duration (max 60 seconds)
+        const MAX_DANCE_DURATION = 60000;  // 60 seconds
+        if (!this.danceModeConfig.duration || this.danceModeConfig.duration <= 0) {
+            const errorMsg = '❌ Invalid dance duration in config';
+            console.error(errorMsg);
+            this.log(errorMsg, 'error');
+            return;
+        }
+        if (this.danceModeConfig.duration > MAX_DANCE_DURATION) {
+            const errorMsg = `❌ Dance duration too long (max ${MAX_DANCE_DURATION}ms)`;
+            console.error(errorMsg);
+            this.log(errorMsg, 'error');
             return;
         }
 
@@ -1117,22 +1156,29 @@ class GeminiLiveClient {
             return;
         }
 
+        // User feedback: dance mode activated
+        // Fixed: Issue #46 - explicit confirmation to user
+        this.log('💃 Dance mode activated!', 'info');
+
         console.log('💃 Triggering dance mode!');
+        console.log('   Config enabled:', this.danceModeConfig.enabled);
+        console.log('   Music file:', this.danceModeConfig.musicFile);
+        console.log('   Duration:', this.danceModeConfig.duration);
         this.isDancing = true;
 
-        // Stop audio playback (mute conversation)
-        if (this.audioPlayer) {
-            this.audioPlayer.stop();
-        }
+        // DON'T stop audio playback - let Gemini speak enthusiastically during dance!
+        // The dance music will play alongside Gemini's audio response
+        // Fixed: Issue #16 - previously stopped audioPlayer, silencing Gemini
 
-        // Stop recording temporarily
+        // Keep recording active - allow user to interrupt dance mode
+        // Fixed: Issue #17 - previously stopped barge-in monitoring
+        // Fixed: Issue #63 - track recording state for proper restoration after dance
         const wasRecording = this.isRecording;
-        if (this.audioRecorder && wasRecording) {
-            this.audioRecorder.stopBargeInMonitoring();
-        }
 
         // Switch to dancing video
+        console.log('🎥 Switching to dancing video...');
         this.setAvatarState('dancing');
+        console.log('✅ setAvatarState("dancing") completed');
 
         // Get environment-aware music URL
         let musicPath = this.danceModeConfig.musicFile;
@@ -1145,10 +1191,24 @@ class GeminiLiveClient {
         console.log(`🎵 Loading dance music from: ${musicPath}`);
 
         // Use preloaded music if available, otherwise create new Audio
-        if (this.preloadedDanceMusic && this.preloadedDanceMusic.src.includes(musicPath)) {
+        console.log('🔍 Checking preloaded music...');
+        console.log('   preloadedDanceMusic exists:', !!this.preloadedDanceMusic);
+        console.log('   preloadedDanceMusic.src:', this.preloadedDanceMusic?.src);
+        console.log('   target musicPath:', musicPath);
+
+        // Fixed: Issue #20 - use endsWith for more precise URL matching
+        // Also fixed: Issue #28 - set crossOrigin on preloaded audio if needed
+        const usePreloaded = this.preloadedDanceMusic &&
+                            (this.preloadedDanceMusic.src.endsWith(musicPath) ||
+                             this.preloadedDanceMusic.src === musicPath);
+
+        if (usePreloaded) {
             console.log('🎵 Using preloaded dance music');
             this.danceAudio = this.preloadedDanceMusic;
             this.danceAudio.currentTime = 0;  // Reset to beginning
+            if (!this.danceAudio.crossOrigin) {
+                this.danceAudio.crossOrigin = "anonymous";
+            }
         } else {
             console.log('🎵 Loading dance music on demand');
             this.danceAudio = new Audio(musicPath);
@@ -1156,7 +1216,13 @@ class GeminiLiveClient {
             this.danceAudio.preload = "auto";
         }
 
-        this.danceAudio.volume = 1.0;
+        console.log('🎵 Dance audio element created:', this.danceAudio);
+        // Fixed: Issue #57 - use configurable volume instead of hardcoded value
+        // Fixed: Issue #29 - previously hardcoded to 1.0 (too loud)
+        // Fixed: Issue #14 - allows Gemini audio and dance music to coexist
+        const volume = this.danceModeConfig.volume || 0.3;  // Default to 0.3 if not configured
+        this.danceAudio.volume = Math.max(0, Math.min(1, volume));  // Clamp to 0-1
+        console.log('🔊 Volume set to:', this.danceAudio.volume);
 
         // Add event listeners for debugging
         this.danceAudio.addEventListener('canplay', () => {
@@ -1168,8 +1234,12 @@ class GeminiLiveClient {
         });
 
         this.danceAudio.addEventListener('error', (e) => {
-            console.error('❌ Dance music error:', e);
+            const errorMsg = `❌ Dance music failed to load: ${this.danceAudio.error?.message || 'Unknown error'}`;
+            console.error(errorMsg, e);
             console.error('   Error details:', this.danceAudio.error);
+            // Fixed: Issue #30 - recover from music load failure
+            this.log(errorMsg, 'error');
+            this.stopDanceMode(false);  // Exit dance mode on error
         });
 
         this.danceAudio.addEventListener('loadeddata', () => {
@@ -1177,14 +1247,19 @@ class GeminiLiveClient {
         });
 
         // CRITICAL: Load the audio first, then play
+        console.log('📦 Loading dance audio...');
         this.danceAudio.load();
+        console.log('✅ Audio load() called');
 
         // Start playback with detailed error handling
+        console.log('▶️ Attempting to play dance music...');
         const playPromise = this.danceAudio.play();
+        console.log('🎯 play() promise returned:', playPromise);
 
         if (playPromise !== undefined) {
             playPromise.then(() => {
-                console.log(`✅ Dance music playback started: ${musicPath}`);
+                console.log(`✅ Dance music playback started successfully: ${musicPath}`);
+                console.log('   Audio state - paused:', this.danceAudio.paused, 'currentTime:', this.danceAudio.currentTime);
             }).catch(e => {
                 console.error('❌ Failed to play dance music:', e);
                 console.error('   Error name:', e.name);
@@ -1234,8 +1309,10 @@ class GeminiLiveClient {
         this.setAvatarState('listening');
 
         // Resume recording if it was active
+        // Fixed: Issue #64 - actually resume barge-in monitoring
         if (resumeRecording && this.audioRecorder) {
             console.log('🎤 Resuming recording after dance');
+            this.audioRecorder.startBargeInMonitoring();
         }
 
         console.log('✅ Dance mode complete');

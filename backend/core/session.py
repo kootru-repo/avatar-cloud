@@ -30,6 +30,11 @@ class SessionState:
     # Transcription accumulation (output_audio_transcription chunks)
     output_transcriptions: list = field(default_factory=list)
 
+    # Tool call debouncing (prevent rapid duplicate calls)
+    # Fixed: Issue #56 - track last tool call to prevent spam
+    last_tool_call_name: Optional[str] = None
+    last_tool_call_time: Optional[datetime] = None
+
 
 # SDK-COMPLIANT: Global session storage with thread-safe access
 active_sessions: Dict[str, SessionState] = {}

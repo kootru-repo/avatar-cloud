@@ -88,6 +88,24 @@ def get_gemini_config() -> dict:
     if api_config.affective_dialog:
         config["enable_affective_dialog"] = True
 
+    # FUNCTION CALLING: Define tools that Gemini can call
+    # Dance mode tool allows Gemini to trigger dance sequence
+    config["tools"] = [
+        {
+            "function_declarations": [
+                {
+                    "name": "trigger_dance_mode",
+                    "description": "Triggers the avatar's dance mode, playing music and showing a dance animation for 10 seconds. IMPORTANT: You MUST continue speaking enthusiastically about dancing while calling this function - the dance music plays quietly in the background so the user can still hear you. Use this when the user asks to dance, mentions dancing, or requests dance music. Parameters are empty (no configuration needed).",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {},
+                        "required": []
+                    }
+                }
+            ]
+        }
+    ]
+
     # CAPTIONS/TRANSCRIPTION: Enable Gemini's built-in output audio transcription
     # This provides real-time transcription of the model's spoken responses
     config_json = load_config_json()
