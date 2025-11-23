@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 def load_config_json() -> dict:
-    """Load configuration from config.json."""
-    backend_config_path = Path(__file__).parent.parent / 'config.json'
+    """Load configuration from backend_config.json."""
+    backend_config_path = Path(__file__).parent.parent / 'backend_config.json'
     if backend_config_path.exists():
         with open(backend_config_path, 'r') as f:
             return json.load(f)
@@ -48,13 +48,13 @@ def get_gemini_config() -> dict:
     OFFICIAL PATTERN from Google's project-livewire example:
     https://github.com/googleapis/python-genai (in src/project-livewire/server/config/config.py)
 
-    Voice is configured ONLY via frontend/config.json → geminiVoice.voiceName
+    Voice is configured ONLY via frontend/frontend_config.json → geminiVoice.voiceName
     No environment variable fallbacks.
 
     Returns:
         Plain dictionary config (NOT typed objects)
     """
-    # Get voice from config.json (loaded in api_config)
+    # Get voice from frontend_config.json (loaded in api_config)
     voice_name = api_config.voice
 
     # Validate voice name
@@ -63,7 +63,7 @@ def get_gemini_config() -> dict:
             f"Invalid voice name '{voice_name}'. "
             f"Valid voices: Puck, Charon, Kore, Fenrir, Aoede, Zubenelgenubi, "
             f"Orion, Pegasus, Vega, Algenib, Alkaid, Altair, Castor, Polaris. "
-            f"Update geminiVoice.voiceName in frontend/config.json"
+            f"Update geminiVoice.voiceName in frontend/frontend_config.json"
         )
 
     # OFFICIAL GOOGLE PATTERN: speech_config as dictionary object
@@ -84,18 +84,28 @@ def get_gemini_config() -> dict:
     }
 
     # AFFECTIVE DIALOG: Adapt response style to input expression and tone
-    # Requires API version v1alpha (configurable via config.json)
+    # Requires API version v1alpha (configurable via backend_config.json)
     if api_config.affective_dialog:
         config["enable_affective_dialog"] = True
 
     # FUNCTION CALLING: Define tools that Gemini can call
     # Dance mode tool allows Gemini to trigger dance sequence
+    # Goodbye mode tool triggers farewell sequence
     config["tools"] = [
         {
             "function_declarations": [
                 {
                     "name": "trigger_dance_mode",
                     "description": "Triggers the avatar's dance mode, playing music and showing a dance animation for 10 seconds. IMPORTANT: You MUST continue speaking enthusiastically about dancing while calling this function - the dance music plays quietly in the background so the user can still hear you. Use this when the user asks to dance, mentions dancing, or requests dance music. Parameters are empty (no configuration needed).",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {},
+                        "required": []
+                    }
+                },
+                {
+                    "name": "trigger_goodbye_mode",
+                    "description": "Triggers the avatar's goodbye sequence with a farewell animation. IMPORTANT: You MUST say ONLY the exact phrase 'See you later!' while calling this function - nothing more, nothing less. Use this when the user says goodbye, farewell, bye, see ya, or indicates they are leaving. Parameters are empty (no configuration needed).",
                     "parameters": {
                         "type": "OBJECT",
                         "properties": {},

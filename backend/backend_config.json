@@ -1,0 +1,43 @@
+{
+  "api": {
+    "model": "models/gemini-2.5-flash-native-audio-preview-09-2025"
+  },
+  "geminiVoice": {
+    "enabled": true,
+    "voiceName": "Algenib",
+    "affectiveDialog": true
+  },
+  "automaticVAD": {
+    "enabled": true,
+    "startOfSpeechSensitivity": "START_SENSITIVITY_HIGH",
+    "endOfSpeechSensitivity": "END_SENSITIVITY_HIGH",
+    "prefixPaddingMs": 100,
+    "silenceDurationMs": 200,
+    "_comment": "Automatic Voice Activity Detection. Gemini will automatically detect when user starts/stops speaking."
+  },
+  "audio": {
+    "outputSampleRate": 24000,
+    "inputSampleRate": 16000,
+    "responseModalities": ["AUDIO"],
+    "mimeTypeInput": "audio/pcm",
+    "mimeTypeOutput": "audio/pcm",
+    "chunkSizeBytes": 3200,
+    "_comment": "Audio format specifications. chunkSizeBytes: 100ms at 16kHz mono 16-bit PCM"
+  },
+  "timeouts": {
+    "sendTimeoutSeconds": 5,
+    "setupTimeoutSeconds": 10,
+    "_comment": "Operation timeouts. sendTimeoutSeconds: timeout for sending messages to Gemini. setupTimeoutSeconds: timeout for session setup"
+  },
+  "captions": {
+    "enabled": true,
+    "_comment": "Uses Gemini's built-in output_audio_transcription feature. Backend always sends transcriptions. Frontend CC toggle controls display (default: OFF)."
+  },
+  "kvCache": {
+    "enabled": true,
+    "preloadBackstory": true,
+    "preloadSetList": true,
+    "backstoryPath": "whinny_backstory.json",
+    "setListPath": "set-list.json"
+  }
+}

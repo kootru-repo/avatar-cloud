@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def load_config() -> dict:
     """Load backend configuration."""
     try:
-        config_path = Path(__file__).parent.parent / 'config.json'
+        config_path = Path(__file__).parent.parent / 'backend_config.json'
         if config_path.exists():
             with open(config_path, 'r') as f:
                 return json.load(f)
@@ -393,13 +393,10 @@ async def handle_gemini_responses(websocket: Any, session: SessionState) -> None
                         }))
                         continue
 
-                    # SDK-COMPLIANT: Handle server_content (audio, text, interruptions)
-                    # Fast path: check server_content first (most common)
-                    server_content = getattr(response, 'server_content', None)
-                    if server_content:
-                        await process_server_content(websocket, session, server_content)
-
                     # SDK-COMPLIANT: Handle tool_call (function calling)
+                    # CRITICAL: Process tool_call BEFORE server_content to ensure
+                    # frontend receives tool_call message before audio starts playing
+                    # This allows video state to switch before audio playback begins
                     if hasattr(response, 'tool_call') and response.tool_call:
                         logger.info(f"🔧 Tool call received: {response.tool_call}")
                         # SDK structure: tool_call.function_calls is an array
@@ -464,6 +461,12 @@ async def handle_gemini_responses(websocket: Any, session: SessionState) -> None
                             )
                             await session.genai_session.send(tool_response)
                             logger.info(f"   ✅ Tool response sent to Gemini: success=True (id={function_call.id})")
+
+                    # SDK-COMPLIANT: Handle server_content (audio, text, interruptions)
+                    # Process AFTER tool_call to ensure frontend receives tool messages first
+                    server_content = getattr(response, 'server_content', None)
+                    if server_content:
+                        await process_server_content(websocket, session, server_content)
 
                     # SDK-COMPLIANT: Handle usage_metadata
                     if hasattr(response, 'usage_metadata') and response.usage_metadata:
@@ -639,7 +642,7 @@ async def handle_client(websocket: Any) -> None:
 
     try:
         # SDK-COMPLIANT: Create session context manager
-        # Voice is configured via frontend/config.json → geminiVoice.voiceName
+        # Voice is configured via frontend/frontend_config.json → geminiVoice.voiceName
         gemini_session_context = await create_gemini_session()
 
         # SDK-COMPLIANT: Use async with for proper lifecycle management

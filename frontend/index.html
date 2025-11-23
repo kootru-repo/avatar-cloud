@@ -194,10 +194,11 @@
             z-index: 0;
         }
 
-        /* Overlay layers - listening, speaking, and dancing videos on top */
+        /* Overlay layers - listening, speaking, dancing, and goodbye videos on top */
         #video-listening,
         #video-speaking,
-        #video-dancing {
+        #video-dancing,
+        #video-goodbye {
             opacity: 0;
             z-index: 1;
         }
@@ -208,8 +209,9 @@
             z-index: 2;
         }
 
-        /* Dancing video should be on top when active */
-        #video-dancing.active {
+        /* Dancing and goodbye videos should be on top when active */
+        #video-dancing.active,
+        #video-goodbye.active {
             opacity: 1;
             z-index: 3;
         }
@@ -911,7 +913,7 @@
         }
 
         /* Closed Captions Box - Bottom of Console */
-        /* Dimensions configured in frontend/config.json */
+        /* Dimensions configured in frontend/frontend_config.json */
         .cc-box {
             width: 100%;
             max-width: 100%;
@@ -1066,6 +1068,7 @@
                         <video id="video-listening" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                         <video id="video-speaking" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                         <video id="video-dancing" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
+                        <video id="video-goodbye" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
 
                         <!-- Stage Curtain -->
                         <div id="stageCurtain" class="stage-curtain">
@@ -1113,6 +1116,6 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=TOOLCALL_COMPLETE"></script>
+    <script type="module" src="app.js?v=GOODBYE_750MS_CONFIG"></script>
 </body>
 </html>

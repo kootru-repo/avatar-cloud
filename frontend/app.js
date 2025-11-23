@@ -29,7 +29,7 @@ class GeminiLiveClient {
         this.interruptTimeout = null;  // Track timeout for clearing interrupted state
         this.lastInterruptTime = 0;  // Timestamp of last interrupt (for debouncing)
 
-        // Speaking cycle configuration (loaded from config.json)
+        // Speaking cycle configuration (loaded from frontend_config.json)
         this.speakingCycleConfig = {
             enabled: true,
             initialForwardDuration: 3.0,
@@ -76,7 +76,8 @@ class GeminiLiveClient {
             idle: document.getElementById('video-idle'),
             listening: document.getElementById('video-listening'),
             speaking: document.getElementById('video-speaking'),
-            dancing: document.getElementById('video-dancing')
+            dancing: document.getElementById('video-dancing'),
+            goodbye: document.getElementById('video-goodbye')
         };
 
         // Current active video reference
@@ -87,6 +88,13 @@ class GeminiLiveClient {
         this.danceTimeout = null;
         this.danceAudio = null;
         this.danceModeConfig = null;
+
+        // Goodbye mode state
+        this.isSayingGoodbye = false;
+        this.goodbyeTimeout = null;
+        this.goodbyeModeConfig = null;
+        this.goodbyeAudioDelay = false;  // Flag to delay audio by 0.5s
+        this.goodbyeAudioDelayTimeout = null;
 
         // Sound effects
         this.soundEffectsConfig = null;
@@ -272,7 +280,7 @@ class GeminiLiveClient {
 
     async loadConfig() {
         try {
-            const response = await fetch('config.json');
+            const response = await fetch('frontend_config.json');
             const config = await response.json();
 
             // Load video sources from config (supports both old and new formats)
@@ -323,6 +331,12 @@ class GeminiLiveClient {
             if (config.danceMode) {
                 this.danceModeConfig = config.danceMode;
                 console.log('✅ Dance mode configuration loaded:', this.danceModeConfig);
+            }
+
+            // Load goodbye mode configuration
+            if (config.goodbyeMode) {
+                this.goodbyeModeConfig = config.goodbyeMode;
+                console.log('✅ Goodbye mode configuration loaded:', this.goodbyeModeConfig);
             }
 
             // Load sound effects configuration
@@ -715,7 +729,18 @@ class GeminiLiveClient {
                 // Defer audio playback to next tick to avoid blocking video
                 // This ensures video element state changes complete before audio decode starts
                 requestAnimationFrame(() => {
-                    this.audioPlayer.play(message.data);
+                    // Check if we need to delay audio for goodbye mode
+                    if (this.goodbyeAudioDelay) {
+                        // Delay audio by configured amount (from frontend_config.json) to give video a head start
+                        const audioDelayMs = (this.goodbyeModeConfig && this.goodbyeModeConfig.audioDelayMs) || 750;
+                        console.log(`⏱️ Delaying goodbye audio by ${audioDelayMs}ms`);
+                        setTimeout(() => {
+                            this.audioPlayer.play(message.data);
+                        }, audioDelayMs);
+                    } else {
+                        // Normal immediate playback
+                        this.audioPlayer.play(message.data);
+                    }
                 });
                 return;
             }
@@ -822,6 +847,11 @@ class GeminiLiveClient {
                         console.log(`🎯 Dance mode tool called by Gemini! (id: ${toolId})`);
                         this.triggerDanceMode();
                     }
+                    // Handle goodbye mode tool call
+                    else if (toolName === 'trigger_goodbye_mode') {
+                        console.log(`🎯 Goodbye mode tool called by Gemini! (id: ${toolId})`);
+                        this.triggerGoodbyeMode();
+                    }
                     break;
 
                 case 'error':
@@ -852,6 +882,18 @@ class GeminiLiveClient {
         if (this.isDancing) {
             this.stopDanceMode(false);
         }
+
+        // Stop goodbye mode if active
+        if (this.isSayingGoodbye) {
+            this.stopGoodbyeMode(false);
+        }
+
+        // Clear goodbye audio delay timeout if active
+        if (this.goodbyeAudioDelayTimeout) {
+            clearTimeout(this.goodbyeAudioDelayTimeout);
+            this.goodbyeAudioDelayTimeout = null;
+        }
+        this.goodbyeAudioDelay = false;
 
         // Clear any pending interrupt timeout
         if (this.interruptTimeout) {
@@ -1318,6 +1360,113 @@ class GeminiLiveClient {
         console.log('✅ Dance mode complete');
     }
 
+    triggerGoodbyeMode() {
+        console.log('🎯 triggerGoodbyeMode() called');
+        console.log('   goodbyeModeConfig:', this.goodbyeModeConfig);
+        console.log('   isSayingGoodbye:', this.isSayingGoodbye);
+
+        if (!this.goodbyeModeConfig) {
+            const errorMsg = '❌ Goodbye mode config is null/undefined';
+            console.error(errorMsg);
+            this.log(errorMsg, 'error');
+            return;
+        }
+
+        if (!this.goodbyeModeConfig.enabled) {
+            const errorMsg = '❌ Goodbye mode is disabled in config';
+            console.error(errorMsg);
+            this.log(errorMsg, 'error');
+            return;
+        }
+
+        // Validate goodbye duration (max 60 seconds)
+        const MAX_GOODBYE_DURATION = 60000;  // 60 seconds
+        if (!this.goodbyeModeConfig.duration || this.goodbyeModeConfig.duration <= 0) {
+            const errorMsg = '❌ Invalid goodbye duration in config';
+            console.error(errorMsg);
+            this.log(errorMsg, 'error');
+            return;
+        }
+        if (this.goodbyeModeConfig.duration > MAX_GOODBYE_DURATION) {
+            const errorMsg = `❌ Goodbye duration too long (max ${MAX_GOODBYE_DURATION}ms)`;
+            console.error(errorMsg);
+            this.log(errorMsg, 'error');
+            return;
+        }
+
+        if (this.isSayingGoodbye) {
+            console.log('⚠️ Already in goodbye mode!');
+            return;
+        }
+
+        // User feedback: goodbye mode activated
+        this.log('👋 See you later!', 'info');
+
+        console.log('👋 Triggering goodbye mode!');
+        console.log('   Config enabled:', this.goodbyeModeConfig.enabled);
+        console.log('   Duration:', this.goodbyeModeConfig.duration);
+        this.isSayingGoodbye = true;
+
+        // Set audio delay flag - audio will be delayed while video plays immediately
+        // Delay duration comes from config (default 750ms)
+        const audioDelayMs = this.goodbyeModeConfig.audioDelayMs || 750;
+        this.goodbyeAudioDelay = true;
+        console.log(`⏱️ Goodbye audio delay enabled (${audioDelayMs}ms)`);
+
+        // Clear the delay flag after configured duration
+        this.goodbyeAudioDelayTimeout = setTimeout(() => {
+            this.goodbyeAudioDelay = false;
+            console.log('✅ Goodbye audio delay cleared');
+        }, audioDelayMs);
+
+        // DON'T stop audio playback - let Gemini say "See you later!" during goodbye animation
+        // Track recording state for proper restoration after goodbye
+        const wasRecording = this.isRecording;
+
+        // Switch to goodbye video
+        console.log('🎥 Switching to goodbye video...');
+        this.setAvatarState('goodbye');
+        console.log('✅ setAvatarState("goodbye") completed');
+
+        console.log(`👋 Goodbye mode active for ${this.goodbyeModeConfig.duration}ms`);
+
+        // Return to idle after duration
+        this.goodbyeTimeout = setTimeout(() => {
+            this.stopGoodbyeMode(wasRecording);
+        }, this.goodbyeModeConfig.duration);
+    }
+
+    stopGoodbyeMode(resumeRecording = true) {
+        if (!this.isSayingGoodbye) return;
+
+        console.log('🛑 Stopping goodbye mode');
+        this.isSayingGoodbye = false;
+
+        // Clear timeouts
+        if (this.goodbyeTimeout) {
+            clearTimeout(this.goodbyeTimeout);
+            this.goodbyeTimeout = null;
+        }
+        if (this.goodbyeAudioDelayTimeout) {
+            clearTimeout(this.goodbyeAudioDelayTimeout);
+            this.goodbyeAudioDelayTimeout = null;
+        }
+
+        // Clear audio delay flag
+        this.goodbyeAudioDelay = false;
+
+        // Return to idle state
+        this.setAvatarState('idle');
+
+        // Resume recording if it was active
+        if (resumeRecording && this.audioRecorder) {
+            console.log('🎤 Resuming recording after goodbye');
+            this.audioRecorder.startBargeInMonitoring();
+        }
+
+        console.log('✅ Goodbye mode complete');
+    }
+
     handleDownloadProgress(message) {
         const { current, total, message: progressMessage, eta_seconds } = message;
 
@@ -1666,6 +1815,25 @@ class GeminiLiveClient {
                     console.error('❌ Failed to play dancing video:', e);
                 });
             }
+        } else if (state === 'goodbye') {
+            // Handle goodbye state - simple loop, no cycling
+            this.stopVideoSpeakingCycle();
+
+            // Ensure goodbye video loops normally and is playing
+            this.avatarVideo.loop = true;
+            this.avatarVideo.playbackRate = 1.0;
+
+            // Reset to start for consistent playback
+            this.avatarVideo.currentTime = 0;
+
+            // Start playing the goodbye video IMMEDIATELY
+            if (this.avatarVideo.paused) {
+                this.avatarVideo.play().then(() => {
+                    console.log('👋 Goodbye video started');
+                }).catch(e => {
+                    console.error('❌ Failed to play goodbye video:', e);
+                });
+            }
         } else {
             // Stop cycling when returning to idle or listening
             this.stopVideoSpeakingCycle();
@@ -1751,18 +1919,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Load all videos into their respective elements
                 const videos = window.geminiClient.avatarVideos;
 
-                if (videos.idle && videos.listening && videos.speaking && videos.dancing) {
+                if (videos.idle && videos.listening && videos.speaking && videos.dancing && videos.goodbye) {
                     // Set sources for all video elements (environment-aware URLs)
                     videos.idle.src = window.geminiClient.getVideoUrl('idle');
                     videos.listening.src = window.geminiClient.getVideoUrl('listening');
                     videos.speaking.src = window.geminiClient.getVideoUrl('speaking');
                     videos.dancing.src = window.geminiClient.getVideoUrl('dancing');
+                    videos.goodbye.src = window.geminiClient.getVideoUrl('goodbye');
 
                     console.log(`📹 Video URLs (${window.geminiClient.isLocalEnvironment() ? 'local' : 'cloud'}):`);
                     console.log(`   Idle: ${videos.idle.src}`);
                     console.log(`   Listening: ${videos.listening.src}`);
                     console.log(`   Speaking: ${videos.speaking.src}`);
                     console.log(`   Dancing: ${videos.dancing.src}`);
+                    console.log(`   Goodbye: ${videos.goodbye.src}`);
 
                     // Pre-load all videos for instant state switching (no loading delays!)
                     Object.values(videos).forEach(video => {

@@ -302,11 +302,30 @@ gemini-livewire-avatar/
 - **Managed By:** Cloud Run (auto-updated on deploy)
 
 ### **8. Cloud Build (CI/CD)**
-**Status:** NOT CURRENTLY CONFIGURED (manual deployments only)
-- **Trigger:** None configured (can be set up to auto-deploy on git push)
-- **Build Config:** `cloudbuild.yaml` exists but not actively used
-- **Current Deployment Method:** Manual `gcloud run deploy` from local machine
-- **Note:** cloudbuild.yaml file is available for future CI/CD setup if needed
+**Status:** ✅ ACTIVE - Auto-deployment configured and working
+- **Trigger Name:** `avatar-backend-trigger`
+- **Trigger Source:** kootru-repo/avatar-cloud (main branch)
+- **Build Config:** `cloudbuild.yaml`
+- **Service Account:** `580499038386-compute@developer.gserviceaccount.com`
+- **Machine Type:** E2_HIGHCPU_8
+- **Deployment Method:** Automatic on push to main branch
+- **Build Time:** 3-5 minutes
+- **Includes:** All environment variables (FIREBASE_PROJECT_ID) and secrets (GEMINI_API_KEY)
+- **Monitoring:** https://console.cloud.google.com/cloud-build/builds?project=avatar-478217
+
+**How It Works:**
+1. Push code to `main` branch
+2. GitHub webhook triggers Cloud Build
+3. Cloud Build runs `cloudbuild.yaml`:
+   - Builds Docker image from `backend/Dockerfile`
+   - Pushes to Container Registry (gcr.io/avatar-478217/gemini-avatar-backend)
+   - Deploys to Cloud Run with all env vars and secrets
+4. New revision goes live automatically
+
+**Service Account Permissions:**
+- `roles/editor` - Full Cloud Run deployment
+- `roles/secretmanager.secretAccessor` - Read GEMINI_API_KEY
+- `roles/iam.serviceAccountUser` - Act as Compute Engine SA
 
 ---
 

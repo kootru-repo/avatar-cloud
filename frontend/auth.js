@@ -17,7 +17,7 @@ class FirebaseAuthManager {
 
     /**
      * Initialize Firebase Auth from config
-     * @param {Object} config - Firebase configuration from config.json
+     * @param {Object} config - Firebase configuration from frontend_config.json
      */
     async initialize(config) {
         this.config = config.firebase;
@@ -29,7 +29,7 @@ class FirebaseAuthManager {
         }
 
         if (!this.config || !this.config.apiKey) {
-            console.error('❌ Firebase configuration missing in config.json');
+            console.error('❌ Firebase configuration missing in frontend_config.json');
             throw new Error('Firebase configuration required');
         }
 
