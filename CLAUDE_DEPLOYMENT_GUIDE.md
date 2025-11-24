@@ -1294,6 +1294,379 @@ if config["initialContext"]["includeSetList"]:
 
 ---
 
+## Closed Captions Architecture
+
+### Overview
+
+Closed captions display Gemini's spoken responses as text overlaid on the video. The system uses Gemini's built-in `output_audio_transcription` feature - NO external Speech-to-Text API is required.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  GEMINI LIVE API                                             │
+│  - Generates audio response                                  │
+│  - Simultaneously generates output_transcription             │
+│  - Sends transcription chunks in real-time                   │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ (transcription chunks)
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  BACKEND (websocket_handler.py)                              │
+│  - Receives output_transcription from Gemini                 │
+│  - Accumulates chunks into session.output_transcriptions     │
+│  - Sends CUMULATIVE text as "transcription_interim"          │
+│  - Sends complete text as "transcription" on turn_complete   │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ (WebSocket messages)
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  FRONTEND (app.js → RollUpCaptionManager)                    │
+│  - Receives cumulative text from backend                     │
+│  - Extracts NEW words by comparing with previous text        │
+│  - Buffers words and displays at 170 WPM                     │
+│  - 2-line roll-up display (line 2 → line 1 on overflow)      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `backend/core/websocket_handler.py` | Lines 555-595: Transcription handling |
+| `backend/backend_config.json` | `captions.enabled` setting |
+| `frontend/app.js` | Lines 13-200: `RollUpCaptionManager` class |
+| `frontend/frontend_config.json` | `closedCaptions` configuration |
+| `frontend/index.html` | CC overlay HTML and CSS |
+
+### Backend Configuration
+
+```json
+// backend/backend_config.json
+{
+  "captions": {
+    "enabled": true,
+    "_comment": "Uses Gemini's built-in output_audio_transcription feature"
+  }
+}
+```
+
+**Backend Transcription Flow:**
+```python
+# websocket_handler.py (lines 555-595)
+
+# 1. Receive transcription chunk from Gemini
+if hasattr(server_content, 'output_transcription'):
+    text = server_content.output_transcription.text.strip()
+
+    # 2. Accumulate chunks
+    session.output_transcriptions.append(text)
+
+    # 3. Send CUMULATIVE text (not individual chunks!)
+    cumulative_text = ' '.join(session.output_transcriptions)
+    await websocket.send(json.dumps({
+        "type": "transcription_interim",
+        "data": cumulative_text
+    }))
+
+# 4. On turn_complete, send final text and clear accumulator
+if server_content.turn_complete:
+    complete_text = ' '.join(session.output_transcriptions)
+    await websocket.send(json.dumps({
+        "type": "transcription",
+        "data": complete_text
+    }))
+    session.output_transcriptions.clear()
+```
+
+### Frontend Configuration
+
+```json
+// frontend/frontend_config.json → closedCaptions
+{
+  "closedCaptions": {
+    // Typography (FCC/WCAG AAA compliant)
+    "fontFamily": "'Roboto', 'Helvetica Neue', Arial, sans-serif",
+    "fontSize": 26,
+    "fontWeight": 500,
+    "lineHeight": 1.4,
+
+    // Colors (15:1 contrast ratio)
+    "textColor": "#FFFF00",
+    "backgroundColor": "rgba(0, 0, 0, 0.8)",
+    "textShadow": "1px 1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.6)",
+
+    // Positioning (inside video frame)
+    "position": "inVideo",
+    "safeMarginBottom": "0%",
+    "safeMarginHorizontal": "10%",
+
+    // Display settings
+    "displayMode": "rollup",
+    "maxLines": 2,
+    "maxCharsPerLine": 37,
+
+    // Timing (170 WPM industry standard)
+    "targetWPM": 170,
+    "wordDelayMs": 353,
+
+    // Opacity
+    "interimOpacity": 0.85,
+    "finalOpacity": 1.0
+  }
+}
+```
+
+### Frontend Caption Manager
+
+The `RollUpCaptionManager` class handles caption display:
+
+```javascript
+// frontend/app.js
+
+class RollUpCaptionManager {
+    constructor(config, ccOverlay) {
+        this.line1El = document.getElementById('ccLine1');  // Top line
+        this.line2El = document.getElementById('ccLine2');  // Bottom line (active)
+        this.ccOverlay = ccOverlay;
+
+        // State
+        this.bufferedWords = [];      // Words waiting to display
+        this.lastProcessedText = '';  // For extracting new words
+        this.displayedWordCount = 0;  // Words already shown
+        this.isDisplaying = false;    // Display routine running?
+    }
+
+    addCaption(text, isFinal) {
+        // 1. Extract NEW words from cumulative text
+        const newWords = this.extractNewWords(text, this.lastProcessedText, isFinal);
+
+        // 2. Add to buffer
+        this.bufferedWords.push(...newWords);
+
+        // 3. Start display routine if not running
+        if (!this.isDisplaying) {
+            this.startDisplayRoutine();
+        }
+
+        // 4. Update tracking
+        this.lastProcessedText = text;
+    }
+
+    extractNewWords(currentText, previousText, isFinal) {
+        // Compare word arrays to find new words
+        // Returns only words that weren't in previousText
+    }
+
+    displayNextWord() {
+        // Display one word at 170 WPM (353ms intervals)
+        // Roll up: line2 → line1 when line2 overflows
+    }
+}
+```
+
+### HTML Structure
+
+```html
+<!-- frontend/index.html (inside .avatar-video-wrapper) -->
+<div id="ccOverlay" class="cc-box">
+    <div class="cc-content">
+        <div id="ccLine1" class="cc-line"></div>
+        <div id="ccLine2" class="cc-line"></div>
+    </div>
+</div>
+```
+
+### CC Toggle
+
+```javascript
+// CC starts OFF by default
+this.isCCActive = false;
+
+// User must click CC toggle to enable
+this.ccToggle.addEventListener('click', () => this.toggleCC());
+
+toggleCC() {
+    this.isCCActive = !this.isCCActive;
+    // Updates UI and enables/disables caption display
+}
+```
+
+---
+
+### ⚠️ CRITICAL GOTCHAS
+
+#### **1. Word Extraction Must Include All New Words**
+
+**THE BUG (caused captions to show only first word):**
+```javascript
+// ❌ WRONG - excludes last word, breaks when only 1 new word
+for (let i = startIndex; i < currentWords.length - 1; i++) {
+    newCompleteWords.push(currentWords[i]);
+}
+```
+
+**THE FIX:**
+```javascript
+// ✅ CORRECT - include all new words
+for (let i = startIndex; i < currentWords.length; i++) {
+    newCompleteWords.push(currentWords[i]);
+}
+```
+
+**Why:** The `-1` was meant to avoid partial words, but backend sends cumulative complete words. When there's only 1 new word (typical case), the loop never executes!
+
+Example:
+- Previous: `"Hello"` (1 word)
+- Current: `"Hello world"` (2 words)
+- startIndex = 1
+- With `-1`: `for (i=1; i<1; i++)` → **never runs!**
+- Without `-1`: `for (i=1; i<2; i++)` → extracts "world" ✓
+
+---
+
+#### **2. Backend Must Send CUMULATIVE Text**
+
+**❌ WRONG - sending individual chunks:**
+```python
+await websocket.send(json.dumps({
+    "type": "transcription_interim",
+    "data": text  # Just this chunk
+}))
+```
+
+**✅ CORRECT - sending cumulative text:**
+```python
+session.output_transcriptions.append(text)
+cumulative_text = ' '.join(session.output_transcriptions)
+await websocket.send(json.dumps({
+    "type": "transcription_interim",
+    "data": cumulative_text  # All chunks so far
+}))
+```
+
+**Why:** Frontend's `extractNewWords()` compares current text with previous to find new words. If backend sends individual chunks, comparison fails.
+
+---
+
+#### **3. CC Toggle Default State**
+
+```javascript
+this.isCCActive = false;  // CC starts OFF
+```
+
+**Important:** Users must click the CC toggle button to see captions. This is intentional (matches broadcast TV behavior where CC is opt-in).
+
+---
+
+#### **4. Reset Tracking on turn_complete**
+
+```javascript
+// Called when turn_complete is received
+resetCaptionTracking() {
+    this.lastProcessedText = '';
+    this.isFinalBuffered = false;
+}
+```
+
+**Why:** Without reset, `extractNewWords()` may fail to detect new words in the next response if they start similarly to the previous response.
+
+---
+
+#### **5. Don't Clear Transcription on Interrupt**
+
+```python
+# websocket_handler.py
+elif msg_type == "interrupt":
+    # ❌ DON'T clear transcription - text was already spoken
+    # session.output_transcriptions.clear()  # WRONG!
+
+    # ✅ DO just set the flag
+    session.client_interrupted = True
+```
+
+**Why:** Clearing transcription on interrupt causes frontend/backend state mismatch, resulting in missing captions.
+
+---
+
+#### **6. CC Overlay Must Be Inside Video Wrapper**
+
+```html
+<!-- ✅ CORRECT - CC inside video wrapper -->
+<div class="avatar-video-wrapper">
+    <video ...></video>
+    <div id="ccOverlay" class="cc-box">...</div>
+</div>
+
+<!-- ❌ WRONG - CC outside video wrapper -->
+<div class="avatar-video-wrapper">
+    <video ...></video>
+</div>
+<div id="ccOverlay" class="cc-box">...</div>
+```
+
+**Why:** CC positioning uses percentage-based positioning relative to the video. If outside the wrapper, positioning breaks.
+
+---
+
+### Testing Captions
+
+1. **Enable CC:** Click the CC toggle button (should light up)
+2. **Start session:** Click "START SESSION"
+3. **Speak:** Say something to trigger Gemini response
+4. **Watch console:** Look for `📝` log messages:
+   ```
+   📝 addCaption called: "Hello world how are you" (isFinal=false)
+   📝 Extracted 5 new word(s): "Hello world how are you"
+   📝 Buffer now has 5 words, displayed 0
+   📝 Starting display routine
+   ```
+
+5. **If captions don't appear, check:**
+   - Is CC toggle active? (`isCCActive = true`)
+   - Is `captionManager` initialized? (check console for errors)
+   - Is backend sending transcription? (check Network tab for WebSocket messages)
+   - Are words being extracted? (look for "Extracted N new words" log)
+
+---
+
+### Debugging Commands
+
+```javascript
+// In browser console:
+
+// Check CC state
+app.isCCActive  // Should be true if CC is on
+
+// Check caption manager
+app.captionManager  // Should exist
+app.captionManager.bufferedWords  // Words waiting to display
+app.captionManager.displayedWordCount  // Words already shown
+app.captionManager.isDisplaying  // Display routine running?
+app.captionManager.lastProcessedText  // Last text received
+
+// Manually test caption display
+app.captionManager.addCaption("Test caption text", false);
+```
+
+---
+
+### Configuration Reference
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `captions.enabled` (backend) | `true` | Enable Gemini transcription |
+| `closedCaptions.fontSize` | `26` | Font size in pixels |
+| `closedCaptions.fontWeight` | `500` | Font weight (400-700) |
+| `closedCaptions.textColor` | `#FFFF00` | Yellow text |
+| `closedCaptions.backgroundColor` | `rgba(0,0,0,0.8)` | 80% black background |
+| `closedCaptions.maxLines` | `2` | Number of caption lines |
+| `closedCaptions.maxCharsPerLine` | `37` | Characters before wrap |
+| `closedCaptions.targetWPM` | `170` | Words per minute |
+| `closedCaptions.wordDelayMs` | `353` | Milliseconds between words |
+| `closedCaptions.interimOpacity` | `0.85` | Opacity during typing |
+| `closedCaptions.finalOpacity` | `1.0` | Opacity when complete |
+
+---
+
 ## Recent Changes & Session History
 
 ### **Session 5: VAD & Barge-In Fixes (2025-11-24)**
@@ -1395,6 +1768,32 @@ startBargeInMonitoring() {
 
 ---
 
+#### **4. CC Word Extraction Fix**
+
+**Problem:** Closed captions only showed the first word, then nothing until audio ended.
+
+**Root Cause:** The `extractNewWords()` function excluded the last word to avoid "partial" words:
+```javascript
+// ❌ BUG: -1 breaks when there's only 1 new word
+for (let i = startIndex; i < currentWords.length - 1; i++) {
+```
+
+When cumulative text grows by 1 word (typical), the loop never executes:
+- Previous: `"Hello"` → Current: `"Hello world"`
+- startIndex = 1, currentWords.length = 2
+- Loop: `for (i=1; i<1; i++)` → **never runs!**
+
+**Solution:** Remove the `-1` since backend sends complete words:
+```javascript
+// ✅ FIX: Include all new words
+for (let i = startIndex; i < currentWords.length; i++) {
+```
+
+**Files Changed:**
+- `frontend/app.js` - Fixed `extractNewWords()` in `RollUpCaptionManager`
+
+---
+
 #### **Summary of Session 5 Changes**
 
 | Change | File(s) | Impact |
@@ -1404,10 +1803,12 @@ startBargeInMonitoring() {
 | Silence duration 500ms | `backend_config.json`, `frontend_config.json` | Allows natural speech pauses |
 | Fix MEDIUM → LOW | `backend_config.json`, `frontend_config.json` | Fixes immediate disconnect |
 | Rack absolute positioning | `index.html` | Video stays centered |
+| CC word extraction fix | `app.js` | All words now display in captions |
 
 **Git Commits:**
 - `92e343b` - fix: Disable client-side barge-in, rely on server-side VAD
 - `79b2fa9` - fix: Use LOW VAD sensitivity (MEDIUM not supported by Gemini)
+- `933c7e8` - fix: CC word extraction now includes all new words
 
 ---
 
