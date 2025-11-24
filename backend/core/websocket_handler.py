@@ -649,32 +649,9 @@ async def handle_client(websocket: Any) -> None:
         async with gemini_session_context as gemini_session:
             session.genai_session = gemini_session
 
-            # KV CACHE PRELOADING: Send backstory and set-list to load into KV cache
-            kv_cache_text = get_kv_cache_preload()
-            if kv_cache_text:
-                try:
-                    logger.info(f"📝 Preloading content into KV cache ({len(kv_cache_text)} chars)")
-                    await asyncio.wait_for(
-                        gemini_session.send(input=kv_cache_text, end_of_turn=True),
-                        timeout=SEND_TIMEOUT_SECONDS
-                    )
-                    logger.info("✅ KV cache preload complete")
-
-                    # Wait for and consume the model's acknowledgment response
-                    # This ensures the content is fully processed before user interaction
-                    async for response in gemini_session.receive():
-                        # Check for turn_complete to know preload is processed
-                        server_content = getattr(response, 'server_content', None)
-                        if server_content and hasattr(server_content, 'turn_complete') and server_content.turn_complete:
-                            logger.info("✅ KV cache processing complete")
-                            break
-                        # Stop after first response cycle
-                        if server_content:
-                            break
-
-                except Exception as e:
-                    logger.warning(f"⚠️ Failed to preload KV cache: {e}")
-                    # Continue anyway - system instructions still have the persona
+            # NO CACHING: All context is in system_instruction field
+            # No need to send messages - Gemini has complete context from session start
+            logger.info("✅ All context loaded via system_instruction (no caching)")
 
             # Send ready to client
             await websocket.send(json.dumps({"ready": True}))

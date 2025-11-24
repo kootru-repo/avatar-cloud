@@ -116,31 +116,39 @@ Remember: You're not here to answer general questions. You're here to be Whinny 
 
 
 def load_system_instructions() -> str:
-    """Load system instructions with character backstory."""
+    """
+    Load complete system instructions with ALL context.
+    No caching - everything in system_instruction field.
+    """
     try:
-        # Try loading custom instructions from frontend_config.json first
-        import json
-        config_path = Path(__file__).parent.parent.parent / 'frontend' / 'frontend_config.json'
-
-        if config_path.exists():
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-                instructions = config.get('ui', {}).get('defaultSystemInstructions', '')
-
-                # If custom instructions exist and don't mention using backstory, use them
-                if instructions and 'backstory' not in instructions.lower():
-                    logger.info(f"✅ Using custom system instructions from frontend_config.json")
-                    return instructions
-
         # Load backstory and create persona instructions
         backstory = load_backstory()
-        if backstory:
-            instructions = create_persona_instructions(backstory)
-            logger.info(f"✅ Persona instructions created ({len(instructions)} chars)")
-            return instructions
+        if not backstory:
+            logger.warning("No backstory found, using default instructions")
+            return get_default_instructions()
 
-        logger.warning("No backstory found, using default instructions")
-        return get_default_instructions()
+        # Create persona summary
+        persona = create_persona_instructions(backstory)
+
+        # Get full context for system instructions
+        backstory_json = get_backstory_for_kv_cache()
+        setlist_json = get_setlist_for_kv_cache()
+
+        # Combine everything into system_instruction
+        instructions = persona
+
+        if backstory_json:
+            instructions += "\n\n" + "="*80 + "\n" + backstory_json
+
+        if setlist_json:
+            instructions += "\n\n" + "="*80 + "\n" + setlist_json
+
+        logger.info(f"✅ Complete system instructions: {len(instructions)} chars")
+        logger.info(f"   - Persona: {len(persona)} chars")
+        logger.info(f"   - Backstory JSON: {len(backstory_json)} chars")
+        logger.info(f"   - Set list JSON: {len(setlist_json)} chars")
+
+        return instructions
 
     except Exception as e:
         logger.error(f"Failed to load system instructions: {e}")
