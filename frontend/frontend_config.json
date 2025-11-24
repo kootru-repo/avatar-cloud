@@ -239,10 +239,10 @@
     "padding": 12,
     "borderRadius": 4,
     "lineHeight": 1.6,
-    "interimChunkDelayMs": 1000,
-    "_comment_delay": "Delay between words (ms). Controls word appearance rate. 1000ms = slower, more readable pace (half speed).",
+    "interimChunkDelayMs": 750,
+    "_comment_delay": "Delay between words (ms). Controls word appearance rate. 750ms = balanced pace for TV-style captions.",
     "maxVisibleWords": 16,
-    "_comment_maxWords": "Maximum words to display (maintains ~2 lines). Old words scroll out as new arrive for sliding window effect."
+    "_comment_maxWords": "Maximum words to display (maintains ~2 lines). Old words instantly replaced as new arrive (TV paint-on style)."
   },
   "typography": {
     "_comment": "Centralized font settings. All font sizes use clamp(min, preferred, max) for responsive scaling.",

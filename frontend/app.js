@@ -1071,7 +1071,7 @@ class GeminiLiveClient {
         // WORD-BY-WORD DISPLAY: Split chunk into individual words
         const newWords = chunk.trim().split(/\s+/).filter(word => word.length > 0);
 
-        // Add each word with a delay for smooth scrolling effect
+        // Add each word with a delay (TV paint-on style)
         let wordIndex = 0;
         const addNextWord = () => {
             if (wordIndex < newWords.length) {
@@ -1086,33 +1086,10 @@ class GeminiLiveClient {
                     this.ccWordsArray.shift();
                 }
 
-                // Update text content
+                // Update text content - TV paint-on style (instant replacement, no scroll)
                 this.ccText.textContent = this.ccWordsArray.join(' ');
                 this.ccText.style.opacity = '0.8';  // Lower opacity for interim
                 this.ccOverlay.classList.add('active');
-
-                // Smooth scroll animation: measure text width and slide left
-                // Only scroll if we're not on the last word
-                if (shouldScroll) {
-                    requestAnimationFrame(() => {
-                        // Get the width of one word (approximate)
-                        const tempSpan = document.createElement('span');
-                        tempSpan.style.font = window.getComputedStyle(this.ccText).font;
-                        tempSpan.style.visibility = 'hidden';
-                        tempSpan.style.position = 'absolute';
-                        tempSpan.textContent = newWords[wordIndex] + ' ';
-                        document.body.appendChild(tempSpan);
-                        const wordWidth = tempSpan.offsetWidth;
-                        document.body.removeChild(tempSpan);
-
-                        // Get current transform
-                        const currentTransform = this.ccText.style.transform || 'translateX(0px)';
-                        const currentX = parseFloat(currentTransform.match(/-?\d+\.?\d*/)?.[0] || 0);
-
-                        // Slide left by the width of the new word
-                        this.ccText.style.transform = `translateX(${currentX - wordWidth}px)`;
-                    });
-                }
 
                 wordIndex++;
 
@@ -1151,7 +1128,6 @@ class GeminiLiveClient {
         this.ccOverlay.classList.remove('active');
         if (this.ccText) {
             this.ccText.textContent = '';
-            this.ccText.style.transform = 'translateX(0px)';  // Reset scroll position
         }
     }
 
