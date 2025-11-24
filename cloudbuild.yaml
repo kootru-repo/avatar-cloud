@@ -25,13 +25,9 @@
 #      ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
 #      --member=serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com \
 #      --role=roles/iam.serviceAccountUser
-
-# File path filters - only trigger on backend changes
-# Note: These filters work when specified in the trigger config (see setup above)
-# or can be enforced at the YAML level for manual builds
-includedFiles:
-  - 'backend/**'
-  - 'cloudbuild.yaml'
+#
+# NOTE: File path filters (includedFiles) must be configured in the trigger itself
+# using the --included-files flag, not in this YAML file. See setup command above.
 
 steps:
   # Step 1: Build the Docker container

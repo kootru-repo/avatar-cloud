@@ -190,7 +190,6 @@
   "ui": {
     "defaultSystemInstructions": "",
     "_comment_systemInstructions": "Leave empty to use backstory-based persona from docs/whinny_backstory.json. The persona will be loaded automatically with strict character boundaries.",
-    "marqueeScrollSpeed": 1.5,
     "avatarStatusUpdateInterval": 100
   },
   "danceMode": {
@@ -240,8 +239,8 @@
     "padding": 12,
     "borderRadius": 4,
     "lineHeight": 1.6,
-    "interimChunkDelayMs": 500,
-    "_comment_delay": "Delay between words (ms). Controls word appearance rate. 500ms = comfortable reading pace.",
+    "interimChunkDelayMs": 1000,
+    "_comment_delay": "Delay between words (ms). Controls word appearance rate. 1000ms = slower, more readable pace (half speed).",
     "maxVisibleWords": 16,
     "_comment_maxWords": "Maximum words to display (maintains ~2 lines). Old words scroll out as new arrive for sliding window effect."
   },
