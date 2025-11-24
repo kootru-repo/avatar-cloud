@@ -208,6 +208,7 @@ class GeminiLiveClient {
         this.statusEl = document.getElementById('status');
         this.mixerToggle = document.getElementById('mixerToggle');
         this.labelOn = document.getElementById('labelOn');
+        this.recLed = document.getElementById('recLed');
         this.isToggleActive = false;
         this.isToggleAnimating = false;
         this.logEl = document.getElementById('log');
@@ -301,9 +302,13 @@ class GeminiLiveClient {
         if (active) {
             this.mixerToggle.classList.add('active');
             this.labelOn.classList.add('active');
+            if (this.recLed) this.recLed.classList.add('active');
+            if (this.labelOn) this.labelOn.textContent = 'LIVE';
         } else {
             this.mixerToggle.classList.remove('active');
             this.labelOn.classList.remove('active');
+            if (this.recLed) this.recLed.classList.remove('active');
+            if (this.labelOn) this.labelOn.textContent = 'START SESSION';
         }
     }
 
@@ -733,7 +738,7 @@ class GeminiLiveClient {
         // Start recording
         await this.audioRecorder.start();
         this.isRecording = true;
-        this.audioIndicator.classList.add('active');
+        if (this.audioIndicator) this.audioIndicator.classList.add('active');
         this.log('🎤 Microphone active', 'info');
     }
 
@@ -1127,7 +1132,7 @@ class GeminiLiveClient {
         this.isToggleAnimating = false;  // Reset animation flag
 
         this.updateToggleUI(false);
-        this.audioIndicator.classList.remove('active');
+        if (this.audioIndicator) this.audioIndicator.classList.remove('active');
 
         // Clear closed captions
         this.clearClosedCaptions();
@@ -1150,7 +1155,9 @@ class GeminiLiveClient {
     }
 
     setStatus(state, text) {
-        this.statusEl.className = `status ${state}`;
+        // Remove old state classes and add new one (preserve rack-status-value)
+        this.statusEl.classList.remove('disconnected', 'connecting', 'connected');
+        this.statusEl.classList.add(state);
         this.statusEl.textContent = text;
     }
 

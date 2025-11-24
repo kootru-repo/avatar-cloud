@@ -563,10 +563,11 @@ async def process_server_content(websocket: Any, session: SessionState, server_c
                     logger.info(f"📝 Transcription chunk #{len(session.output_transcriptions) + 1}: '{text}'")
                     # Accumulate for final complete text
                     session.output_transcriptions.append(text)
-                    # Send chunk immediately for real-time display
+                    # Send CUMULATIVE text for real-time display (frontend expects cumulative)
+                    cumulative_text = ' '.join(session.output_transcriptions)
                     await websocket.send(json.dumps({
                         "type": "transcription_interim",
-                        "data": text
+                        "data": cumulative_text
                     }))
 
         # Check if model_turn has text parts (alternative to output_transcription)
