@@ -73,20 +73,26 @@ class RollUpCaptionManager {
             return [];
         }
 
-        // Get the new words (excluding the last one which might be incomplete)
-        const numNewWords = currentWords.length - previousWords.length;
         const startIndex = previousWords.length;
-
-        // Extract new complete words (all but possibly the last one)
-        // We take words from startIndex to currentWords.length - 1 (exclude last)
         const newCompleteWords = [];
-        for (let i = startIndex; i < currentWords.length - 1; i++) {
-            newCompleteWords.push(currentWords[i]);
-        }
 
-        // If this is a final transcription, also include the last word
-        if (isFinal && currentWords.length > 0) {
-            newCompleteWords.push(currentWords[currentWords.length - 1]);
+        // Strategy: Extract new words, but exclude the CURRENT last word (might be incomplete)
+        // EXCEPT when it's the ONLY word (first word case) OR it's a final transcription
+
+        if (isFinal) {
+            // Final transcription: include ALL new words including the last one
+            for (let i = startIndex; i < currentWords.length; i++) {
+                newCompleteWords.push(currentWords[i]);
+            }
+        } else if (currentWords.length === 1 && previousWords.length === 0) {
+            // Special case: Very first word - include it (it's likely complete if transcription started)
+            newCompleteWords.push(currentWords[0]);
+        } else {
+            // Interim update with multiple words: extract new words but exclude the last one
+            // The last word might still be forming
+            for (let i = startIndex; i < currentWords.length - 1; i++) {
+                newCompleteWords.push(currentWords[i]);
+            }
         }
 
         return newCompleteWords;
