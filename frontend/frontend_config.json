@@ -147,7 +147,9 @@
     "connectionTimeout": 10000,
     "_comment_audioChunkInterval": "How often to send audio chunks to Gemini (ms). Lower = more frequent chunks, reduces buffer accumulation. Gemini's automatic VAD handles speech detection.",
     "audioChunkInterval": 500,
-    "metricsUpdateInterval": 1000
+    "metricsUpdateInterval": 1000,
+    "_comment_interruptCooldownMs": "Cooldown period after barge-in (ms). During this time, user audio is buffered instead of triggering new responses. Prevents rapid interruption stacking. 2000ms = 2 seconds.",
+    "interruptCooldownMs": 2000
   },
   "audioReactivity": {
     "enabled": false,
