@@ -24,12 +24,13 @@ class RollUpCaptionManager {
         this.maxCharsPerLine = config.maxCharsPerLine || 37;
 
         // Buffered state (stores incoming text, displays independently)
-        this.bufferedText = '';
+        this.bufferedWords = [];  // Array of complete words ready to display
+        this.lastProcessedText = '';  // Track last interim text to detect new words
         this.isFinalBuffered = false;
 
         // Display state (independent of Gemini updates)
         this.currentLines = ['', ''];  // [line1, line2]
-        this.displayedWords = [];  // Words already shown
+        this.displayedWordCount = 0;  // Number of words already displayed
         this.displayTimeout = null;
         this.isDisplaying = false;
     }
@@ -38,19 +39,22 @@ class RollUpCaptionManager {
     addCaption(text, isFinal = false) {
         if (!text || text.trim().length === 0) return;
 
-        // ONLY accept final transcriptions (ignore interim with partial/incomplete words)
-        if (!isFinal) {
-            return;
+        // Extract only NEW complete words from this update
+        const newWords = this.extractNewWords(text, this.lastProcessedText, isFinal);
+
+        if (newWords.length > 0) {
+            // Add new complete words to buffer
+            this.bufferedWords.push(...newWords);
+
+            // Start independent display routine if not already running
+            if (!this.isDisplaying) {
+                this.startDisplayRoutine();
+            }
         }
 
-        // Store final transcription in buffer
-        this.bufferedText = text;
-        this.isFinalBuffered = true;
-
-        // Start independent display routine if not already running
-        if (!this.isDisplaying) {
-            this.startDisplayRoutine();
-        }
+        // Update tracking
+        this.lastProcessedText = text;
+        this.isFinalBuffered = isFinal;
 
         // Show overlay
         if (this.ccOverlay) {
@@ -58,10 +62,39 @@ class RollUpCaptionManager {
         }
     }
 
+    // Extract only new complete words by comparing current text with previous
+    extractNewWords(currentText, previousText, isFinal) {
+        const currentWords = currentText.trim().split(/\s+/).filter(w => w.length > 0);
+        const previousWords = previousText.trim().split(/\s+/).filter(w => w.length > 0);
+
+        // If current has more words than previous, the NEW words are complete
+        // The last word might still be incomplete (being typed), so exclude it unless final
+        if (currentWords.length <= previousWords.length) {
+            return [];
+        }
+
+        // Get the new words (excluding the last one which might be incomplete)
+        const numNewWords = currentWords.length - previousWords.length;
+        const startIndex = previousWords.length;
+
+        // Extract new complete words (all but possibly the last one)
+        // We take words from startIndex to currentWords.length - 1 (exclude last)
+        const newCompleteWords = [];
+        for (let i = startIndex; i < currentWords.length - 1; i++) {
+            newCompleteWords.push(currentWords[i]);
+        }
+
+        // If this is a final transcription, also include the last word
+        if (isFinal && currentWords.length > 0) {
+            newCompleteWords.push(currentWords[currentWords.length - 1]);
+        }
+
+        return newCompleteWords;
+    }
+
     // Independent display routine (runs at 170 WPM regardless of Gemini updates)
     startDisplayRoutine() {
         this.isDisplaying = true;
-        this.displayedWords = [];
         this.displayNextWord();
     }
 
@@ -73,18 +106,15 @@ class RollUpCaptionManager {
             this.displayTimeout = null;
         }
 
-        // Get all words from buffer
-        const allWords = this.bufferedText.trim().split(/\s+/).filter(w => w.length > 0);
-
         // Check if we've displayed all buffered words
-        if (this.displayedWords.length >= allWords.length) {
+        if (this.displayedWordCount >= this.bufferedWords.length) {
             this.isDisplaying = false;
             return;
         }
 
-        // Get next word
-        const nextWord = allWords[this.displayedWords.length];
-        this.displayedWords.push(nextWord);
+        // Get next word from buffer
+        const nextWord = this.bufferedWords[this.displayedWordCount];
+        this.displayedWordCount++;
 
         // Try to add word to line 2 (bottom line)
         const testLine = this.currentLines[1] ? `${this.currentLines[1]} ${nextWord}` : nextWord;
@@ -103,7 +133,7 @@ class RollUpCaptionManager {
         if (this.line2El) this.line2El.textContent = this.currentLines[1];
 
         // Set opacity based on whether we've reached final text
-        const isDisplayingFinal = this.isFinalBuffered && (this.displayedWords.length === allWords.length);
+        const isDisplayingFinal = this.isFinalBuffered && (this.displayedWordCount >= this.bufferedWords.length);
         const opacity = isDisplayingFinal ? this.finalOpacity : this.interimOpacity;
         if (this.line1El) this.line1El.style.opacity = opacity;
         if (this.line2El) this.line2El.style.opacity = opacity;
@@ -120,10 +150,11 @@ class RollUpCaptionManager {
         }
 
         // Reset state
-        this.bufferedText = '';
+        this.bufferedWords = [];
+        this.lastProcessedText = '';
         this.isFinalBuffered = false;
         this.currentLines = ['', ''];
-        this.displayedWords = [];
+        this.displayedWordCount = 0;
         this.isDisplaying = false;
 
         // Clear display
