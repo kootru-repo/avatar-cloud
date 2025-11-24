@@ -343,3 +343,39 @@ def get_initial_context() -> str:
 
 # Load system instructions on module import
 SYSTEM_INSTRUCTIONS = load_system_instructions()
+
+# DEBUG: Verify system instructions loaded
+if SYSTEM_INSTRUCTIONS:
+    logger.info("="*80)
+    logger.info("🔍 SYSTEM INSTRUCTION LOADING DEBUG")
+    logger.info("="*80)
+    logger.info(f"✅ System instructions loaded: {len(SYSTEM_INSTRUCTIONS)} characters")
+
+    # Check for character name
+    if "Whinny Kravitz" in SYSTEM_INSTRUCTIONS:
+        logger.info("✅ Character name 'Whinny Kravitz' found in system instructions")
+    else:
+        logger.warning("⚠️ Character name 'Whinny Kravitz' NOT found in system instructions!")
+
+    # Check for key sections
+    sections_to_check = [
+        "AGENT PERSONA",
+        "CONVERSATIONAL FLOW",
+        "TOOL SPECIFICATIONS",
+        "GUARDRAILS",
+        "DETAILED BEHAVIORAL TRAITS"
+    ]
+
+    for section in sections_to_check:
+        if section in SYSTEM_INSTRUCTIONS:
+            logger.info(f"✅ Section '{section}' present")
+        else:
+            logger.warning(f"⚠️ Section '{section}' MISSING!")
+
+    # Show first 500 characters
+    logger.info("First 500 characters of system instructions:")
+    logger.info(SYSTEM_INSTRUCTIONS[:500])
+    logger.info("="*80)
+else:
+    logger.error("❌ CRITICAL: System instructions are EMPTY!")
+    logger.error("="*80)

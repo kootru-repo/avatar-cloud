@@ -107,6 +107,45 @@ async def create_gemini_session():
             # SDK-COMPLIANT: Get configuration (voice from frontend_config.json)
             config = get_gemini_config()
 
+            # DEBUG: Verify config before sending to SDK
+            logger.info("="*80)
+            logger.info("🔍 GEMINI CLIENT DEBUG - CONFIG BEFORE SDK CALL")
+            logger.info("="*80)
+            logger.info(f"Config type: {type(config)}")
+            logger.info(f"Config keys: {list(config.keys())}")
+
+            if "system_instruction" in config:
+                si = config["system_instruction"]
+                logger.info(f"✅ system_instruction in config")
+                logger.info(f"   Type: {type(si)}")
+
+                # Handle different types
+                from google.genai import types
+                if isinstance(si, types.Content):
+                    logger.info(f"   Format: Content object")
+                    if si.parts and hasattr(si.parts[0], 'text'):
+                        text = si.parts[0].text
+                        logger.info(f"   Text length: {len(text)} chars")
+                        logger.info(f"   Contains 'Whinny': {'Whinny Kravitz' in text}")
+                        logger.info(f"   First 200 chars: {text[:200]}")
+                elif isinstance(si, str):
+                    logger.info(f"   Format: String ({len(si)} chars)")
+                    logger.info(f"   Contains 'Whinny': {'Whinny Kravitz' in si}")
+                    logger.info(f"   First 200 chars: {si[:200]}")
+                else:
+                    logger.warning(f"   Unexpected format: {type(si)}")
+            else:
+                logger.error("❌ CRITICAL: system_instruction NOT in config before SDK call!")
+
+            # Check if config has proper structure
+            if "generation_config" in config:
+                gen_config = config["generation_config"]
+                logger.info(f"✅ generation_config present: {list(gen_config.keys())}")
+            else:
+                logger.warning("⚠️ generation_config NOT in config")
+
+            logger.info("="*80)
+
             logger.info(f"Connecting to Google AI Live API...")
             logger.info(f"  Model: {MODEL}")
 

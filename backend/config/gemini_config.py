@@ -69,6 +69,15 @@ def get_gemini_config() -> dict:
     # OFFICIAL GOOGLE PATTERN: speech_config as dictionary object
     # Reference: https://ai.google.dev/gemini-api/docs/audio
     # The SDK requires speech_config to be a dictionary with voice_name
+
+    # CRITICAL: Test if system_instruction needs to be Content object vs string
+    # According to SDK docs, system_instruction can be string OR Content object
+    # Let's try Content object first as it's more explicit
+    system_instruction_as_content = types.Content(
+        role="user",
+        parts=[types.Part(text=SYSTEM_INSTRUCTIONS)]
+    )
+
     config = {
         "generation_config": {
             "response_modalities": api_config.response_modalities,
@@ -80,7 +89,7 @@ def get_gemini_config() -> dict:
                 }
             }
         },
-        "system_instruction": SYSTEM_INSTRUCTIONS
+        "system_instruction": system_instruction_as_content  # Try Content object format
     }
 
     # AFFECTIVE DIALOG: Adapt response style to input expression and tone
@@ -146,5 +155,49 @@ def get_gemini_config() -> dict:
     if api_config.affective_dialog:
         logger.info(f"   Affective dialog: Enabled (adapts to tone/expression)")
     logger.info(f"   Config keys: {list(config.keys())}")
+
+    # DEBUG: Verify system_instruction is in config and not empty
+    logger.info("="*80)
+    logger.info("🔍 GEMINI CONFIG DEBUG - SYSTEM INSTRUCTION")
+    logger.info("="*80)
+    if "system_instruction" in config:
+        si_value = config["system_instruction"]
+        if si_value:
+            logger.info(f"✅ system_instruction present in config")
+            logger.info(f"✅ system_instruction type: {type(si_value)}")
+
+            # Handle Content object
+            if isinstance(si_value, types.Content):
+                logger.info("✅ system_instruction is Content object (correct format)")
+                logger.info(f"   Role: {si_value.role}")
+                logger.info(f"   Parts: {len(si_value.parts)} part(s)")
+                if si_value.parts:
+                    first_part = si_value.parts[0]
+                    if hasattr(first_part, 'text'):
+                        text_content = first_part.text
+                        logger.info(f"   Text length: {len(text_content)} characters")
+                        if "Whinny Kravitz" in text_content:
+                            logger.info("✅ 'Whinny Kravitz' found in Content object text")
+                        else:
+                            logger.error("❌ 'Whinny Kravitz' NOT found in Content object text!")
+                        logger.info("First 300 chars of system_instruction text:")
+                        logger.info(text_content[:300])
+            # Handle string (fallback)
+            elif isinstance(si_value, str):
+                logger.info("⚠️ system_instruction is string (should be Content object?)")
+                logger.info(f"   Length: {len(si_value)} characters")
+                if "Whinny Kravitz" in si_value:
+                    logger.info("✅ 'Whinny Kravitz' found in string")
+                else:
+                    logger.error("❌ 'Whinny Kravitz' NOT found in string!")
+                logger.info("First 300 chars:")
+                logger.info(si_value[:300])
+            else:
+                logger.warning(f"⚠️ Unexpected system_instruction type: {type(si_value)}")
+        else:
+            logger.error("❌ CRITICAL: system_instruction is EMPTY in config!")
+    else:
+        logger.error("❌ CRITICAL: system_instruction key NOT in config!")
+    logger.info("="*80)
 
     return config

@@ -2,8 +2,8 @@
 ## Master Reference for All Deployments & Architecture
 
 **Project:** Gemini Live Avatar - Voice-to-voice AI conversation with animated avatar
-**Last Updated:** 2025-11-20 (Session 2 - Speech-to-Text migration)
-**Status:** Production-ready, manual deployments
+**Last Updated:** 2025-11-23 (Session 3 - System instruction restructuring & configuration cleanup)
+**Status:** Production-ready, automatic deployments via Cloud Build
 
 ---
 
@@ -148,7 +148,7 @@ gcloud run services describe gemini-avatar-backend --region=us-central1
                            │
 ┌──────────────────────────▼──────────────────────────────────┐
 │              GEMINI API                                      │
-│  Model: gemini-2.5-flash-native-audio-preview-09-2025       │
+│  Model: models/gemini-2.5-flash-native-audio-preview-09-2025│
 │  - Voice-to-voice conversation                               │
 │  - Native audio processing (AUDIO-only responses)            │
 │  - Built-in output audio transcription for captions         │
@@ -198,12 +198,19 @@ gemini-livewire-avatar/
 │   ├── requirements.txt        # Python dependencies
 │   ├── Dockerfile              # Container definition
 │   ├── backend_config.json    # Backend configuration
+│   ├── whinny_backstory.json  # Character persona and behavior rules
+│   ├── set-list.json          # Performance song list with trivia details
+│   ├── config/
+│   │   ├── prompts.py         # System instruction builder (Google-compliant structure)
+│   │   ├── gemini_config.py   # Live API configuration
+│   │   └── environment.py     # Environment variable loader
 │   └── core/
 │       ├── websocket_handler.py # WebSocket message handling
 │       ├── gemini_client.py     # Gemini API session management
 │       ├── session.py           # Session state management
 │       └── auth.py              # Firebase authentication
 │
+├── .env                        # Environment configuration (API keys, ports)
 ├── cloudbuild.yaml             # Cloud Build configuration
 ├── firebase.json               # Firebase Hosting config
 ├── .firebaserc                 # Firebase project config
@@ -302,13 +309,15 @@ gemini-livewire-avatar/
 - **Managed By:** Cloud Run (auto-updated on deploy)
 
 ### **8. Cloud Build (CI/CD)**
-**Status:** ✅ ACTIVE - Auto-deployment configured and working
+**Status:** ✅ ACTIVE - Auto-deployment configured and working for BACKEND ONLY
 - **Trigger Name:** `avatar-backend-trigger`
 - **Trigger Source:** kootru-repo/avatar-cloud (main branch)
 - **Build Config:** `cloudbuild.yaml`
 - **Service Account:** `580499038386-compute@developer.gserviceaccount.com`
 - **Machine Type:** E2_HIGHCPU_8
-- **Deployment Method:** Automatic on push to main branch
+- **Deployment Method:**
+  - **Backend:** Automatic on push to main branch (via Cloud Build)
+  - **Frontend:** Manual `firebase deploy --only hosting` required
 - **Build Time:** 3-5 minutes
 - **Includes:** All environment variables (FIREBASE_PROJECT_ID) and secrets (GEMINI_API_KEY)
 - **Monitoring:** https://console.cloud.google.com/cloud-build/builds?project=avatar-478217
@@ -627,6 +636,12 @@ gcloud run services describe gemini-avatar-backend \
     "outputSampleRate": 24000,
     "inputSampleRate": 16000,
     "responseModalities": ["AUDIO"]
+  },
+  "initialContext": {
+    "enabled": true,
+    "includeBackstory": false,
+    "includeSetList": true,
+    "_comment": "Optional: Send backstory/setlist as first message. Backstory disabled since system_instruction already includes persona. SetList enabled to provide detailed song trivia."
   }
 }
 ```
@@ -635,6 +650,7 @@ gcloud run services describe gemini-avatar-backend \
 - Gemini model version changes
 - Voice/VAD settings tuning
 - Audio configuration changes
+- Initial context loading preferences (backstory vs setlist)
 
 ---
 
@@ -983,7 +999,7 @@ File Modified?
 │
 ├── frontend/* → Git commit + MANUAL: firebase deploy --only hosting (30-60 sec)
 │
-├── cloudbuild.yaml → (Not used - manual deployments only)
+├── cloudbuild.yaml → Git commit (AUTO-DEPLOYS backend via Cloud Build trigger)
 │
 ├── firebase.json → MANUAL: firebase deploy (affects hosting config)
 │
@@ -994,12 +1010,182 @@ File Modified?
 
 ## Recent Changes & Session History
 
+### **Session 3: System Instruction Restructuring & Configuration Optimization (2025-11-23)**
+
+#### **1. System Instruction Restructuring (Google Best Practices)**
+
+**Problem:** System instructions didn't follow Google's official recommended structure for Live API.
+
+**Solution:** Complete rewrite of `backend/config/prompts.py::create_persona_instructions()` to follow Google's 5-part structure:
+
+1. **Agent Persona** - Character identity, personality, world details
+2. **Conversational Flow** - One-time setup + ongoing conversation loop
+3. **Tool Specifications** - When/how to use function calling (dance, goodbye modes)
+4. **Guardrails** - Explicit examples with ❌ DON'T patterns and deflection responses
+5. **Detailed Behavioral Traits** - Fine-tuned personality characteristics
+
+**Reference:** https://docs.cloud.google.com/vertex-ai/generative-ai/docs/live-api/best-practices
+
+**Key Improvements:**
+- Tool invocation rules now in system_instruction (not just backstory JSON)
+- Explicit numbered steps for conversational flow
+- Guardrails with example user questions and expected deflection responses
+- Clear separation of concerns matching Google's pattern
+
+**Files Changed:**
+- `backend/config/prompts.py` - Complete restructure (lines 40-206)
+
+---
+
+#### **2. Context Loading Optimization (Eliminated Redundancy)**
+
+**Problem:** Persona sent TWICE - once in system_instruction, once as first message (redundant)
+
+**Solution:** Renamed and restructured context configuration:
+
+**Before:**
+```json
+{
+  "kvCache": {
+    "enabled": true,
+    "preloadBackstory": true,  // Redundant!
+    "preloadSetList": true
+  }
+}
+```
+
+**After:**
+```json
+{
+  "initialContext": {
+    "enabled": true,
+    "includeBackstory": false,  // Disabled (already in system_instruction)
+    "includeSetList": true,      // Enabled (provides song trivia details)
+    "_comment": "Live API does NOT support context caching"
+  }
+}
+```
+
+**Rationale:**
+- Google Live API does NOT support context caching (per official docs)
+- System instruction is the recommended place for persona (Google best practice)
+- Set list provides detailed song information NOT in system instruction (no redundancy)
+- Backstory disabled to eliminate duplicate persona loading
+
+**Files Changed:**
+- `backend/backend_config.json` - Renamed kvCache → initialContext
+- `backend/config/prompts.py` - Renamed functions and added clarifying comments
+- `backend/core/websocket_handler.py` - Updated import and usage
+
+---
+
+#### **3. Environment Configuration Cleanup**
+
+**Problem:** `.env` file contained many unused variables from Vertex AI mode
+
+**Before (71 lines):**
+- Vertex AI variables (PROJECT_ID, REGION, SERVICE_ACCOUNT_KEY_PATH)
+- MODEL variable (overridden by config JSON)
+- VOICE variable (ignored, loaded from config)
+- FRONTEND_PORT (unused)
+- AVATAR_BUCKET_NAME (unused)
+
+**After (29 lines - 59% reduction):**
+```bash
+# REQUIRED
+GEMINI_API_KEY=...
+
+# OPTIONAL (has defaults)
+BACKEND_PORT=8080
+BACKEND_HOST=0.0.0.0
+DEBUG=false
+
+# IMPORTANT (for production CORS)
+FIREBASE_PROJECT_ID=avatar-478217
+ALLOWED_ORIGINS=...
+ALLOW_NO_ORIGIN=true
+```
+
+**Result:** Clean, focused `.env` with only actively-used variables
+
+**Files Changed:**
+- `.env` - Removed all unused Vertex AI and legacy variables
+
+---
+
+#### **4. Configuration File Documentation**
+
+**Added Documentation For:**
+1. **set-list.json** - Performance song list with artist, year, album details (40+ songs)
+2. **whinny_backstory.json** - Character persona, personality influences, reaction rules
+3. **initialContext configuration** - When to enable backstory vs setlist loading
+4. **System instruction structure** - How persona is built from backstory JSON
+
+**Key Points:**
+- Set list provides music trivia capability (artists, years, albums, band members)
+- Backstory defines character personality and behavioral rules
+- Initial context message now optional and non-redundant
+- System instruction follows Google's recommended ordering
+
+---
+
+#### **5. Model Name Clarification**
+
+**Correct Model Name Format:**
+```
+models/gemini-2.5-flash-native-audio-preview-09-2025
+```
+
+**Critical:** The `models/` prefix is REQUIRED for Google AI Developer API (per official SDK)
+
+**Where Used:**
+- `frontend/frontend_config.json` → `api.model`
+- `backend/backend_config.json` → `api.model`
+- `backend/core/gemini_client.py` → Model initialization
+
+**Note:** Environment variable MODEL is overridden by config files (by design)
+
+---
+
+#### **6. Function Calling: Goodbye Mode**
+
+**Added Documentation:** Goodbye mode parallels dance mode pattern
+
+**Function:** `trigger_goodbye_mode()`
+- **Triggers:** "goodbye", "bye", "see you later", "farewell", "I'm leaving"
+- **Action:** Plays farewell animation (see-ya.webm, 5.084s)
+- **Voice:** Gemini says exactly "See you later!" while calling function
+- **Media:** `frontend/media/video/see-ya.webm`
+
+**Implementation Files:**
+- `backend/config/gemini_config.py` - Function definition (lines 107-114)
+- `backend/whinny_backstory.json` - Trigger rules (lines 75-79)
+- `backend/core/websocket_handler.py` - Same tool handler as dance mode
+- `frontend/app.js` - Goodbye mode handler
+- `frontend/frontend_config.json` - Goodbye mode configuration
+
+---
+
+#### **Summary of Changes**
+
+| Change | Impact | Reason |
+|--------|--------|--------|
+| System instruction restructure | High | Follows Google best practices |
+| Renamed kvCache → initialContext | Medium | Eliminates confusion (no caching on Live API) |
+| Disabled backstory in context | High | Eliminates redundancy with system_instruction |
+| Enabled setlist in context | High | Provides song trivia without redundancy |
+| Cleaned .env file | Medium | Removes unused variables |
+| Fixed model name format | Low | Clarifies correct `models/` prefix usage |
+| Documented goodbye mode | Medium | Complete function calling documentation |
+
+---
+
 ### **Session 2: Gemini 2.5 Native Audio Setup & UI Improvements (2025-11-20)**
 
 #### **1. Gemini 2.5 Native Audio Implementation**
 
 **Architecture:**
-- **Model:** `gemini-2.5-flash-native-audio-preview-09-2025`
+- **Model:** `models/gemini-2.5-flash-native-audio-preview-09-2025`
 - **Response Modality:** AUDIO only (native audio generation)
 - **Captions:** Gemini's built-in `output_audio_transcription` feature
 - **No external STT:** System does not use Google Cloud Speech-to-Text API or Whisper
@@ -1111,43 +1297,56 @@ firebase deploy --only hosting
 
 **What Claude Needs to Know:**
 
-1. **Backend changes** (Python code in `backend/`) require manual deployment: `cd backend && gcloud run deploy gemini-avatar-backend --source . --region=us-central1`
+1. **Backend changes** (Python code in `backend/`) have TWO options:
+   - **Automatic:** Git commit + push to main → Cloud Build auto-deploys (3-5 min)
+   - **Manual:** `cd backend && gcloud run deploy gemini-avatar-backend --source . --region=us-central1`
 2. **Frontend changes** (HTML/JS in `frontend/`) require manual `firebase deploy --only hosting`
-3. **Always commit to git first** for version control, then deploy manually
+3. **Always commit to git first** for version control
 4. **Backend URL:** https://gemini-avatar-backend-580499038386.us-central1.run.app
 5. **Frontend URL:** https://avatar-478217.web.app
 6. **Project ID:** avatar-478217
 7. **GitHub Repo:** https://github.com/kootru-repo/avatar-cloud
-8. **Auto-deployment:** NOT currently configured (all deployments are manual)
-9. **Audio Model:** Gemini 2.5 Flash Native Audio (AUDIO-only responses, built-in caption transcription)
+8. **Auto-deployment:** ✅ ACTIVE for backend via Cloud Build trigger (frontend requires manual deploy)
+9. **Audio Model:** `models/gemini-2.5-flash-native-audio-preview-09-2025` (AUDIO-only responses, built-in caption transcription)
 10. **Required Environment Variables:** `BACKEND_HOST`, `BACKEND_PORT`, `DEBUG`, `REQUIRE_AUTH`, `FIREBASE_PROJECT_ID`
 11. **Captions:** Gemini's native `output_audio_transcription` feature (no external STT required)
+12. **System Instructions:** Follows Google's 5-part Live API structure (Persona → Flow → Tools → Guardrails → Details)
+13. **Context Loading:** `initialContext` with setlist enabled, backstory disabled (no redundancy with system_instruction)
+14. **Configuration Files:** `backend_config.json` (backend), `frontend_config.json` (frontend), `.env` (environment), `whinny_backstory.json` (persona), `set-list.json` (song trivia)
 
 **Deployment Workflow:**
 ```bash
-# For backend changes:
+# For backend changes (AUTOMATIC via Cloud Build):
 git add backend/
 git commit -m "Fix: description"
 git push origin main
+# Cloud Build automatically deploys to Cloud Run (3-5 minutes)
+# Monitor: https://console.cloud.google.com/cloud-build/builds?project=avatar-478217
+
+# For backend changes (MANUAL - if Cloud Build unavailable):
 cd backend
-gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 \
+  --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 \
+  --memory 512Mi --cpu 1 \
+  --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 \
+  --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest \
+  --port 8080
 # Takes 3-5 minutes
 
-# For frontend changes:
+# For frontend changes (ALWAYS MANUAL):
 git add frontend/
 git commit -m "Fix: description"
 git push origin main
 firebase deploy --only hosting
 # Takes 30-60 seconds
 
-# For both:
+# For both (backend auto-deploys, frontend manual):
 git add .
 git commit -m "Fix: description"
 git push origin main
-cd backend
-gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
-cd ..
+# Backend deploys automatically via Cloud Build
 firebase deploy --only hosting
+# Frontend requires manual deploy
 ```
 
 ---
