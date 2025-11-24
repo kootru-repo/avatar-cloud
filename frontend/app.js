@@ -7,8 +7,8 @@ import { AudioRecorder } from './audio-recorder.js';
 import { AudioPlayer } from './audio-player.js';
 
 /**
- * Single-Line Caption Manager
- * Simple instant display (FCC/WCAG compliant)
+ * Chunked Caption Manager
+ * Displays 3-5 words at a time with readable duration (FCC/WCAG compliant)
  */
 class RollUpCaptionManager {
     constructor(config, ccOverlay) {
@@ -18,20 +18,36 @@ class RollUpCaptionManager {
         // Configuration
         this.interimOpacity = config.interimOpacity || 0.85;
         this.finalOpacity = config.finalOpacity || 1.0;
+        this.chunkSize = config.chunkSize || 4;  // 3-5 words per chunk (default 4)
+        this.msPerWord = config.msPerWord || 400;  // 400ms per word = 150 WPM reading speed
+        this.minDisplayMs = config.minDisplayMs || 1200;  // Minimum 1.2 seconds per chunk
+
+        // State
+        this.chunks = [];
+        this.currentChunkIndex = 0;
+        this.displayTimeout = null;
+        this.isFinal = false;
     }
 
-    // Add caption text (interim or final) - instant display
+    // Add caption text - break into chunks and display sequentially
     addCaption(text, isFinal = false) {
         if (!text || text.trim().length === 0) return;
 
-        // Display text instantly on line 1 only
-        if (this.line1El) {
-            this.line1El.textContent = text;
+        this.isFinal = isFinal;
 
-            // Visual indication: interim (85%) vs final (100%)
-            const opacity = isFinal ? this.finalOpacity : this.interimOpacity;
-            this.line1El.style.opacity = opacity;
+        // Break text into words
+        const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+
+        // Create chunks of 3-5 words
+        this.chunks = [];
+        for (let i = 0; i < words.length; i += this.chunkSize) {
+            const chunk = words.slice(i, i + this.chunkSize).join(' ');
+            this.chunks.push(chunk);
         }
+
+        // Start displaying chunks from the beginning
+        this.currentChunkIndex = 0;
+        this.displayNextChunk();
 
         // Show overlay
         if (this.ccOverlay) {
@@ -39,7 +55,57 @@ class RollUpCaptionManager {
         }
     }
 
+    // Display next chunk with appropriate duration
+    displayNextChunk() {
+        // Clear any existing timeout
+        if (this.displayTimeout) {
+            clearTimeout(this.displayTimeout);
+            this.displayTimeout = null;
+        }
+
+        // Check if we have chunks to display
+        if (this.currentChunkIndex >= this.chunks.length) {
+            return;
+        }
+
+        // Get current chunk
+        const chunk = this.chunks[this.currentChunkIndex];
+        const wordCount = chunk.split(/\s+/).length;
+
+        // Display chunk
+        if (this.line1El) {
+            this.line1El.textContent = chunk;
+
+            // Visual indication: interim (85%) vs final (100%)
+            const opacity = this.isFinal ? this.finalOpacity : this.interimOpacity;
+            this.line1El.style.opacity = opacity;
+        }
+
+        // Calculate display duration based on word count
+        // Formula: max(minDisplayMs, wordCount * msPerWord)
+        const displayDuration = Math.max(this.minDisplayMs, wordCount * this.msPerWord);
+
+        // Move to next chunk
+        this.currentChunkIndex++;
+
+        // Schedule next chunk (if there is one)
+        if (this.currentChunkIndex < this.chunks.length) {
+            this.displayTimeout = setTimeout(() => this.displayNextChunk(), displayDuration);
+        }
+    }
+
     clear() {
+        // Clear timeout
+        if (this.displayTimeout) {
+            clearTimeout(this.displayTimeout);
+            this.displayTimeout = null;
+        }
+
+        // Reset state
+        this.chunks = [];
+        this.currentChunkIndex = 0;
+        this.isFinal = false;
+
         // Clear display
         if (this.line1El) this.line1El.textContent = '';
         if (this.ccOverlay) this.ccOverlay.classList.remove('active');

@@ -250,16 +250,24 @@
     "safeMarginBottom": "10%",
     "safeMarginHorizontal": "10%",
 
-    "_comment_dimensions": "Sized for single-line instant display",
+    "_comment_dimensions": "Sized for single-line chunked display",
     "width": 820,
     "maxWidthVh": 72,
     "maxWidthVw": 72,
     "padding": 12,
     "borderRadius": 4,
 
-    "_comment_display": "Single-line instant display (no scrolling, no word-by-word)",
-    "displayMode": "instant",
+    "_comment_display": "Chunked display: 3-5 words at a time with readable duration",
+    "displayMode": "chunked",
     "maxLines": 1,
+    "chunkSize": 4,
+    "_comment_chunkSize": "Number of words per chunk (3-5 range, default 4)",
+
+    "_comment_timing": "Reading speed: 400ms per word = 150 WPM, minimum 1.2s per chunk",
+    "msPerWord": 400,
+    "minDisplayMs": 1200,
+    "_comment_msPerWord": "Milliseconds per word (400ms = 150 WPM reading speed)",
+    "_comment_minDisplayMs": "Minimum display duration per chunk (1200ms = 1.2 seconds)",
 
     "_comment_interim": "Visual distinction between interim and final transcriptions",
     "interimOpacity": 0.85,
