@@ -116,39 +116,17 @@ Remember: You're not here to answer general questions. You're here to be Whinny 
 
 
 def load_system_instructions() -> str:
-    """
-    Load complete system instructions with ALL context.
-    No caching - everything in system_instruction field.
-    """
+    """Load system instructions with character persona (NOT the full JSON)."""
     try:
         # Load backstory and create persona instructions
         backstory = load_backstory()
-        if not backstory:
-            logger.warning("No backstory found, using default instructions")
-            return get_default_instructions()
+        if backstory:
+            instructions = create_persona_instructions(backstory)
+            logger.info(f"✅ Persona instructions created ({len(instructions)} chars)")
+            return instructions
 
-        # Create persona summary
-        persona = create_persona_instructions(backstory)
-
-        # Get full context for system instructions
-        backstory_json = get_backstory_for_kv_cache()
-        setlist_json = get_setlist_for_kv_cache()
-
-        # Combine everything into system_instruction
-        instructions = persona
-
-        if backstory_json:
-            instructions += "\n\n" + "="*80 + "\n" + backstory_json
-
-        if setlist_json:
-            instructions += "\n\n" + "="*80 + "\n" + setlist_json
-
-        logger.info(f"✅ Complete system instructions: {len(instructions)} chars")
-        logger.info(f"   - Persona: {len(persona)} chars")
-        logger.info(f"   - Backstory JSON: {len(backstory_json)} chars")
-        logger.info(f"   - Set list JSON: {len(setlist_json)} chars")
-
-        return instructions
+        logger.warning("No backstory found, using default instructions")
+        return get_default_instructions()
 
     except Exception as e:
         logger.error(f"Failed to load system instructions: {e}")

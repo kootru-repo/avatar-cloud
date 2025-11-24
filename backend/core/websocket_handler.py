@@ -649,9 +649,28 @@ async def handle_client(websocket: Any) -> None:
         async with gemini_session_context as gemini_session:
             session.genai_session = gemini_session
 
-            # NO CACHING: All context is in system_instruction field
-            # No need to send messages - Gemini has complete context from session start
-            logger.info("✅ All context loaded via system_instruction (no caching)")
+            # Send backstory/setlist as first message for context
+            kv_cache_text = get_kv_cache_preload()
+            if kv_cache_text:
+                try:
+                    logger.info(f"📝 Sending context as message ({len(kv_cache_text)} chars)")
+                    await asyncio.wait_for(
+                        gemini_session.send(input=kv_cache_text, end_of_turn=True),
+                        timeout=SEND_TIMEOUT_SECONDS
+                    )
+                    logger.info("✅ Context message sent")
+
+                    # Wait for and consume the model's acknowledgment
+                    async for response in gemini_session.receive():
+                        server_content = getattr(response, 'server_content', None)
+                        if server_content and hasattr(server_content, 'turn_complete') and server_content.turn_complete:
+                            logger.info("✅ Context acknowledged")
+                            break
+                        if server_content:
+                            break
+
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to send context: {e}")
 
             # Send ready to client
             await websocket.send(json.dumps({"ready": True}))
