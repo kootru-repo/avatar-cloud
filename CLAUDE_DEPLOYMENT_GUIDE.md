@@ -1008,7 +1008,331 @@ File Modified?
 
 ---
 
+## Backstory & Persona Architecture
+
+### **Overview**
+
+The avatar's personality and behavior are defined by a backstory JSON file that loads into Gemini's system instructions. This architecture ensures consistent character behavior while avoiding redundancy.
+
+### **File Location**
+
+**Primary Backstory:** `backend/whinny_backstory.json`
+**Set List (Song Trivia):** `backend/set-list.json`
+**System Instruction Builder:** `backend/config/prompts.py`
+
+### **How It Works**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  whinny_backstory.json                                       │
+│  - Character identity, personality, world details            │
+│  - Behavioral rules and reaction patterns                    │
+│  - Function calling triggers (dance, goodbye)                │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  backend/config/prompts.py                                   │
+│  create_persona_instructions(backstory_data)                 │
+│  - Transforms JSON into Google's 5-part structure            │
+│  - Builds system_instruction for Gemini                      │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Gemini Live API Session                                     │
+│  system_instruction: {persona instructions}                  │
+│  - Persona loaded ONCE at session start                      │
+│  - No redundant first message needed                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### **Configuration**
+
+```json
+// backend/backend_config.json
+{
+  "initialContext": {
+    "enabled": true,
+    "includeBackstory": false,  // Disabled (already in system_instruction)
+    "includeSetList": true,      // Enabled (provides song trivia details)
+    "_comment": "Live API does NOT support context caching"
+  }
+}
+```
+
+**Why includeBackstory is false:**
+- Backstory is transformed into system_instruction (Google best practice)
+- Sending backstory as first message would be redundant
+- System instruction is the recommended place for persona (per Google docs)
+
+**Why includeSetList is true:**
+- Set list provides detailed song information NOT in system instruction
+- Contains 40+ songs with artist, year, album, band member details
+- Enables music trivia capability without persona redundancy
+
+### **Google's 5-Part System Instruction Structure**
+
+The `create_persona_instructions()` function transforms backstory JSON into:
+
+1. **Agent Persona**
+   - Character identity (Whinny, singing cowgirl mare)
+   - Personality traits, influences
+   - World details (genre: new wave outlaw country)
+
+2. **Conversational Flow**
+   - One-time setup (greeting, context gathering)
+   - Ongoing conversation loop (respond naturally)
+   - Numbered steps for clarity
+
+3. **Tool Specifications**
+   - When/how to use function calling
+   - Dance mode triggers: "dance", "let's dance", etc.
+   - Goodbye mode triggers: "goodbye", "bye", "see you later"
+   - **Critical:** "You MUST continue speaking while calling this function"
+
+4. **Guardrails**
+   - Explicit ❌ DON'T examples
+   - Deflection responses for off-topic questions
+   - Character boundaries (stays in persona)
+
+5. **Detailed Behavioral Traits**
+   - Fine-tuned personality characteristics
+   - Response style, tone, vocabulary
+
+**Reference:** https://docs.cloud.google.com/vertex-ai/generative-ai/docs/live-api/best-practices
+
+### **Backstory JSON Structure**
+
+```json
+// backend/whinny_backstory.json (example structure)
+{
+  "basic_info": {
+    "name": "Whinny",
+    "species": "Singing cowgirl mare",
+    "genre": "New wave outlaw country"
+  },
+  "personality": {
+    "core_traits": ["Energetic", "Playful", "Authentic"],
+    "influences": ["Dolly Parton", "Stevie Nicks", "K.D. Lang"]
+  },
+  "reaction_rules": {
+    "greeting": "Warm and enthusiastic",
+    "compliment": "Gracious and humble",
+    "request_dance": "Trigger dance mode function"
+  },
+  "function_calling": {
+    "dance_triggers": ["dance", "let's dance", "show me some moves"],
+    "goodbye_triggers": ["goodbye", "bye", "see you later", "farewell"]
+  }
+}
+```
+
+### **Set List JSON Structure**
+
+```json
+// backend/set-list.json (example structure)
+{
+  "songs": [
+    {
+      "title": "Jolene",
+      "artist": "Dolly Parton",
+      "year": 1973,
+      "album": "Jolene",
+      "trivia": "Written in one day, inspired by a bank teller"
+    }
+    // ... 40+ songs total
+  ]
+}
+```
+
+### **Key Functions**
+
+#### **backend/config/prompts.py**
+
+```python
+def create_persona_instructions(backstory_data):
+    """
+    Transform backstory JSON into Google's 5-part system instruction.
+
+    Returns: String containing formatted system instructions
+    """
+    # Part 1: Agent Persona
+    # Part 2: Conversational Flow
+    # Part 3: Tool Specifications
+    # Part 4: Guardrails
+    # Part 5: Detailed Behavioral Traits
+    pass
+
+def load_initial_context_message(config):
+    """
+    Optionally load backstory/setlist as first message.
+
+    IMPORTANT: Only loads setlist by default (backstory in system_instruction).
+    """
+    if config.get("includeSetList", True):
+        return load_set_list()
+    return None
+```
+
+#### **backend/core/websocket_handler.py**
+
+```python
+# System instruction loaded at session start
+system_instruction = create_persona_instructions(backstory_data)
+
+# Optional initial context message (setlist only)
+if config["initialContext"]["includeSetList"]:
+    initial_message = load_initial_context_message(config)
+    # Send to Gemini as first message
+```
+
+### **Deployment Considerations**
+
+**Backend Files:**
+- Changes to `whinny_backstory.json` or `set-list.json` require backend deployment
+- Changes to `prompts.py` require backend deployment
+- Backend deployment: `cd backend && gcloud run deploy gemini-avatar-backend --source . --region=us-central1`
+- Or use automatic Cloud Build trigger (git push → auto-deploy)
+
+**No Frontend Changes Needed:**
+- Backstory and set list are backend-only
+- Frontend receives Gemini's responses (already includes persona)
+
+### **Testing Persona Changes**
+
+1. **Modify backstory:** Edit `backend/whinny_backstory.json`
+2. **Commit:** `git add backend/ && git commit -m "Update backstory"`
+3. **Push:** `git push origin main` (triggers auto-deploy if Cloud Build enabled)
+4. **Or deploy manually:** `cd backend && gcloud run deploy gemini-avatar-backend --source . --region=us-central1`
+5. **Test:** Visit https://avatar-478217.web.app and start conversation
+6. **Verify:** Avatar should reflect personality changes
+
+### **Common Pitfalls**
+
+❌ **DON'T:** Send backstory as both system_instruction AND first message (redundant)
+✅ **DO:** Backstory in system_instruction, setlist as first message (if needed)
+
+❌ **DON'T:** Put song trivia in system_instruction (too verbose)
+✅ **DO:** Keep system_instruction for persona, setlist for detailed data
+
+❌ **DON'T:** Forget to redeploy backend after backstory changes
+✅ **DO:** Always deploy backend when modifying JSON files
+
+### **Architecture Benefits**
+
+1. **Single Source of Truth:** Backstory JSON defines all character behavior
+2. **No Redundancy:** Persona in system_instruction only (not duplicated)
+3. **Separation of Concerns:** Persona vs data (backstory vs setlist)
+4. **Easy Updates:** Edit JSON, redeploy backend, done
+5. **Google Compliant:** Follows official Live API best practices
+
+---
+
 ## Recent Changes & Session History
+
+### **Session 4: Closed Captions Redesign - FCC/WCAG AAA Compliance (2025-11-24)**
+
+#### **1. Complete Closed Captions Redesign**
+
+**Problem:** Existing captions used monospace font, white text, paint-on style below console (non-standard for broadcast).
+
+**Solution:** Complete redesign following FCC/WCAG AAA industry standards:
+
+**Visual Design:**
+- **Color:** Yellow (#FFFF00) on black background (15:1 contrast, exceeds WCAG AAA 7:1)
+- **Font:** Proportional sans-serif (Roboto) - 13-20% faster reading than monospace
+- **Font Weight:** 500 (medium) for better legibility
+- **Background:** 80% opacity black (reduced from 85% for less video obstruction)
+- **Text Shadow:** Enhanced depth (1px 1px 2px + 0 0 4px)
+
+**Positioning:**
+- **Location:** Inside video frame (not below console)
+- **Safe Zones:** 10% margins from all edges (broadcast standard)
+- **Z-Index:** 5 (above videos, below curtain)
+
+**Display Method:**
+- **Style:** Single-line instant display (no scrolling, no word-by-word animation)
+- **Behavior:** Full sentence appears immediately
+- **Opacity:** Interim 85%, Final 100%
+
+**Implementation:**
+```javascript
+// frontend/app.js (lines 9-47)
+class RollUpCaptionManager {
+    constructor(config, ccOverlay) {
+        this.line1El = document.getElementById('ccLine1');
+        this.ccOverlay = ccOverlay;
+        this.interimOpacity = config.interimOpacity || 0.85;
+        this.finalOpacity = config.finalOpacity || 1.0;
+    }
+
+    addCaption(text, isFinal = false) {
+        if (!text || text.trim().length === 0) return;
+
+        // Display text instantly on line 1 only
+        if (this.line1El) {
+            this.line1El.textContent = text;
+            const opacity = isFinal ? this.finalOpacity : this.interimOpacity;
+            this.line1El.style.opacity = opacity;
+        }
+
+        if (this.ccOverlay) {
+            this.ccOverlay.classList.add('active');
+        }
+    }
+
+    clear() {
+        if (this.line1El) this.line1El.textContent = '';
+        if (this.ccOverlay) this.ccOverlay.classList.remove('active');
+    }
+}
+```
+
+**Configuration:**
+```json
+// frontend/frontend_config.json (lines 234-272)
+"closedCaptions": {
+  "fontFamily": "'Roboto', 'Helvetica Neue', Arial, sans-serif",
+  "fontSize": 26,
+  "fontWeight": 500,
+  "textColor": "#FFFF00",
+  "backgroundColor": "rgba(0, 0, 0, 0.8)",
+  "position": "inVideo",
+  "safeMarginBottom": "10%",
+  "safeMarginHorizontal": "10%",
+  "displayMode": "instant",
+  "maxLines": 1,
+  "interimOpacity": 0.85,
+  "finalOpacity": 1.0,
+  "contrastRatio": "AAA"
+}
+```
+
+**Files Changed:**
+- `frontend/app.js` - New simplified RollUpCaptionManager class
+- `frontend/index.html` - Moved CC inside video wrapper, updated CSS
+- `frontend/frontend_config.json` - Industry-standard configuration
+
+**User Feedback Iterations:**
+1. **Initial:** 2-line roll-up with word-by-word scrolling at 170 WPM
+2. **Final:** Single-line instant display (user preference: no scrolling)
+
+**Git Commits:**
+- `291a81d` - Initial FCC/WCAG redesign with roll-up
+- `a030f4d` - Simplified to single-line instant display
+
+**Standards Compliance:**
+
+| Standard | Requirement | Implementation | Status |
+|----------|-------------|----------------|--------|
+| **WCAG AAA Contrast** | 7:1 minimum | 15:1 (yellow on black) | ✅ |
+| **Safe Zones** | 10% margins | 10% all edges | ✅ |
+| **Font Type** | Proportional | Roboto sans-serif | ✅ |
+| **Positioning** | Inside video | Bottom 10%, centered | ✅ |
+| **Legibility** | High contrast | Yellow + shadows | ✅ |
+
+---
 
 ### **Session 3: System Instruction Restructuring & Configuration Optimization (2025-11-23)**
 
