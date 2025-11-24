@@ -1002,77 +1002,96 @@
             flex-shrink: 0;
         }
 
-        /* Compact Realistic Amplifier Badge */
+        /* 3D Amplifier Badge with Analog Dials */
         .promo-badge {
             position: absolute;
             bottom: 12px;
             left: 12px;
             z-index: 1000;
-            width: 140px;
+            width: 150px;
 
-            /* Black tolex covering (amp exterior) */
+            /* 3D Black tolex covering with lighting */
             background:
-                linear-gradient(135deg,
-                    rgba(15, 15, 15, 0.98) 0%,
-                    rgba(25, 25, 25, 0.98) 100%
+                linear-gradient(145deg,
+                    rgba(25, 25, 28, 0.98) 0%,
+                    rgba(12, 12, 15, 0.98) 50%,
+                    rgba(20, 20, 23, 0.98) 100%
                 );
 
-            /* Metal corner protectors and edge binding */
-            border: 2px solid rgba(90, 90, 95, 0.95);
-            border-radius: 3px;
+            /* 3D Metal corner protectors with depth */
+            border: 3px solid rgba(90, 90, 95, 0.95);
+            border-radius: 4px;
 
+            /* Enhanced 3D depth shadows and highlights */
             box-shadow:
-                /* Depth shadow */
-                0 4px 12px rgba(0, 0, 0, 0.9),
-                0 2px 6px rgba(0, 0, 0, 0.8),
-                /* Metal edge highlights */
-                inset 0 1px 0 rgba(120, 120, 125, 0.3),
-                inset 1px 0 0 rgba(120, 120, 125, 0.2),
-                inset -1px 0 0 rgba(0, 0, 0, 0.5),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+                /* Deep 3D shadow */
+                0 8px 20px rgba(0, 0, 0, 0.95),
+                0 4px 10px rgba(0, 0, 0, 0.9),
+                0 2px 6px rgba(0, 0, 0, 0.85),
+                /* Top highlight (light source from top-left) */
+                inset 2px 2px 4px rgba(255, 255, 255, 0.06),
+                inset -2px -2px 4px rgba(0, 0, 0, 0.7),
+                /* Edge bevels */
+                inset 0 2px 0 rgba(140, 140, 145, 0.3),
+                inset 2px 0 0 rgba(140, 140, 145, 0.25),
+                inset -2px 0 0 rgba(0, 0, 0, 0.6),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.6);
 
-            padding: 10px 12px 8px 12px;
-            backdrop-filter: blur(8px);
-            transition: all 0.2s ease;
+            padding: 12px 14px 10px 14px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            transform: perspective(1000px) rotateX(2deg);
+            transform-style: preserve-3d;
         }
 
         .promo-badge:hover {
-            transform: translateY(-1px);
+            transform: perspective(1000px) rotateX(0deg) translateY(-2px);
             box-shadow:
-                0 6px 16px rgba(0, 0, 0, 0.95),
-                0 3px 8px rgba(0, 0, 0, 0.85),
-                inset 0 1px 0 rgba(120, 120, 125, 0.4),
-                inset 1px 0 0 rgba(120, 120, 125, 0.3),
-                0 0 12px rgba(251, 188, 4, 0.15);
+                /* Amplified 3D shadow on hover */
+                0 12px 30px rgba(0, 0, 0, 0.98),
+                0 6px 16px rgba(0, 0, 0, 0.92),
+                0 3px 8px rgba(0, 0, 0, 0.88),
+                /* Stronger highlights */
+                inset 2px 2px 5px rgba(255, 255, 255, 0.08),
+                inset -2px -2px 5px rgba(0, 0, 0, 0.75),
+                inset 0 2px 0 rgba(140, 140, 145, 0.4),
+                inset 2px 0 0 rgba(140, 140, 145, 0.3),
+                /* Subtle gold glow */
+                0 0 16px rgba(251, 188, 4, 0.2);
         }
 
-        /* Metal corner screws */
+        /* 3D Metal corner screws with Phillips head */
         .promo-badge::before,
         .promo-badge::after {
             content: '';
             position: absolute;
-            width: 4px;
-            height: 4px;
-            background: radial-gradient(circle,
-                rgba(140, 140, 145, 0.9) 0%,
-                rgba(70, 70, 75, 0.9) 60%,
-                rgba(40, 40, 45, 0.9) 100%
+            width: 5px;
+            height: 5px;
+            background: radial-gradient(circle at 30% 30%,
+                rgba(160, 160, 165, 0.95) 0%,
+                rgba(100, 100, 105, 0.92) 40%,
+                rgba(60, 60, 65, 0.9) 70%,
+                rgba(35, 35, 40, 0.9) 100%
             );
             border-radius: 50%;
             box-shadow:
-                inset 0 0.5px 1px rgba(200, 200, 205, 0.4),
-                inset 0 -0.5px 1px rgba(0, 0, 0, 0.8);
+                /* 3D depth */
+                0 1px 2px rgba(0, 0, 0, 0.9),
+                0 0.5px 1px rgba(0, 0, 0, 0.8),
+                /* Inset Phillips head slot */
+                inset 0.5px 0.5px 1px rgba(200, 200, 210, 0.5),
+                inset -0.5px -0.5px 1.5px rgba(0, 0, 0, 0.9);
             z-index: 10;
         }
 
         .promo-badge::before {
-            top: 5px;
-            left: 5px;
+            top: 6px;
+            left: 6px;
         }
 
         .promo-badge::after {
-            top: 5px;
-            right: 5px;
+            top: 6px;
+            right: 6px;
         }
 
         .promo-content {
@@ -1083,51 +1102,65 @@
             align-items: center;
         }
 
-        /* Bottom corner screws */
+        /* 3D Bottom corner screws */
         .promo-content::before,
         .promo-content::after {
             content: '';
             position: absolute;
-            width: 4px;
-            height: 4px;
-            background: radial-gradient(circle,
-                rgba(140, 140, 145, 0.9) 0%,
-                rgba(70, 70, 75, 0.9) 60%,
-                rgba(40, 40, 45, 0.9) 100%
+            width: 5px;
+            height: 5px;
+            background: radial-gradient(circle at 30% 30%,
+                rgba(160, 160, 165, 0.95) 0%,
+                rgba(100, 100, 105, 0.92) 40%,
+                rgba(60, 60, 65, 0.9) 70%,
+                rgba(35, 35, 40, 0.9) 100%
             );
             border-radius: 50%;
             box-shadow:
-                inset 0 0.5px 1px rgba(200, 200, 205, 0.4),
-                inset 0 -0.5px 1px rgba(0, 0, 0, 0.8);
-            bottom: -3px;
+                0 1px 2px rgba(0, 0, 0, 0.9),
+                0 0.5px 1px rgba(0, 0, 0, 0.8),
+                inset 0.5px 0.5px 1px rgba(200, 200, 210, 0.5),
+                inset -0.5px -0.5px 1.5px rgba(0, 0, 0, 0.9);
+            bottom: -4px;
         }
 
         .promo-content::before {
-            left: -7px;
+            left: -8px;
         }
 
         .promo-content::after {
-            right: -7px;
+            right: -8px;
         }
 
-        /* Amp logo nameplate - brushed aluminum */
+        /* 3D Amp logo nameplate - brushed aluminum with depth */
         .amp-nameplate {
             width: 100%;
-            background: linear-gradient(180deg,
-                rgba(180, 180, 185, 0.15) 0%,
-                rgba(140, 140, 145, 0.12) 50%,
-                rgba(100, 100, 105, 0.15) 100%
+            background: linear-gradient(165deg,
+                rgba(200, 200, 205, 0.18) 0%,
+                rgba(160, 160, 165, 0.14) 30%,
+                rgba(120, 120, 125, 0.12) 60%,
+                rgba(90, 90, 95, 0.16) 100%
             );
-            border: 1px solid rgba(160, 160, 165, 0.25);
-            border-radius: 2px;
-            padding: 4px 6px;
+            border: 1px solid rgba(180, 180, 185, 0.3);
+            border-radius: 3px;
+            padding: 5px 7px;
             text-align: center;
+
+            /* 3D raised plate effect */
             box-shadow:
-                inset 0 1px 0 rgba(200, 200, 205, 0.15),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.4),
-                0 1px 2px rgba(0, 0, 0, 0.5);
+                /* Plate depth */
+                0 2px 4px rgba(0, 0, 0, 0.7),
+                0 1px 2px rgba(0, 0, 0, 0.6),
+                /* Top bevel highlight */
+                inset 0 2px 1px rgba(220, 220, 225, 0.2),
+                inset 1px 0 1px rgba(200, 200, 205, 0.15),
+                /* Bottom bevel shadow */
+                inset 0 -2px 2px rgba(0, 0, 0, 0.5),
+                inset -1px 0 1px rgba(0, 0, 0, 0.4);
+
             position: relative;
             overflow: hidden;
+            transform: translateZ(2px);
         }
 
         /* Brushed metal texture on nameplate */
@@ -1260,6 +1293,118 @@
             filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9))
                     drop-shadow(0 0 6px rgba(66, 133, 244, 0.5))
                     drop-shadow(0 0 8px rgba(155, 89, 182, 0.3));
+        }
+
+        /* 3D Analog Control Dials Container */
+        .amp-dials {
+            display: flex;
+            justify-content: space-around;
+            gap: 8px;
+            padding: 6px 0;
+            margin: 4px 0;
+        }
+
+        /* Individual 3D Dial */
+        .amp-dial {
+            position: relative;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* 3D Dial knob body */
+        .dial-knob {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+
+            /* 3D metallic knob with lighting */
+            background: radial-gradient(circle at 35% 35%,
+                rgba(140, 140, 145, 0.95) 0%,
+                rgba(100, 100, 105, 0.9) 30%,
+                rgba(70, 70, 75, 0.88) 60%,
+                rgba(40, 40, 45, 0.85) 100%
+            );
+
+            /* 3D depth and highlights */
+            box-shadow:
+                /* Outer depth shadow */
+                0 3px 6px rgba(0, 0, 0, 0.9),
+                0 1px 3px rgba(0, 0, 0, 0.8),
+                /* Top-left highlight (light source) */
+                inset 2px 2px 3px rgba(200, 200, 210, 0.4),
+                inset 1px 1px 2px rgba(180, 180, 190, 0.3),
+                /* Bottom-right shadow (depth) */
+                inset -2px -2px 4px rgba(0, 0, 0, 0.8),
+                inset -1px -1px 2px rgba(0, 0, 0, 0.7);
+
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            transform: translateZ(3px);
+        }
+
+        .dial-knob:hover {
+            box-shadow:
+                0 4px 8px rgba(0, 0, 0, 0.95),
+                0 2px 4px rgba(0, 0, 0, 0.85),
+                inset 2px 2px 4px rgba(220, 220, 230, 0.5),
+                inset 1px 1px 2px rgba(200, 200, 210, 0.4),
+                inset -2px -2px 5px rgba(0, 0, 0, 0.85),
+                inset -1px -1px 3px rgba(0, 0, 0, 0.75);
+            transform: translateZ(4px) scale(1.05);
+        }
+
+        /* Dial indicator line/pointer */
+        .dial-knob::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 6px;
+            background: linear-gradient(180deg,
+                rgba(251, 188, 4, 0.95) 0%,
+                rgba(200, 150, 10, 0.9) 100%
+            );
+            border-radius: 1px;
+            box-shadow:
+                0 0 3px rgba(251, 188, 4, 0.6),
+                inset 0 1px 0 rgba(255, 220, 100, 0.5);
+        }
+
+        /* Dial center cap/button */
+        .dial-knob::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle at 40% 40%,
+                rgba(50, 50, 55, 0.9) 0%,
+                rgba(30, 30, 35, 0.92) 50%,
+                rgba(15, 15, 20, 0.95) 100%
+            );
+            border-radius: 50%;
+            box-shadow:
+                inset 0 1px 2px rgba(0, 0, 0, 0.9),
+                inset 0 -0.5px 1px rgba(100, 100, 105, 0.3),
+                0 0.5px 1px rgba(150, 150, 155, 0.3);
+        }
+
+        /* Dial labels (Volume, Tone, Gain) */
+        .dial-label {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 6px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: rgba(180, 180, 185, 0.7);
+            text-align: center;
+            margin-top: 2px;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
         }
 
         /* Responsive Design */
@@ -1410,13 +1555,30 @@
             </div>
         </div>
 
-        <!-- Compact Amplifier Badge - Bottom Left -->
+        <!-- 3D Amplifier Badge with Analog Dials - Bottom Left -->
         <div class="promo-badge">
             <div class="promo-content">
                 <div class="amp-nameplate">
                     <a href="https://kootru.com" target="_blank" rel="noopener noreferrer" class="kootru">Kootru.com</a>
                 </div>
                 <div class="amp-divider"></div>
+
+                <!-- Analog Control Dials -->
+                <div class="amp-dials">
+                    <div class="amp-dial">
+                        <div class="dial-knob"></div>
+                        <div class="dial-label">Vol</div>
+                    </div>
+                    <div class="amp-dial">
+                        <div class="dial-knob"></div>
+                        <div class="dial-label">Tone</div>
+                    </div>
+                    <div class="amp-dial">
+                        <div class="dial-knob"></div>
+                        <div class="dial-label">Gain</div>
+                    </div>
+                </div>
+
                 <div class="promo-line">
                     <div class="powered-label">Powered by</div>
                     <span class="gemini-gradient">GEMINI</span>
