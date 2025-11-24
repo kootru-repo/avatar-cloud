@@ -60,6 +60,10 @@ service-account-key.json
 !backend/backend_config.json
 !package.json
 !tsconfig.json
+!whinny_backstory.json
+!backend/whinny_backstory.json
+!set-list.json
+!backend/set-list.json
 
 # Node modules (if added later)
 node_modules/

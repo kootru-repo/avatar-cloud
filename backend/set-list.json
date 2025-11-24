@@ -1,0 +1,688 @@
+{
+  "set_list": {
+    "set1": [
+      {
+        "title": "Light Em Up",
+        "artist": "Fall Out Boy",
+        "year": 2015,
+        "album": "American Beauty/American Psycho",
+        "band_members": [
+          "Patrick Stump (vocals, guitar)",
+          "Pete Wentz (bass)",
+          "Joe Trohman (guitar)",
+          "Andy Hurley (drums)"
+        ],
+        "position": "1.1",
+        "set_number": 1,
+        "position_in_set": 1,
+        "global_position": 1
+      },
+      {
+        "title": "Long Train Runnin'",
+        "artist": "The Doobie Brothers",
+        "year": 1973,
+        "album": "The Captain and Me",
+        "band_members": [
+          "Tom Johnston (vocals, guitar)",
+          "Patrick Simmons (guitar, vocals)",
+          "Tiran Porter (bass)",
+          "John Hartman (drums)",
+          "Michael Hossack (drums)",
+          "Bill Payne (keyboards)"
+        ],
+        "position": "1.2",
+        "set_number": 1,
+        "position_in_set": 2,
+        "global_position": 2
+      },
+      {
+        "title": "Hold The Line",
+        "artist": "Toto",
+        "year": 1978,
+        "album": "Toto",
+        "band_members": [
+          "Bobby Kimball (vocals)",
+          "Steve Lukather (guitar, vocals)",
+          "David Paich (keyboards, vocals)",
+          "Steve Porcaro (keyboards)",
+          "David Hungate (bass)",
+          "Jeff Porcaro (drums)"
+        ],
+        "position": "1.3",
+        "set_number": 1,
+        "position_in_set": 3,
+        "global_position": 3
+      },
+      {
+        "title": "Shine",
+        "artist": "Collective Soul",
+        "year": 1993,
+        "album": "Hints Allegations and Things Left Unsaid",
+        "band_members": [
+          "Ed Roland (vocals, guitar)",
+          "Dean Roland (guitar)",
+          "Will Turpin (bass)",
+          "Shane Evans (drums)",
+          "Jesse Triplett (guitar)"
+        ],
+        "position": "1.4",
+        "set_number": 1,
+        "position_in_set": 4,
+        "global_position": 4
+      },
+      {
+        "title": "Come Together",
+        "artist": "The Beatles",
+        "year": 1969,
+        "album": "Abbey Road",
+        "band_members": [
+          "John Lennon (vocals, guitar)",
+          "Paul McCartney (bass, vocals)",
+          "George Harrison (guitar, vocals)",
+          "Ringo Starr (drums)"
+        ],
+        "position": "1.5",
+        "set_number": 1,
+        "position_in_set": 5,
+        "global_position": 5
+      },
+      {
+        "title": "Power Of Love",
+        "artist": "Huey Lewis and the News",
+        "year": 1985,
+        "album": "Back to the Future Soundtrack",
+        "band_members": [
+          "Huey Lewis (vocals, harmonica)",
+          "Chris Hayes (guitar)",
+          "Sean Hopper (keyboards)",
+          "Johnny Colla (saxophone, guitar)",
+          "Mario Cipollina (bass)",
+          "Bill Gibson (drums)"
+        ],
+        "position": "1.6",
+        "set_number": 1,
+        "position_in_set": 6,
+        "global_position": 6
+      },
+      {
+        "title": "Jump",
+        "artist": "Van Halen",
+        "year": 1984,
+        "album": "1984",
+        "band_members": [
+          "David Lee Roth (vocals)",
+          "Eddie Van Halen (guitar, keyboards)",
+          "Michael Anthony (bass)",
+          "Alex Van Halen (drums)"
+        ],
+        "position": "1.7",
+        "set_number": 1,
+        "position_in_set": 7,
+        "global_position": 7
+      },
+      {
+        "title": "Midnight Rider",
+        "artist": "The Allman Brothers Band",
+        "year": 1970,
+        "album": "Idlewild South",
+        "band_members": [
+          "Gregg Allman (vocals, keyboards)",
+          "Duane Allman (guitar)",
+          "Dickey Betts (guitar)",
+          "Berry Oakley (bass)",
+          "Butch Trucks (drums)",
+          "Jai Johanny Johanson (drums)"
+        ],
+        "position": "1.8",
+        "set_number": 1,
+        "position_in_set": 8,
+        "global_position": 8
+      },
+      {
+        "title": "Smooth",
+        "artist": "Santana featuring Rob Thomas",
+        "year": 1999,
+        "album": "Supernatural",
+        "band_members": [
+          "Carlos Santana (guitar)",
+          "Rob Thomas (vocals)",
+          "Benny Rietveld (bass)",
+          "Rodney Holmes (drums)",
+          "Karl Perazzo (percussion)",
+          "Raul Rekow (percussion)"
+        ],
+        "position": "1.9",
+        "set_number": 1,
+        "position_in_set": 9,
+        "global_position": 9
+      },
+      {
+        "title": "I Wish",
+        "artist": "Stevie Wonder",
+        "year": 1976,
+        "album": "Songs in the Key of Life",
+        "band_members": [
+          "Stevie Wonder (vocals, keyboards, harmonica)"
+        ],
+        "position": "1.10",
+        "set_number": 1,
+        "position_in_set": 10,
+        "global_position": 10
+      },
+      {
+        "title": "Lose Control",
+        "artist": "Teddy Swims",
+        "year": 2023,
+        "album": "I've Tried Everything But Therapy (Part 1)",
+        "band_members": [
+          "Teddy Swims (vocals)"
+        ],
+        "position": "1.11",
+        "set_number": 1,
+        "position_in_set": 11,
+        "global_position": 11
+      },
+      {
+        "title": "I Had Some Help",
+        "artist": "Post Malone featuring Morgan Wallen",
+        "year": 2024,
+        "album": "F-1 Trillion",
+        "band_members": [
+          "Post Malone (vocals)",
+          "Morgan Wallen (vocals)"
+        ],
+        "position": "1.12",
+        "set_number": 1,
+        "position_in_set": 12,
+        "global_position": 12
+      },
+      {
+        "title": "Bruno Medley",
+        "artist": "Bruno Mars",
+        "year": 2010,
+        "album": "Various (Doo-Wops & Hooligans, Unorthodox Jukebox, 24K Magic)",
+        "band_members": [
+          "Bruno Mars (vocals)",
+          "Philip Lawrence (vocals, keyboards)",
+          "Kameron Whalum (guitar)",
+          "Jamareo Artis (bass)",
+          "Eric Hernandez (drums)",
+          "Dwayne Dugger (saxophone)",
+          "James King (trumpet)",
+          "Dan Levy (trombone)"
+        ],
+        "position": "1.13",
+        "set_number": 1,
+        "position_in_set": 13,
+        "global_position": 13
+      },
+      {
+        "title": "Everybody Wants to Rule the World",
+        "artist": "Tears for Fears",
+        "year": 1985,
+        "album": "Songs from the Big Chair",
+        "band_members": [
+          "Roland Orzabal (vocals, guitar, keyboards)",
+          "Curt Smith (vocals, bass)",
+          "Ian Stanley (keyboards)",
+          "Manny Elias (drums)"
+        ],
+        "position": "1.14",
+        "set_number": 1,
+        "position_in_set": 14,
+        "global_position": 14
+      }
+    ],
+    "set2": [
+      {
+        "title": "Mr Brightside",
+        "artist": "The Killers",
+        "year": 2003,
+        "album": "Hot Fuss",
+        "band_members": [
+          "Brandon Flowers (vocals, keyboards)",
+          "Dave Keuning (guitar)",
+          "Mark Stoermer (bass)",
+          "Ronnie Vannucci Jr. (drums)"
+        ],
+        "position": "2.1",
+        "set_number": 2,
+        "position_in_set": 1,
+        "global_position": 15
+      },
+      {
+        "title": "The Final Countdown",
+        "artist": "Europe",
+        "year": 1986,
+        "album": "The Final Countdown",
+        "band_members": [
+          "Joey Tempest (vocals)",
+          "John Norum (guitar)",
+          "Mic Michaeli (keyboards)",
+          "John Leven (bass)",
+          "Ian Haugland (drums)"
+        ],
+        "position": "2.2",
+        "set_number": 2,
+        "position_in_set": 2,
+        "global_position": 16
+      },
+      {
+        "title": "I Believe in a Thing Called Love",
+        "artist": "The Darkness",
+        "year": 2003,
+        "album": "Permission to Land",
+        "band_members": [
+          "Justin Hawkins (vocals, guitar)",
+          "Dan Hawkins (guitar)",
+          "Frankie Poullain (bass)",
+          "Ed Graham (drums)"
+        ],
+        "position": "2.3",
+        "set_number": 2,
+        "position_in_set": 3,
+        "global_position": 17
+      },
+      {
+        "title": "Everlong",
+        "artist": "Foo Fighters",
+        "year": 1997,
+        "album": "The Colour and the Shape",
+        "band_members": [
+          "Dave Grohl (vocals, guitar)",
+          "Pat Smear (guitar)",
+          "Nate Mendel (bass)",
+          "Taylor Hawkins (drums)",
+          "Chris Shiflett (guitar)"
+        ],
+        "position": "2.4",
+        "set_number": 2,
+        "position_in_set": 4,
+        "global_position": 18
+      },
+      {
+        "title": "Fame",
+        "artist": "David Bowie",
+        "year": 1975,
+        "album": "Young Americans",
+        "band_members": [
+          "David Bowie (vocals)",
+          "Carlos Alomar (guitar)",
+          "John Lennon (guitar, backing vocals)",
+          "Willie Weeks (bass)",
+          "Andy Newmark (drums)",
+          "David Sanborn (saxophone)"
+        ],
+        "position": "2.5",
+        "set_number": 2,
+        "position_in_set": 5,
+        "global_position": 19
+      },
+      {
+        "title": "Shining Star",
+        "artist": "Earth, Wind & Fire",
+        "year": 1975,
+        "album": "That's the Way of the World",
+        "band_members": [
+          "Maurice White (vocals, drums, kalimba)",
+          "Philip Bailey (vocals, percussion)",
+          "Verdine White (bass)",
+          "Larry Dunn (keyboards)",
+          "Al McKay (guitar)",
+          "Johnny Graham (guitar)",
+          "Ralph Johnson (drums, percussion)",
+          "Andrew Woolfolk (saxophone)",
+          "Don Myrick (saxophone)"
+        ],
+        "position": "2.6",
+        "set_number": 2,
+        "position_in_set": 6,
+        "global_position": 20
+      },
+      {
+        "title": "Sara Smile",
+        "artist": "Hall & Oates",
+        "year": 1975,
+        "album": "Daryl Hall & John Oates",
+        "band_members": [
+          "Daryl Hall (vocals, keyboards)",
+          "John Oates (vocals, guitar)"
+        ],
+        "position": "2.7",
+        "set_number": 2,
+        "position_in_set": 7,
+        "global_position": 21
+      },
+      {
+        "title": "Sledgehammer",
+        "artist": "Peter Gabriel",
+        "year": 1986,
+        "album": "So",
+        "band_members": [
+          "Peter Gabriel (vocals)",
+          "Tony Levin (bass)",
+          "Manu Katché (drums)",
+          "David Rhodes (guitar)",
+          "Richard Tee (keyboards)"
+        ],
+        "position": "2.8",
+        "set_number": 2,
+        "position_in_set": 8,
+        "global_position": 22
+      },
+      {
+        "title": "Levitating",
+        "artist": "Dua Lipa",
+        "year": 2020,
+        "album": "Future Nostalgia",
+        "band_members": [
+          "Dua Lipa (vocals)"
+        ],
+        "position": "2.9",
+        "set_number": 2,
+        "position_in_set": 9,
+        "global_position": 23
+      },
+      {
+        "title": "You Belong With Me",
+        "artist": "Taylor Swift",
+        "year": 2008,
+        "album": "Fearless",
+        "band_members": [
+          "Taylor Swift (vocals, guitar)"
+        ],
+        "position": "2.10",
+        "set_number": 2,
+        "position_in_set": 10,
+        "global_position": 24
+      },
+      {
+        "title": "Everybody",
+        "artist": "Backstreet Boys",
+        "year": 1997,
+        "album": "Backstreet's Back",
+        "band_members": [
+          "Nick Carter (vocals)",
+          "Brian Littrell (vocals)",
+          "AJ McLean (vocals)",
+          "Howie Dorough (vocals)",
+          "Kevin Richardson (vocals)"
+        ],
+        "position": "2.11",
+        "set_number": 2,
+        "position_in_set": 11,
+        "global_position": 25
+      },
+      {
+        "title": "Take On Me",
+        "artist": "a-ha",
+        "year": 1985,
+        "album": "Hunting High and Low",
+        "band_members": [
+          "Morten Harket (vocals)",
+          "Pål Waaktaar-Savoy (guitar, keyboards)",
+          "Magne Furuholmen (keyboards, guitar)"
+        ],
+        "position": "2.12",
+        "set_number": 2,
+        "position_in_set": 12,
+        "global_position": 26
+      },
+      {
+        "title": "Prince Medley",
+        "artist": "Prince",
+        "year": 1984,
+        "album": "Various (Purple Rain, 1999, Sign o' the Times)",
+        "band_members": [
+          "Prince (vocals, guitar, keyboards)",
+          "Wendy Melvoin (guitar)",
+          "Lisa Coleman (keyboards)",
+          "Brown Mark (bass)",
+          "Bobby Z (drums)",
+          "Matt Fink (keyboards)"
+        ],
+        "position": "2.13",
+        "set_number": 2,
+        "position_in_set": 13,
+        "global_position": 27
+      }
+    ],
+    "set3": [
+      {
+        "title": "Linkin Park Medley",
+        "artist": "Linkin Park",
+        "year": 2000,
+        "album": "Various (Hybrid Theory, Meteora, Minutes to Midnight)",
+        "band_members": [
+          "Chester Bennington (vocals)",
+          "Mike Shinoda (vocals, keyboards, guitar)",
+          "Brad Delson (guitar)",
+          "Dave Farrell (bass)",
+          "Rob Bourdon (drums)",
+          "Joe Hahn (turntables, samples)"
+        ],
+        "position": "3.1",
+        "set_number": 3,
+        "position_in_set": 1,
+        "global_position": 28
+      },
+      {
+        "title": "Don't Stop Me Now",
+        "artist": "Queen",
+        "year": 1978,
+        "album": "Jazz",
+        "band_members": [
+          "Freddie Mercury (vocals, piano)",
+          "Brian May (guitar)",
+          "Roger Taylor (drums)",
+          "John Deacon (bass)"
+        ],
+        "position": "3.2",
+        "set_number": 3,
+        "position_in_set": 2,
+        "global_position": 29
+      },
+      {
+        "title": "Counting Stars",
+        "artist": "OneRepublic",
+        "year": 2013,
+        "album": "Native",
+        "band_members": [
+          "Ryan Tedder (vocals, piano)",
+          "Zach Filkins (guitar)",
+          "Drew Brown (guitar)",
+          "Brent Kutzle (bass, cello)",
+          "Eddie Fisher (drums)"
+        ],
+        "position": "3.3",
+        "set_number": 3,
+        "position_in_set": 3,
+        "global_position": 30
+      },
+      {
+        "title": "Too Sweet",
+        "artist": "Hozier",
+        "year": 2023,
+        "album": "Unreal Unearth",
+        "band_members": [
+          "Hozier (vocals, guitar)"
+        ],
+        "position": "3.4",
+        "set_number": 3,
+        "position_in_set": 4,
+        "global_position": 31
+      },
+      {
+        "title": "The Door",
+        "artist": "Teddy Swims",
+        "year": 2024,
+        "album": "I've Tried Everything But Therapy (Part 2)",
+        "band_members": [
+          "Teddy Swims (vocals)"
+        ],
+        "position": "3.5",
+        "set_number": 3,
+        "position_in_set": 5,
+        "global_position": 32
+      },
+      {
+        "title": "Bad Medley",
+        "artist": "Michael Jackson",
+        "year": 1987,
+        "album": "Bad",
+        "band_members": [
+          "Michael Jackson (vocals)",
+          "Jennifer Batten (guitar)",
+          "Ricky Lawson (drums)",
+          "Don Boyette (bass)",
+          "Rory Kaplan (keyboards)",
+          "Kevin Maloney (keyboards)"
+        ],
+        "position": "3.6",
+        "set_number": 3,
+        "position_in_set": 6,
+        "global_position": 33
+      },
+      {
+        "title": "Baby One More Time",
+        "artist": "Britney Spears",
+        "year": 1998,
+        "album": "...Baby One More Time",
+        "band_members": [
+          "Britney Spears (vocals)"
+        ],
+        "position": "3.7",
+        "set_number": 3,
+        "position_in_set": 7,
+        "global_position": 34
+      },
+      {
+        "title": "I Can't Go For That",
+        "artist": "Hall & Oates",
+        "year": 1981,
+        "album": "Private Eyes",
+        "band_members": [
+          "Daryl Hall (vocals, keyboards)",
+          "John Oates (vocals, guitar, bass)"
+        ],
+        "position": "3.8",
+        "set_number": 3,
+        "position_in_set": 8,
+        "global_position": 35
+      },
+      {
+        "title": "Crazy",
+        "artist": "Gnarls Barkley",
+        "year": 2006,
+        "album": "St. Elsewhere",
+        "band_members": [
+          "CeeLo Green (vocals)",
+          "Danger Mouse (production, instruments)"
+        ],
+        "position": "3.9",
+        "set_number": 3,
+        "position_in_set": 9,
+        "global_position": 36
+      },
+      {
+        "title": "Want To Want Me",
+        "artist": "Jason Derulo",
+        "year": 2015,
+        "album": "Everything Is 4",
+        "band_members": [
+          "Jason Derulo (vocals)"
+        ],
+        "position": "3.10",
+        "set_number": 3,
+        "position_in_set": 10,
+        "global_position": 37
+      },
+      {
+        "title": "Can't Stop The Feeling",
+        "artist": "Justin Timberlake",
+        "year": 2016,
+        "album": "Trolls Soundtrack",
+        "band_members": [
+          "Justin Timberlake (vocals)"
+        ],
+        "position": "3.11",
+        "set_number": 3,
+        "position_in_set": 11,
+        "global_position": 38
+      },
+      {
+        "title": "Adventure Of A Lifetime",
+        "artist": "Coldplay",
+        "year": 2015,
+        "album": "A Head Full of Dreams",
+        "band_members": [
+          "Chris Martin (vocals, piano)",
+          "Jonny Buckland (guitar)",
+          "Guy Berryman (bass)",
+          "Will Champion (drums)"
+        ],
+        "position": "3.12",
+        "set_number": 3,
+        "position_in_set": 12,
+        "global_position": 39
+      },
+      {
+        "title": "Faithfully",
+        "artist": "Journey",
+        "year": 1983,
+        "album": "Frontiers",
+        "band_members": [
+          "Steve Perry (vocals)",
+          "Neal Schon (guitar)",
+          "Jonathan Cain (keyboards)",
+          "Ross Valory (bass)",
+          "Steve Smith (drums)"
+        ],
+        "position": "3.13",
+        "set_number": 3,
+        "position_in_set": 13,
+        "global_position": 40
+      }
+    ]
+  },
+  "quick_reference": {
+    "The Doobie Brothers": "Tom Johnston, Patrick Simmons, Tiran Porter, John Hartman, Michael Hossack",
+    "Toto": "Bobby Kimball, Steve Lukather, David Paich, Steve Porcaro, David Hungate, Jeff Porcaro",
+    "The Beatles": "John Lennon, Paul McCartney, George Harrison, Ringo Starr",
+    "Van Halen": "David Lee Roth, Eddie Van Halen, Michael Anthony, Alex Van Halen",
+    "The Allman Brothers Band": "Gregg Allman, Duane Allman, Dickey Betts, Berry Oakley, Butch Trucks, Jai Johanny Johanson",
+    "Santana featuring Rob Thomas": "Carlos Santana, Rob Thomas (featuring), Benny Rietveld, Rodney Holmes, Karl Perazzo, Raul Rekow",
+    "Stevie Wonder": "Stevie Wonder",
+    "Teddy Swims": "Teddy Swims",
+    "Post Malone featuring Morgan Wallen": "Post Malone, Morgan Wallen",
+    "Dua Lipa": "Dua Lipa",
+    "Taylor Swift": "Taylor Swift",
+    "Hozier": "Hozier",
+    "Britney Spears": "Britney Spears",
+    "Jason Derulo": "Jason Derulo",
+    "Justin Timberlake": "Justin Timberlake",
+    "Bruno Mars": "Bruno Mars, Philip Lawrence, Kameron Whalum, Jamareo Artis, Eric Hernandez",
+    "Tears for Fears": "Roland Orzabal, Curt Smith, Ian Stanley, Manny Elias",
+    "The Killers": "Brandon Flowers, Dave Keuning, Mark Stoermer, Ronnie Vannucci Jr.",
+    "Europe": "Joey Tempest, John Norum, Mic Michaeli, John Leven, Ian Haugland",
+    "The Darkness": "Justin Hawkins, Dan Hawkins, Frankie Poullain, Ed Graham",
+    "Foo Fighters": "Dave Grohl, Pat Smear, Nate Mendel, Taylor Hawkins, Chris Shiflett",
+    "David Bowie": "David Bowie, Carlos Alomar, John Lennon (guest), Willie Weeks, Andy Newmark",
+    "Earth, Wind & Fire": "Maurice White, Philip Bailey, Verdine White, Larry Dunn, Al McKay",
+    "Hall & Oates": "Daryl Hall, John Oates",
+    "Peter Gabriel": "Peter Gabriel, Tony Levin, Manu Katché, David Rhodes, Richard Tee",
+    "Backstreet Boys": "Nick Carter, Brian Littrell, AJ McLean, Howie Dorough, Kevin Richardson",
+    "a-ha": "Morten Harket, Pål Waaktaar-Savoy, Magne Furuholmen",
+    "Prince": "Prince, Wendy Melvoin, Lisa Coleman, Brown Mark, Bobby Z, Matt Fink",
+    "Linkin Park": "Chester Bennington, Mike Shinoda, Brad Delson, Dave Farrell, Rob Bourdon, Joe Hahn",
+    "Queen": "Freddie Mercury, Brian May, Roger Taylor, John Deacon",
+    "OneRepublic": "Ryan Tedder, Zach Filkins, Drew Brown, Brent Kutzle, Eddie Fisher",
+    "Michael Jackson": "Michael Jackson, Jennifer Batten, Ricky Lawson, Don Boyette, Rory Kaplan",
+    "Gnarls Barkley": "CeeLo Green, Danger Mouse",
+    "Coldplay": "Chris Martin, Jonny Buckland, Guy Berryman, Will Champion",
+    "Journey": "Steve Perry, Neal Schon, Jonathan Cain, Ross Valory, Steve Smith",
+    "Fall Out Boy": "Patrick Stump, Pete Wentz, Joe Trohman, Andy Hurley",
+    "Collective Soul": "Ed Roland, Dean Roland, Will Turpin, Shane Evans, Jesse Triplett",
+    "Huey Lewis and the News": "Huey Lewis, Chris Hayes, Sean Hopper, Johnny Colla, Mario Cipollina, Bill Gibson"
+  }
+}
