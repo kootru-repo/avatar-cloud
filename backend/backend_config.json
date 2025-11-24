@@ -34,11 +34,11 @@
     "_comment": "Uses Gemini's built-in output_audio_transcription feature. Backend always sends transcriptions. Frontend CC toggle controls display (default: OFF)."
   },
   "initialContext": {
-    "enabled": false,
+    "enabled": true,
     "includeBackstory": false,
-    "includeSetList": false,
+    "includeSetList": true,
     "backstoryPath": "whinny_backstory.json",
     "setListPath": "set-list.json",
-    "_comment": "Optional: Send backstory/setlist as first message. Disabled by default since system_instruction already includes persona. Live API does NOT support context caching."
+    "_comment": "Optional: Send backstory/setlist as first message. Backstory disabled since system_instruction already includes persona. SetList enabled to provide detailed song trivia. Live API does NOT support context caching."
   }
 }
