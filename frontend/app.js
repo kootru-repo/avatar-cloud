@@ -7,88 +7,45 @@ import { AudioRecorder } from './audio-recorder.js';
 import { AudioPlayer } from './audio-player.js';
 
 /**
- * Chunked Caption Manager
- * Displays 3-5 words at a time with readable duration (FCC/WCAG compliant)
+ * Roll-Up Caption Manager (Original FCC Design)
+ * 2-line roll-up display at 170 WPM, completely decoupled from Gemini updates
  */
 class RollUpCaptionManager {
     constructor(config, ccOverlay) {
         this.line1El = document.getElementById('ccLine1');
+        this.line2El = document.getElementById('ccLine2');
         this.ccOverlay = ccOverlay;
 
         // Configuration
         this.interimOpacity = config.interimOpacity || 0.85;
         this.finalOpacity = config.finalOpacity || 1.0;
-        this.chunkSize = config.chunkSize || 4;  // 3-5 words per chunk (default 4)
-        this.msPerWord = config.msPerWord || 400;  // 400ms per word = 150 WPM reading speed
-        this.minDisplayMs = config.minDisplayMs || 1200;  // Minimum 1.2 seconds per chunk
+        this.targetWPM = config.targetWPM || 170;
+        this.wordDelayMs = config.wordDelayMs || Math.round(60000 / this.targetWPM);
+        this.maxCharsPerLine = config.maxCharsPerLine || 37;
 
-        // State for incremental display
-        this.lastProcessedText = '';
-        this.allChunks = [];
-        this.currentChunkIndex = 0;
+        // Buffered state (stores incoming text, displays independently)
+        this.bufferedText = '';
+        this.isFinalBuffered = false;
+
+        // Display state (independent of Gemini updates)
+        this.currentLines = ['', ''];  // [line1, line2]
+        this.displayedWords = [];  // Words already shown
         this.displayTimeout = null;
         this.isDisplaying = false;
-        this.isFinal = false;
     }
 
-    // Add caption text - handle incremental updates from Gemini
+    // Buffer incoming text (from Gemini) - does NOT display immediately
     addCaption(text, isFinal = false) {
         if (!text || text.trim().length === 0) return;
 
-        // For FINAL results, clear everything and restart fresh
-        if (isFinal) {
-            this.clear();
-            this.isFinal = true;
-            this.lastProcessedText = text;
+        // Store in buffer
+        this.bufferedText = text;
+        this.isFinalBuffered = isFinal;
 
-            // Break text into words
-            const words = text.trim().split(/\s+/).filter(w => w.length > 0);
-
-            // Create chunks of 3-5 words
-            this.allChunks = [];
-            for (let i = 0; i < words.length; i += this.chunkSize) {
-                const chunk = words.slice(i, i + this.chunkSize).join(' ');
-                this.allChunks.push(chunk);
-            }
-
-            // Start displaying chunks
-            this.currentChunkIndex = 0;
-            this.displayNextChunk();
-
-            // Show overlay
-            if (this.ccOverlay) {
-                this.ccOverlay.classList.add('active');
-            }
-            return;
+        // Start independent display routine if not already running
+        if (!this.isDisplaying) {
+            this.startDisplayRoutine();
         }
-
-        // For INTERIM results, ignore if already displaying
-        if (this.isDisplaying) {
-            // Let the current display sequence finish
-            return;
-        }
-
-        // Only process if text changed
-        if (text === this.lastProcessedText) {
-            return;
-        }
-
-        this.isFinal = false;
-        this.lastProcessedText = text;
-
-        // Break text into words
-        const words = text.trim().split(/\s+/).filter(w => w.length > 0);
-
-        // Create chunks of 3-5 words
-        this.allChunks = [];
-        for (let i = 0; i < words.length; i += this.chunkSize) {
-            const chunk = words.slice(i, i + this.chunkSize).join(' ');
-            this.allChunks.push(chunk);
-        }
-
-        // Start displaying chunks from beginning
-        this.currentChunkIndex = 0;
-        this.displayNextChunk();
 
         // Show overlay
         if (this.ccOverlay) {
@@ -96,48 +53,58 @@ class RollUpCaptionManager {
         }
     }
 
-    // Display next chunk with appropriate duration
-    displayNextChunk() {
+    // Independent display routine (runs at 170 WPM regardless of Gemini updates)
+    startDisplayRoutine() {
+        this.isDisplaying = true;
+        this.displayedWords = [];
+        this.displayNextWord();
+    }
+
+    // Display next word at controlled pace
+    displayNextWord() {
         // Clear any existing timeout
         if (this.displayTimeout) {
             clearTimeout(this.displayTimeout);
             this.displayTimeout = null;
         }
 
-        // Check if we have chunks to display
-        if (this.currentChunkIndex >= this.allChunks.length) {
+        // Get all words from buffer
+        const allWords = this.bufferedText.trim().split(/\s+/).filter(w => w.length > 0);
+
+        // Check if we've displayed all buffered words
+        if (this.displayedWords.length >= allWords.length) {
             this.isDisplaying = false;
             return;
         }
 
-        this.isDisplaying = true;
+        // Get next word
+        const nextWord = allWords[this.displayedWords.length];
+        this.displayedWords.push(nextWord);
 
-        // Get current chunk
-        const chunk = this.allChunks[this.currentChunkIndex];
-        const wordCount = chunk.split(/\s+/).length;
+        // Try to add word to line 2 (bottom line)
+        const testLine = this.currentLines[1] ? `${this.currentLines[1]} ${nextWord}` : nextWord;
 
-        // Display chunk
-        if (this.line1El) {
-            this.line1El.textContent = chunk;
-
-            // Visual indication: interim (85%) vs final (100%)
-            const opacity = this.isFinal ? this.finalOpacity : this.interimOpacity;
-            this.line1El.style.opacity = opacity;
-        }
-
-        // Calculate display duration based on word count
-        // Formula: max(minDisplayMs, wordCount * msPerWord)
-        const displayDuration = Math.max(this.minDisplayMs, wordCount * this.msPerWord);
-
-        // Move to next chunk
-        this.currentChunkIndex++;
-
-        // Schedule next chunk (if there is one)
-        if (this.currentChunkIndex < this.allChunks.length) {
-            this.displayTimeout = setTimeout(() => this.displayNextChunk(), displayDuration);
+        if (testLine.length <= this.maxCharsPerLine) {
+            // Fits on current line
+            this.currentLines[1] = testLine;
         } else {
-            this.isDisplaying = false;
+            // Need to scroll: line 2 → line 1, start new line 2
+            this.currentLines[0] = this.currentLines[1];
+            this.currentLines[1] = nextWord;
         }
+
+        // Update display
+        if (this.line1El) this.line1El.textContent = this.currentLines[0];
+        if (this.line2El) this.line2El.textContent = this.currentLines[1];
+
+        // Set opacity based on whether we've reached final text
+        const isDisplayingFinal = this.isFinalBuffered && (this.displayedWords.length === allWords.length);
+        const opacity = isDisplayingFinal ? this.finalOpacity : this.interimOpacity;
+        if (this.line1El) this.line1El.style.opacity = opacity;
+        if (this.line2El) this.line2El.style.opacity = opacity;
+
+        // Schedule next word at WPM rate
+        this.displayTimeout = setTimeout(() => this.displayNextWord(), this.wordDelayMs);
     }
 
     clear() {
@@ -148,14 +115,15 @@ class RollUpCaptionManager {
         }
 
         // Reset state
-        this.lastProcessedText = '';
-        this.allChunks = [];
-        this.currentChunkIndex = 0;
+        this.bufferedText = '';
+        this.isFinalBuffered = false;
+        this.currentLines = ['', ''];
+        this.displayedWords = [];
         this.isDisplaying = false;
-        this.isFinal = false;
 
         // Clear display
         if (this.line1El) this.line1El.textContent = '';
+        if (this.line2El) this.line2El.textContent = '';
         if (this.ccOverlay) this.ccOverlay.classList.remove('active');
     }
 }
