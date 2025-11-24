@@ -239,8 +239,8 @@
     "padding": 12,
     "borderRadius": 4,
     "lineHeight": 1.6,
-    "interimChunkDelayMs": 750,
-    "_comment_delay": "Delay between words (ms). Controls word appearance rate. 750ms = balanced pace for TV-style captions.",
+    "interimChunkDelayMs": 600,
+    "_comment_delay": "Delay between words (ms). Controls word appearance rate. 600ms = faster TV-style captions (20% speed increase).",
     "maxVisibleWords": 16,
     "_comment_maxWords": "Maximum words to display (maintains ~2 lines). Old words instantly replaced as new arrive (TV paint-on style)."
   },
