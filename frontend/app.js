@@ -7,51 +7,31 @@ import { AudioRecorder } from './audio-recorder.js';
 import { AudioPlayer } from './audio-player.js';
 
 /**
- * Roll-Up Caption Manager
- * Industry-standard 2-line roll-up display (FCC/WCAG compliant)
+ * Single-Line Caption Manager
+ * Simple instant display (FCC/WCAG compliant)
  */
 class RollUpCaptionManager {
     constructor(config, ccOverlay) {
         this.line1El = document.getElementById('ccLine1');
-        this.line2El = document.getElementById('ccLine2');
         this.ccOverlay = ccOverlay;
 
-        // Configuration from frontend_config.json
-        this.maxCharsPerLine = config.maxCharsPerLine || 37;
-        this.targetWPM = config.targetWPM || 170;
-        this.wordDelayMs = config.wordDelayMs || Math.round(60000 / this.targetWPM);
+        // Configuration
         this.interimOpacity = config.interimOpacity || 0.85;
         this.finalOpacity = config.finalOpacity || 1.0;
-
-        // State
-        this.currentLines = ['', ''];  // [line1, line2]
-        this.pendingWords = [];
-        this.isActive = false;
-        this.isFinal = false;
-        this.displayTimeout = null;
     }
 
-    // Add caption text (interim or final)
+    // Add caption text (interim or final) - instant display
     addCaption(text, isFinal = false) {
         if (!text || text.trim().length === 0) return;
 
-        this.isFinal = isFinal;
+        // Display text instantly on line 1 only
+        if (this.line1El) {
+            this.line1El.textContent = text;
 
-        // Break into words
-        const words = text.trim().split(/\s+/).filter(w => w.length > 0);
-
-        // Queue words for sequential display
-        this.pendingWords = this.pendingWords.concat(words);
-
-        // Start display loop if not running
-        if (!this.isActive) {
-            this.displayNextWord();
+            // Visual indication: interim (85%) vs final (100%)
+            const opacity = isFinal ? this.finalOpacity : this.interimOpacity;
+            this.line1El.style.opacity = opacity;
         }
-
-        // Visual indication: interim (85%) vs final (100%)
-        const opacity = isFinal ? this.finalOpacity : this.interimOpacity;
-        if (this.line1El) this.line1El.style.opacity = opacity;
-        if (this.line2El) this.line2El.style.opacity = opacity;
 
         // Show overlay
         if (this.ccOverlay) {
@@ -59,59 +39,9 @@ class RollUpCaptionManager {
         }
     }
 
-    // Display words sequentially at correct WPM rate
-    displayNextWord() {
-        if (this.pendingWords.length === 0) {
-            this.isActive = false;
-            return;
-        }
-
-        this.isActive = true;
-        const word = this.pendingWords.shift();
-
-        // Try to add word to line 2 (bottom line)
-        const testLine = this.currentLines[1] ? `${this.currentLines[1]} ${word}` : word;
-
-        if (testLine.length <= this.maxCharsPerLine) {
-            // Fits on current line
-            this.currentLines[1] = testLine;
-        } else {
-            // Need to scroll: line 2 → line 1, start new line 2
-            this.scrollLines();
-            this.currentLines[1] = word;
-        }
-
-        // Update display
-        if (this.line1El) this.line1El.textContent = this.currentLines[0];
-        if (this.line2El) this.line2El.textContent = this.currentLines[1];
-
-        // Schedule next word at WPM rate
-        this.displayTimeout = setTimeout(() => this.displayNextWord(), this.wordDelayMs);
-    }
-
-    // Scroll animation: line 2 moves to line 1
-    scrollLines() {
-        this.currentLines[0] = this.currentLines[1];
-        this.currentLines[1] = '';
-        // CSS transition handles the smooth animation
-    }
-
     clear() {
-        // Clear timeout
-        if (this.displayTimeout) {
-            clearTimeout(this.displayTimeout);
-            this.displayTimeout = null;
-        }
-
-        // Reset state
-        this.currentLines = ['', ''];
-        this.pendingWords = [];
-        this.isActive = false;
-        this.isFinal = false;
-
         // Clear display
         if (this.line1El) this.line1El.textContent = '';
-        if (this.line2El) this.line2El.textContent = '';
         if (this.ccOverlay) this.ccOverlay.classList.remove('active');
     }
 }

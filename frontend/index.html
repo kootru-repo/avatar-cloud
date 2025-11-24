@@ -920,9 +920,9 @@
             left: 10%;
             right: 10%;
 
-            /* DIMENSIONS: Sized for 2-line roll-up display */
+            /* DIMENSIONS: Sized for single-line display */
             max-width: 80%;
-            min-height: calc(var(--cc-font-size, 26px) * 1.4 * 2 + 24px);
+            min-height: calc(var(--cc-font-size, 26px) * 1.4 + 24px);
 
             /* VISUAL DESIGN: 80% opacity black (broadcast standard) */
             background: rgba(0, 0, 0, 0.8);
@@ -955,16 +955,15 @@
             opacity: 1;
         }
 
-        /* Multi-line roll-up layout */
+        /* Single-line caption layout */
         .cc-content {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
             align-items: center;
+            justify-content: center;
             width: 100%;
         }
 
-        /* Individual caption lines (roll-up style) */
+        /* Caption line styling */
         .cc-line {
             /* TYPOGRAPHY: Proportional sans-serif (NOT monospace) */
             font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
@@ -990,8 +989,8 @@
             width: 100%;
             word-wrap: break-word;
 
-            /* ANIMATION: Smooth scroll transitions */
-            transition: transform 0.3s ease-out, opacity 0.3s ease;
+            /* SMOOTH TRANSITIONS */
+            transition: opacity 0.3s ease;
         }
 
         /* Bottom Controls Section */
@@ -1106,7 +1105,6 @@
                         <div id="ccOverlay" class="cc-box">
                             <div class="cc-content">
                                 <div id="ccLine1" class="cc-line"></div>
-                                <div id="ccLine2" class="cc-line"></div>
                             </div>
                         </div>
 
@@ -1151,6 +1149,6 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=CC_REDESIGN_ROLLUP_FCC"></script>
+    <script type="module" src="app.js?v=CC_SINGLE_LINE_INSTANT"></script>
 </body>
 </html>
