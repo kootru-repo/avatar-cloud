@@ -67,14 +67,36 @@ class RollUpCaptionManager {
         const currentWords = currentText.trim().split(/\s+/).filter(w => w.length > 0);
         const previousWords = previousText.trim().split(/\s+/).filter(w => w.length > 0);
 
-        // If current has more words than previous, the NEW words are complete
-        // The last word might still be incomplete (being typed), so exclude it unless final
-        if (currentWords.length <= previousWords.length) {
-            return [];
+        if (currentWords.length === 0) return [];
+
+        // RESET DETECTION: If current text doesn't start with previous text's words,
+        // this is a fresh start (e.g., after interrupt or new response)
+        let isReset = false;
+        if (previousWords.length > 0 && currentWords.length > 0) {
+            // Check if current starts with the same words as previous
+            const minLen = Math.min(previousWords.length, currentWords.length);
+            for (let i = 0; i < minLen; i++) {
+                if (currentWords[i] !== previousWords[i]) {
+                    isReset = true;
+                    console.log(`📝 Caption reset detected: "${currentWords[0]}" != "${previousWords[0]}"`);
+                    break;
+                }
+            }
+            // Also detect reset if current is shorter and doesn't match
+            if (currentWords.length < previousWords.length) {
+                isReset = true;
+                console.log(`📝 Caption reset detected: shorter text (${currentWords.length} < ${previousWords.length})`);
+            }
         }
 
-        const startIndex = previousWords.length;
+        // If reset detected, treat as fresh start
+        const startIndex = isReset ? 0 : previousWords.length;
         const newCompleteWords = [];
+
+        // If current has fewer/equal words than previous AND not a reset, nothing new
+        if (!isReset && currentWords.length <= previousWords.length) {
+            return [];
+        }
 
         // Strategy: Extract new words, but exclude the CURRENT last word (might be incomplete)
         // EXCEPT when it's the ONLY word (first word case) OR it's a final transcription
@@ -84,8 +106,8 @@ class RollUpCaptionManager {
             for (let i = startIndex; i < currentWords.length; i++) {
                 newCompleteWords.push(currentWords[i]);
             }
-        } else if (currentWords.length === 1 && previousWords.length === 0) {
-            // Special case: Very first word - include it (it's likely complete if transcription started)
+        } else if (currentWords.length === 1 && (previousWords.length === 0 || isReset)) {
+            // Special case: Very first word (or first after reset) - include it
             newCompleteWords.push(currentWords[0]);
         } else {
             // Interim update with multiple words: extract new words but exclude the last one
@@ -167,6 +189,13 @@ class RollUpCaptionManager {
         if (this.line1El) this.line1El.textContent = '';
         if (this.line2El) this.line2El.textContent = '';
         if (this.ccOverlay) this.ccOverlay.classList.remove('active');
+    }
+
+    // Reset tracking state for new response (keeps visual display for continuity)
+    resetForNewResponse() {
+        this.lastProcessedText = '';
+        this.isFinalBuffered = false;
+        console.log('📝 Caption tracking reset for new response');
     }
 }
 
@@ -986,6 +1015,10 @@ class GeminiLiveClient {
 
                 case 'turn_complete':
                     console.log('✅ Turn complete received (sentence boundary)');
+
+                    // Reset caption tracking for next response (prevents state mismatch)
+                    this.resetCaptionTracking();
+
                     // NATURAL PAUSING: Pause the talking video between sentences
                     // - If audio still queued: Pause talking video (natural pause)
                     // - If no audio: Return to listening (conversation ended)
@@ -1221,6 +1254,13 @@ class GeminiLiveClient {
     clearClosedCaptions() {
         if (this.captionManager) {
             this.captionManager.clear();
+        }
+    }
+
+    // Reset caption tracking for new response (called on turn_complete)
+    resetCaptionTracking() {
+        if (this.captionManager) {
+            this.captionManager.resetForNewResponse();
         }
     }
 

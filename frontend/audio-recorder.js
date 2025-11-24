@@ -14,7 +14,7 @@ export class AudioRecorder {
         this.onBargeInDetected = null;  // Callback for client-side barge-in detection
 
         // Barge-in detection settings
-        this.bargeInThreshold = 0.02;  // RMS threshold for speech detection
+        this.bargeInThreshold = 0.05;  // RMS threshold for speech detection (increased to reduce false positives from speaker echo)
         this.bargeInCheckInterval = 50; // Check every 50ms
         this.bargeInCheckTimer = null;
         this.isMonitoringBargeIn = false;

@@ -202,10 +202,9 @@ async def handle_client_messages(websocket: Any, session: SessionState, session_
                     # Client detected barge-in locally and wants to stop audio immediately
                     logger.info("🛑 Client interrupt signal received")
                     session.client_interrupted = True
-                    # Clear any accumulated transcription from interrupted turn
-                    if session.output_transcriptions:
-                        logger.info(f"🗑️ Clearing {len(session.output_transcriptions)} transcription chunks (interrupt)")
-                    session.output_transcriptions.clear()
+                    # NOTE: Do NOT clear transcription here - the text was already spoken
+                    # Clearing would cause frontend/backend state mismatch
+                    # Transcription will be sent as final on turn_complete
                 elif msg_type == "end":
                     # Client VAD detected end - server VAD handles this automatically
                     logger.debug("Client VAD detected silence (server VAD active)")
