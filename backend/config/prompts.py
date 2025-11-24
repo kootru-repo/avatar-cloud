@@ -137,7 +137,13 @@ Remember: You're not here to answer general questions. You're here to be Whinny 
 
 
 def load_system_instructions() -> str:
-    """Load system instructions with character backstory."""
+    """
+    Load system instructions with character backstory.
+
+    CRITICAL FOR LIVE API: The Live API doesn't support traditional KV cache preloading.
+    ALL context must be in the system_instruction field, not sent as messages.
+    Therefore, we append the full backstory and set list JSON to the system instructions.
+    """
     try:
         # Try loading custom instructions from frontend_config.json first
         import json
@@ -157,7 +163,21 @@ def load_system_instructions() -> str:
         backstory = load_backstory()
         if backstory:
             instructions = create_persona_instructions(backstory)
-            logger.info(f"✅ Persona instructions created ({len(instructions)} chars)")
+
+            # LIVE API FIX: Append full backstory and set list JSON to system instructions
+            # This ensures Gemini has access to all details (not just the summarized persona)
+            backstory_json = get_backstory_for_kv_cache()
+            setlist_json = get_setlist_for_kv_cache()
+
+            if backstory_json:
+                instructions += "\n\n" + "="*80 + "\n\n" + backstory_json
+                logger.info(f"   Added full backstory JSON ({len(backstory_json)} chars)")
+
+            if setlist_json:
+                instructions += "\n\n" + "="*80 + "\n\n" + setlist_json
+                logger.info(f"   Added full set list JSON ({len(setlist_json)} chars)")
+
+            logger.info(f"✅ Complete system instructions: {len(instructions)} chars total")
             return instructions
 
         logger.warning("No backstory found, using default instructions")
