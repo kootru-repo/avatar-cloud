@@ -407,143 +407,210 @@
             color: #ff3333;
         }
 
-        /* High-End Mixer Board Buttons */
+        /* Compact 3D Rack-Mount Style Buttons */
         .control-btn {
             font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
             padding: 0;
             border: none;
-            border-radius: 8px;
-            font-size: var(--status-medium-font-size, clamp(11px, 1.4vh, 14px));
-            font-weight: var(--status-medium-font-weight, 700);
+            border-radius: 4px;
+            font-size: 8px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: var(--status-medium-letter-spacing, 1.5px);
+            letter-spacing: 0.8px;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.1s ease;
             position: relative;
             width: 100%;
-            min-height: 65px;
+            min-height: 35px;
+            max-height: 35px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.5vh;
+            gap: 3px;
+            transform-style: preserve-3d;
 
-            /* Metallic base with depth */
+            /* 3D Button housing with realistic lighting */
             background:
-                linear-gradient(180deg,
-                    rgba(255, 255, 255, 0.15) 0%,
-                    rgba(255, 255, 255, 0.05) 45%,
-                    rgba(0, 0, 0, 0.2) 50%,
-                    rgba(0, 0, 0, 0.4) 100%),
-                linear-gradient(145deg, #2a2a2a, #1a1a1a);
+                radial-gradient(ellipse at 50% 20%,
+                    rgba(60, 60, 65, 0.95) 0%,
+                    rgba(40, 40, 45, 0.92) 40%,
+                    rgba(25, 25, 30, 0.9) 70%,
+                    rgba(15, 15, 20, 0.9) 100%
+                );
 
-            /* 3D embossed effect */
+            border: 1px solid rgba(80, 80, 85, 0.8);
+
+            /* Deep 3D depth with multiple shadow layers */
             box-shadow:
-                0 1px 0 rgba(255, 255, 255, 0.1) inset,
-                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
-                0 4px 8px rgba(0, 0, 0, 0.6),
-                0 8px 16px rgba(0, 0, 0, 0.3);
+                /* Outer depth */
+                0 4px 8px rgba(0, 0, 0, 0.95),
+                0 2px 4px rgba(0, 0, 0, 0.9),
+                0 1px 2px rgba(0, 0, 0, 0.85),
+                /* Top highlight (light from above) */
+                inset 0 2px 1px rgba(100, 100, 110, 0.4),
+                inset 1px 1px 2px rgba(80, 80, 90, 0.3),
+                /* Bottom shadow (depth) */
+                inset 0 -2px 3px rgba(0, 0, 0, 0.8),
+                inset -1px -1px 2px rgba(0, 0, 0, 0.7);
+
+            transform: perspective(500px) translateZ(2px);
         }
 
+        /* Recessed mounting screws on button housing */
         .control-btn::before {
             content: '';
             position: absolute;
-            top: 8%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 10px;
-            height: 10px;
+            top: 3px;
+            left: 3px;
+            width: 3px;
+            height: 3px;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent);
-            transition: all 0.2s ease;
-            opacity: 0.3;
+            background: radial-gradient(circle at 35% 35%,
+                rgba(80, 80, 85, 0.8) 0%,
+                rgba(30, 30, 35, 0.9) 60%,
+                rgba(10, 10, 15, 0.95) 100%
+            );
+            box-shadow:
+                inset 0 1px 1px rgba(0, 0, 0, 0.9),
+                0 0.5px 0 rgba(100, 100, 105, 0.2);
+        }
+
+        .control-btn::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%,
+                rgba(80, 80, 85, 0.8) 0%,
+                rgba(30, 30, 35, 0.9) 60%,
+                rgba(10, 10, 15, 0.95) 100%
+            );
+            box-shadow:
+                inset 0 1px 1px rgba(0, 0, 0, 0.9),
+                0 0.5px 0 rgba(100, 100, 105, 0.2);
         }
 
         .control-btn:active {
-            transform: translateY(2px);
+            transform: perspective(500px) translateZ(0px) translateY(1px);
             box-shadow:
-                0 1px 0 rgba(255, 255, 255, 0.1) inset,
-                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
-                0 2px 4px rgba(0, 0, 0, 0.6),
-                0 4px 8px rgba(0, 0, 0, 0.3);
+                0 2px 4px rgba(0, 0, 0, 0.95),
+                0 1px 2px rgba(0, 0, 0, 0.9),
+                inset 0 2px 1px rgba(100, 100, 110, 0.3),
+                inset 0 -2px 3px rgba(0, 0, 0, 0.85);
         }
 
         .control-btn:disabled {
-            opacity: 0.4;
+            opacity: 0.3;
             cursor: not-allowed;
-            filter: grayscale(0.5);
+            filter: grayscale(0.7);
         }
 
-        /* LED Indicator */
+        /* Compact LED Indicator with lens effect */
         .btn-led {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            background: #0a0a0a;
-            border: 1px solid rgba(0, 0, 0, 0.5);
+            background: radial-gradient(circle at 40% 40%,
+                rgba(30, 30, 35, 0.9) 0%,
+                rgba(15, 15, 20, 0.95) 100%
+            );
+            border: 0.5px solid rgba(60, 60, 65, 0.6);
             box-shadow:
-                0 0 3px rgba(0, 0, 0, 0.8) inset,
-                0 1px 0 rgba(255, 255, 255, 0.1);
-            transition: all 0.2s ease;
+                /* LED well depth */
+                inset 0 1px 2px rgba(0, 0, 0, 0.95),
+                inset 0 0 3px rgba(0, 0, 0, 0.9),
+                /* Lens highlight */
+                0 0.5px 0 rgba(150, 150, 155, 0.2);
+            transition: all 0.15s ease;
         }
 
+        /* REC Button - Compact 3D with red metallic housing */
         .control-btn.btn-rec {
             background:
-                linear-gradient(180deg,
-                    rgba(255, 100, 100, 0.2) 0%,
-                    rgba(255, 51, 51, 0.1) 45%,
-                    rgba(139, 0, 0, 0.3) 50%,
-                    rgba(80, 0, 0, 0.5) 100%),
-                linear-gradient(145deg, #3a2222, #2a1a1a);
-            color: #ff6666;
-            text-shadow: 0 0 8px rgba(255, 51, 51, 0.6);
-            border: 1px solid rgba(255, 51, 51, 0.3);
+                radial-gradient(ellipse at 50% 20%,
+                    rgba(80, 40, 40, 0.95) 0%,
+                    rgba(60, 25, 25, 0.92) 40%,
+                    rgba(40, 15, 15, 0.9) 70%,
+                    rgba(30, 10, 10, 0.9) 100%
+                );
+            color: #ff8888;
+            text-shadow:
+                0 0 6px rgba(255, 80, 80, 0.8),
+                0 1px 2px rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(100, 40, 40, 0.9);
         }
 
         .control-btn.btn-rec .btn-led {
-            background: radial-gradient(circle at 30% 30%, #ff3333, #aa0000);
+            background: radial-gradient(circle at 35% 35%,
+                #ff4444 0%,
+                #cc2222 50%,
+                #880000 100%
+            );
             box-shadow:
-                0 0 8px #ff3333,
-                0 0 12px rgba(255, 51, 51, 0.6),
-                0 0 3px rgba(0, 0, 0, 0.8) inset;
+                /* LED glow */
+                0 0 6px rgba(255, 60, 60, 0.9),
+                0 0 10px rgba(255, 40, 40, 0.6),
+                0 0 3px rgba(255, 80, 80, 0.4),
+                /* Well depth */
+                inset 0 1px 2px rgba(0, 0, 0, 0.8),
+                /* Lens */
+                0 0.5px 0 rgba(255, 150, 150, 0.3);
             animation: ledPulse 1.5s ease-in-out infinite;
         }
 
         .control-btn.btn-rec:hover:not(:disabled) {
             box-shadow:
-                0 1px 0 rgba(255, 255, 255, 0.15) inset,
-                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
-                0 4px 8px rgba(0, 0, 0, 0.6),
-                0 8px 20px rgba(255, 51, 51, 0.4);
+                0 4px 8px rgba(0, 0, 0, 0.96),
+                0 2px 4px rgba(0, 0, 0, 0.92),
+                0 6px 16px rgba(255, 40, 40, 0.3),
+                inset 0 2px 1px rgba(120, 80, 80, 0.4),
+                inset 0 -2px 3px rgba(0, 0, 0, 0.85);
         }
 
+        /* STOP Button - Compact 3D with yellow metallic housing */
         .control-btn.btn-stop-alt {
             background:
-                linear-gradient(180deg,
-                    rgba(255, 220, 100, 0.2) 0%,
-                    rgba(255, 204, 0, 0.1) 45%,
-                    rgba(139, 100, 0, 0.3) 50%,
-                    rgba(80, 60, 0, 0.5) 100%),
-                linear-gradient(145deg, #3a3222, #2a2a1a);
-            color: #ffdd66;
-            text-shadow: 0 0 8px rgba(255, 204, 0, 0.6);
-            border: 1px solid rgba(255, 204, 0, 0.3);
+                radial-gradient(ellipse at 50% 20%,
+                    rgba(70, 60, 40, 0.95) 0%,
+                    rgba(55, 45, 25, 0.92) 40%,
+                    rgba(40, 30, 15, 0.9) 70%,
+                    rgba(30, 20, 10, 0.9) 100%
+                );
+            color: #ffdd88;
+            text-shadow:
+                0 0 6px rgba(255, 200, 80, 0.8),
+                0 1px 2px rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(100, 80, 40, 0.9);
         }
 
         .control-btn.btn-stop-alt .btn-led {
-            background: radial-gradient(circle at 30% 30%, #ffcc00, #aa8800);
+            background: radial-gradient(circle at 35% 35%,
+                #ffdd44 0%,
+                #ccaa22 50%,
+                #886600 100%
+            );
             box-shadow:
-                0 0 8px #ffcc00,
-                0 0 12px rgba(255, 204, 0, 0.6),
-                0 0 3px rgba(0, 0, 0, 0.8) inset;
+                /* LED glow */
+                0 0 6px rgba(255, 200, 60, 0.9),
+                0 0 10px rgba(255, 180, 40, 0.6),
+                0 0 3px rgba(255, 220, 80, 0.4),
+                /* Well depth */
+                inset 0 1px 2px rgba(0, 0, 0, 0.8),
+                /* Lens */
+                0 0.5px 0 rgba(255, 240, 150, 0.3);
         }
 
         .control-btn.btn-stop-alt:hover:not(:disabled) {
             box-shadow:
-                0 1px 0 rgba(255, 255, 255, 0.15) inset,
-                0 -1px 0 rgba(0, 0, 0, 0.5) inset,
-                0 4px 8px rgba(0, 0, 0, 0.6),
-                0 8px 20px rgba(255, 204, 0, 0.4);
+                0 4px 8px rgba(0, 0, 0, 0.96),
+                0 2px 4px rgba(0, 0, 0, 0.92),
+                0 6px 16px rgba(255, 180, 40, 0.3),
+                inset 0 2px 1px rgba(120, 100, 80, 0.4),
+                inset 0 -2px 3px rgba(0, 0, 0, 0.85);
         }
 
         /* Mixer Board Toggle Switch */
@@ -738,23 +805,31 @@
                 0 -1px 0 rgba(255, 255, 255, 0.05) inset;
         }
 
-        /* CC Toggle Switch - Horizontal Design */
+        /* Compact 3D CC Toggle Switch - Rack-Mount Style */
         .cc-toggle-container {
             width: 100%;
-            padding: 2vh 1.5vw;
-            background: linear-gradient(145deg, #0a1a1a, #050a0a);
-            border-radius: 8px;
-            border: 2px solid rgba(0, 200, 255, 0.15);
+            padding: 8px 10px;
+            background:
+                radial-gradient(ellipse at 50% 20%,
+                    rgba(40, 50, 50, 0.95) 0%,
+                    rgba(25, 30, 30, 0.92) 50%,
+                    rgba(15, 18, 18, 0.9) 100%
+                );
+            border-radius: 4px;
+            border: 1px solid rgba(60, 80, 85, 0.8);
             box-shadow:
-                0 4px 8px rgba(0, 0, 0, 0.6),
-                0 0 20px rgba(0, 0, 0, 0.4) inset;
+                0 4px 8px rgba(0, 0, 0, 0.95),
+                0 2px 4px rgba(0, 0, 0, 0.9),
+                inset 0 2px 1px rgba(80, 100, 105, 0.3),
+                inset 0 -2px 3px rgba(0, 0, 0, 0.8);
+            transform: perspective(500px) translateZ(2px);
         }
 
         .cc-toggle {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1.5vh;
+            gap: 6px;
             position: relative;
         }
 
@@ -763,40 +838,54 @@
             justify-content: space-between;
             width: 100%;
             font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
-            font-size: var(--status-small-font-size, clamp(9px, 1.1vh, 11px));
-            font-weight: var(--status-small-font-weight, 700);
+            font-size: 7px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: var(--status-small-letter-spacing, 1.2px);
-            padding: 0 0.5vw;
+            letter-spacing: 0.8px;
+            padding: 0 4px;
         }
 
         .cc-toggle-label {
-            transition: all 0.3s ease;
-            color: #444;
+            transition: all 0.2s ease;
+            color: #555;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.9);
         }
 
         .cc-toggle-label.active {
-            color: #00ccff;
-            text-shadow: 0 0 8px rgba(0, 204, 255, 0.8);
+            color: #00ddff;
+            text-shadow:
+                0 0 6px rgba(0, 220, 255, 0.9),
+                0 1px 2px rgba(0, 0, 0, 0.9);
         }
 
         .cc-toggle-switch {
             position: relative;
-            width: 120px;
-            height: 50px;
+            width: 70px;
+            height: 28px;
             cursor: pointer;
+            transform-style: preserve-3d;
         }
 
+        /* 3D Recessed track channel */
         .cc-toggle-track {
             position: absolute;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, #0a0a0a, #1a1a1a, #0a0a0a);
-            border-radius: 25px;
-            border: 2px solid rgba(0, 0, 0, 0.8);
+            background:
+                linear-gradient(180deg,
+                    rgba(10, 10, 12, 0.95) 0%,
+                    rgba(18, 18, 20, 0.92) 50%,
+                    rgba(12, 12, 14, 0.95) 100%
+                );
+            border-radius: 14px;
+            border: 1px solid rgba(40, 40, 45, 0.9);
             box-shadow:
-                0 0 10px rgba(0, 0, 0, 0.8) inset,
-                0 2px 0 rgba(255, 255, 255, 0.05);
+                /* Deep recessed channel */
+                inset 0 3px 6px rgba(0, 0, 0, 0.95),
+                inset 0 1px 3px rgba(0, 0, 0, 0.9),
+                inset 0 -1px 1px rgba(60, 60, 65, 0.2),
+                /* Outer rim */
+                0 1px 0 rgba(80, 80, 85, 0.2);
             overflow: hidden;
         }
 
@@ -809,89 +898,119 @@
             height: 100%;
             background: linear-gradient(90deg,
                 transparent 0%,
-                rgba(0, 204, 255, 0.1) 50%,
+                rgba(0, 220, 255, 0.15) 50%,
                 transparent 100%);
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.2s ease;
         }
 
         .cc-toggle-switch.active .cc-toggle-track::before {
             opacity: 1;
         }
 
+        /* Compact 3D slider knob */
         .cc-toggle-slider {
             position: absolute;
-            width: 50px;
-            height: 38px;
-            left: 6px;
+            width: 30px;
+            height: 22px;
+            left: 3px;
             top: 50%;
             transform: translateY(-50%);
             background:
-                linear-gradient(180deg,
-                    rgba(255, 255, 255, 0.2) 0%,
-                    rgba(255, 255, 255, 0.08) 50%,
-                    rgba(0, 0, 0, 0.3) 100%),
-                linear-gradient(90deg, #3a3a3a, #2a2a2a);
-            border-radius: 20px;
-            border: 2px solid rgba(0, 0, 0, 0.6);
+                radial-gradient(ellipse at 50% 30%,
+                    rgba(100, 100, 105, 0.95) 0%,
+                    rgba(70, 70, 75, 0.92) 40%,
+                    rgba(45, 45, 50, 0.9) 70%,
+                    rgba(30, 30, 35, 0.9) 100%
+                );
+            border-radius: 11px;
+            border: 1px solid rgba(80, 80, 85, 0.8);
             box-shadow:
-                0 4px 8px rgba(0, 0, 0, 0.8),
-                0 1px 0 rgba(255, 255, 255, 0.1) inset,
-                0 -1px 0 rgba(0, 0, 0, 0.5) inset;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                /* Slider depth */
+                0 3px 6px rgba(0, 0, 0, 0.95),
+                0 1px 3px rgba(0, 0, 0, 0.9),
+                /* Top highlight */
+                inset 0 1px 1px rgba(140, 140, 145, 0.4),
+                inset 0.5px 0.5px 1px rgba(120, 120, 125, 0.3),
+                /* Bottom shadow */
+                inset 0 -1px 2px rgba(0, 0, 0, 0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
+            transform-style: preserve-3d;
+            transform: translateY(-50%) translateZ(1px);
         }
 
+        /* Grip lines on slider */
         .cc-toggle-slider::before {
             content: '';
-            width: 4px;
-            height: 16px;
-            background: linear-gradient(180deg, #444, #222);
-            border-radius: 2px;
+            width: 2px;
+            height: 10px;
+            background: linear-gradient(180deg,
+                rgba(60, 60, 65, 0.8) 0%,
+                rgba(30, 30, 35, 0.9) 100%
+            );
+            border-radius: 1px;
             box-shadow:
-                0 1px 0 rgba(255, 255, 255, 0.2) inset,
-                0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+                inset 0 1px 1px rgba(0, 0, 0, 0.9),
+                0 0.5px 0 rgba(100, 100, 105, 0.2);
         }
 
         .cc-toggle-switch.active .cc-toggle-slider {
-            left: calc(100% - 56px);
-            border-color: rgba(0, 204, 255, 0.4);
+            left: calc(100% - 33px);
+            border-color: rgba(60, 120, 125, 0.9);
             box-shadow:
-                0 4px 8px rgba(0, 0, 0, 0.8),
-                0 0 12px rgba(0, 204, 255, 0.4),
-                0 1px 0 rgba(255, 255, 255, 0.1) inset,
-                0 -1px 0 rgba(0, 0, 0, 0.5) inset;
+                0 3px 6px rgba(0, 0, 0, 0.96),
+                0 1px 3px rgba(0, 0, 0, 0.92),
+                0 0 8px rgba(0, 220, 255, 0.4),
+                inset 0 1px 1px rgba(140, 160, 165, 0.5),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.85);
         }
 
+        /* Compact 3D LED indicators */
         .cc-indicator-led {
             position: absolute;
-            width: 12px;
-            height: 12px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             top: 50%;
             transform: translateY(-50%);
-            background: #1a1a1a;
-            border: 1px solid rgba(0, 0, 0, 0.8);
-            box-shadow: 0 0 3px rgba(0, 0, 0, 0.8) inset;
-            transition: all 0.3s ease;
+            background: radial-gradient(circle at 40% 40%,
+                rgba(30, 30, 35, 0.9) 0%,
+                rgba(15, 15, 20, 0.95) 100%
+            );
+            border: 0.5px solid rgba(50, 50, 55, 0.7);
+            box-shadow:
+                inset 0 1px 2px rgba(0, 0, 0, 0.95),
+                inset 0 0 3px rgba(0, 0, 0, 0.9),
+                0 0.5px 0 rgba(120, 120, 125, 0.2);
+            transition: all 0.2s ease;
         }
 
         .cc-indicator-led.left {
-            left: 15px;
+            left: 8px;
         }
 
         .cc-indicator-led.right {
-            right: 15px;
+            right: 8px;
         }
 
         .cc-toggle-switch.active .cc-indicator-led.right {
-            background: radial-gradient(circle at 30% 30%, #00ccff, #0088aa);
+            background: radial-gradient(circle at 35% 35%,
+                #00eeff 0%,
+                #00bbdd 50%,
+                #006688 100%
+            );
             box-shadow:
-                0 0 8px #00ccff,
-                0 0 12px rgba(0, 204, 255, 0.6),
-                0 0 3px rgba(0, 0, 0, 0.8) inset;
+                /* LED glow */
+                0 0 5px rgba(0, 230, 255, 0.95),
+                0 0 8px rgba(0, 200, 255, 0.7),
+                0 0 2px rgba(0, 240, 255, 0.5),
+                /* Well depth */
+                inset 0 1px 1px rgba(0, 0, 0, 0.7),
+                /* Lens */
+                0 0.5px 0 rgba(100, 240, 255, 0.3);
             animation: ccLedPulse 2s ease-in-out infinite;
         }
 
@@ -1432,8 +1551,9 @@
             }
 
             .control-btn {
-                min-height: 50px;
-                font-size: var(--debug-console-font-size, clamp(10px, 1.2vh, 12px));
+                min-height: 35px;
+                max-height: 35px;
+                font-size: 8px;
                 flex: 1;
             }
         }
