@@ -1001,6 +1001,56 @@
             flex-shrink: 0;
         }
 
+        /* Promo Badge - Bottom Left */
+        .promo-badge {
+            position: fixed;
+            bottom: 2vh;
+            left: 2vw;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .promo-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .promo-line {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+        }
+
+        .kootru {
+            font-weight: 600;
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Gemini gradient: Blue → Purple → Red (official brand colors) */
+        .gemini-gradient {
+            font-weight: 700;
+            background: linear-gradient(90deg,
+                #4285f4 0%,     /* Google Blue */
+                #9b59b6 35%,    /* Purple */
+                #ea4335 70%,    /* Google Red */
+                #fbbc04 100%    /* Gold accent */
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            letter-spacing: 0.5px;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .console-container {
@@ -1147,8 +1197,14 @@
                 <div class="log-entry info">System ready. Press REC to start live session...</div>
             </div>
         </div>
+
+        <!-- Promo Badge - Bottom Left -->
+        <div class="promo-badge">
+            <div class="promo-line">Built by <span class="kootru">Kootru</span></div>
+            <div class="promo-line">Powered by <span class="gemini-gradient">Gemini</span></div>
+        </div>
     </div>
 
-    <script type="module" src="app.js?v=CC_IGNORE_INTERIM"></script>
+    <script type="module" src="app.js?v=PROMO_BADGE"></script>
 </body>
 </html>
