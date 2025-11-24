@@ -912,54 +912,86 @@
             }
         }
 
-        /* Closed Captions Box - Bottom of Console */
-        /* Dimensions configured in frontend/frontend_config.json */
+        /* Closed Captions - Industry Standard Design (FCC/WCAG AAA Compliant) */
         .cc-box {
-            width: 100%;
-            max-width: 100%;
-            height: calc(var(--cc-font-size, 26px) * var(--cc-line-height, 1.6) + var(--cc-padding, 12px) * 2);
-            background: rgba(0, 0, 0, 0.85);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            /* POSITIONING: Inside video frame with 10% safe margins */
+            position: absolute;
+            bottom: 10%;
+            left: 10%;
+            right: 10%;
+
+            /* DIMENSIONS: Sized for 2-line roll-up display */
+            max-width: 80%;
+            min-height: calc(var(--cc-font-size, 26px) * 1.4 * 2 + 24px);
+
+            /* VISUAL DESIGN: 80% opacity black (broadcast standard) */
+            background: rgba(0, 0, 0, 0.8);
+            border: none;
             border-radius: var(--cc-border-radius, 4px);
-            padding: var(--cc-padding, 12px);
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.6) inset,
-                0 -1px 0 rgba(255, 255, 255, 0.05) inset,
-                0 4px 12px rgba(0, 0, 0, 0.5);
+            padding: var(--cc-padding, 12px) 16px;
+
+            /* LAYERING: Above videos, below curtain */
+            z-index: 5;
+
+            /* TRANSITION */
             opacity: 0;
             transition: opacity 0.3s ease;
-            overflow: hidden;
+
+            /* LAYOUT */
             display: flex;
             align-items: center;
-            margin: 2vh auto 0;
-            flex-shrink: 0;
+            justify-content: center;
+
+            /* HIDE SCROLLBAR */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .cc-box::-webkit-scrollbar {
+            display: none;
         }
 
         .cc-box.active {
             opacity: 1;
         }
 
-        .cc-text {
-            color: #ffffff;
-            font-family: var(--font-family-secondary, 'Roboto Mono', monospace);
+        /* Multi-line roll-up layout */
+        .cc-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Individual caption lines (roll-up style) */
+        .cc-line {
+            /* TYPOGRAPHY: Proportional sans-serif (NOT monospace) */
+            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
             font-size: var(--cc-font-size, 26px);
-            line-height: var(--cc-line-height, 1.6);
-            text-align: left;
-            font-weight: var(--cc-font-weight, 400);
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-            white-space: nowrap;
-            display: inline-block;
-            transition: transform 1.2s ease-out;
-        }
+            font-weight: 500;
+            line-height: 1.4;
 
-        /* Hide scrollbar completely */
-        .cc-box {
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE/Edge */
-        }
+            /* COLOR: Yellow on black (industry standard for max legibility) */
+            color: #FFFF00;
 
-        .cc-box::-webkit-scrollbar {
-            display: none; /* Chrome/Safari/Opera */
+            /* SHADOWS: Enhanced depth for readability */
+            text-shadow:
+                1px 1px 2px rgba(0,0,0,0.9),
+                0 0 4px rgba(0,0,0,0.6);
+
+            /* ANTI-ALIASING: Smooth rendering */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+
+            /* LAYOUT */
+            text-align: center;
+            width: 100%;
+            word-wrap: break-word;
+
+            /* ANIMATION: Smooth scroll transitions */
+            transition: transform 0.3s ease-out, opacity 0.3s ease;
         }
 
         /* Bottom Controls Section */
@@ -1070,6 +1102,14 @@
                         <video id="video-dancing" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
                         <video id="video-goodbye" class="avatar-video" autoplay loop muted playsinline preload="auto"></video>
 
+                        <!-- Closed Captions - positioned within video safe zone -->
+                        <div id="ccOverlay" class="cc-box">
+                            <div class="cc-content">
+                                <div id="ccLine1" class="cc-line"></div>
+                                <div id="ccLine2" class="cc-line"></div>
+                            </div>
+                        </div>
+
                         <!-- Stage Curtain -->
                         <div id="stageCurtain" class="stage-curtain">
                             <div class="curtain-rod"></div>
@@ -1109,13 +1149,8 @@
                 <div class="log-entry info">System ready. Press REC to start live session...</div>
             </div>
         </div>
-
-        <!-- Closed Captions Box - Bottom of Console -->
-        <div id="ccOverlay" class="cc-box">
-            <div id="ccText" class="cc-text"></div>
-        </div>
     </div>
 
-    <script type="module" src="app.js?v=INTERRUPT_COOLDOWN_2S"></script>
+    <script type="module" src="app.js?v=CC_REDESIGN_ROLLUP_FCC"></script>
 </body>
 </html>

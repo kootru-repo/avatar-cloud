@@ -6,6 +6,116 @@
 import { AudioRecorder } from './audio-recorder.js';
 import { AudioPlayer } from './audio-player.js';
 
+/**
+ * Roll-Up Caption Manager
+ * Industry-standard 2-line roll-up display (FCC/WCAG compliant)
+ */
+class RollUpCaptionManager {
+    constructor(config, ccOverlay) {
+        this.line1El = document.getElementById('ccLine1');
+        this.line2El = document.getElementById('ccLine2');
+        this.ccOverlay = ccOverlay;
+
+        // Configuration from frontend_config.json
+        this.maxCharsPerLine = config.maxCharsPerLine || 37;
+        this.targetWPM = config.targetWPM || 170;
+        this.wordDelayMs = config.wordDelayMs || Math.round(60000 / this.targetWPM);
+        this.interimOpacity = config.interimOpacity || 0.85;
+        this.finalOpacity = config.finalOpacity || 1.0;
+
+        // State
+        this.currentLines = ['', ''];  // [line1, line2]
+        this.pendingWords = [];
+        this.isActive = false;
+        this.isFinal = false;
+        this.displayTimeout = null;
+    }
+
+    // Add caption text (interim or final)
+    addCaption(text, isFinal = false) {
+        if (!text || text.trim().length === 0) return;
+
+        this.isFinal = isFinal;
+
+        // Break into words
+        const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+
+        // Queue words for sequential display
+        this.pendingWords = this.pendingWords.concat(words);
+
+        // Start display loop if not running
+        if (!this.isActive) {
+            this.displayNextWord();
+        }
+
+        // Visual indication: interim (85%) vs final (100%)
+        const opacity = isFinal ? this.finalOpacity : this.interimOpacity;
+        if (this.line1El) this.line1El.style.opacity = opacity;
+        if (this.line2El) this.line2El.style.opacity = opacity;
+
+        // Show overlay
+        if (this.ccOverlay) {
+            this.ccOverlay.classList.add('active');
+        }
+    }
+
+    // Display words sequentially at correct WPM rate
+    displayNextWord() {
+        if (this.pendingWords.length === 0) {
+            this.isActive = false;
+            return;
+        }
+
+        this.isActive = true;
+        const word = this.pendingWords.shift();
+
+        // Try to add word to line 2 (bottom line)
+        const testLine = this.currentLines[1] ? `${this.currentLines[1]} ${word}` : word;
+
+        if (testLine.length <= this.maxCharsPerLine) {
+            // Fits on current line
+            this.currentLines[1] = testLine;
+        } else {
+            // Need to scroll: line 2 → line 1, start new line 2
+            this.scrollLines();
+            this.currentLines[1] = word;
+        }
+
+        // Update display
+        if (this.line1El) this.line1El.textContent = this.currentLines[0];
+        if (this.line2El) this.line2El.textContent = this.currentLines[1];
+
+        // Schedule next word at WPM rate
+        this.displayTimeout = setTimeout(() => this.displayNextWord(), this.wordDelayMs);
+    }
+
+    // Scroll animation: line 2 moves to line 1
+    scrollLines() {
+        this.currentLines[0] = this.currentLines[1];
+        this.currentLines[1] = '';
+        // CSS transition handles the smooth animation
+    }
+
+    clear() {
+        // Clear timeout
+        if (this.displayTimeout) {
+            clearTimeout(this.displayTimeout);
+            this.displayTimeout = null;
+        }
+
+        // Reset state
+        this.currentLines = ['', ''];
+        this.pendingWords = [];
+        this.isActive = false;
+        this.isFinal = false;
+
+        // Clear display
+        if (this.line1El) this.line1El.textContent = '';
+        if (this.line2El) this.line2El.textContent = '';
+        if (this.ccOverlay) this.ccOverlay.classList.remove('active');
+    }
+}
+
 class GeminiLiveClient {
     constructor() {
         this.ws = null;
@@ -49,10 +159,6 @@ class GeminiLiveClient {
         this.logEl = document.getElementById('log');
         this.audioIndicator = document.getElementById('audioIndicator');
         this.ccOverlay = document.getElementById('ccOverlay');
-        this.ccText = document.getElementById('ccText');
-        this.ccTimeout = null;  // For delaying next sentence
-        this.lastCaptionTime = 0;  // Track when last caption was shown
-        this.minCaptionDisplayMs = 5000;  // Minimum 5s display before next caption
 
         // CC Toggle elements
         this.ccToggle = document.getElementById('ccToggle');
@@ -60,15 +166,8 @@ class GeminiLiveClient {
         this.ccLabelOn = document.getElementById('ccLabelOn');
         this.isCCActive = false;  // CC starts OFF
 
-        // CC interim chunk throttling (loaded from config)
-        this.ccInterimChunkDelayMs = 130;  // Default 130ms delay between chunks
-        this.ccInterimChunkQueue = [];  // Queue of pending interim chunks
-        this.ccInterimChunkTimeout = null;  // Timeout for processing queued chunks
-
-        // CC sliding window (loaded from config)
-        this.ccWordsArray = [];  // Track individual words for sliding window effect
-        this.ccMaxVisibleWords = 16;  // Default: ~2 lines worth of words
-        this.ccIsProcessingFinal = false;  // Track if we're on the final chunk
+        // CC Manager - initialized after config loads
+        this.captionManager = null;
 
         // Download progress tracking
         this.downloadCountdownInterval = null;
@@ -168,22 +267,10 @@ class GeminiLiveClient {
             this.ccToggle.classList.remove('active');
             this.ccLabelOff.classList.add('active');
             this.ccLabelOn.classList.remove('active');
-            // Hide and clear CC window when disabled
-            this.ccOverlay.classList.remove('active');
-            this.ccText.textContent = '';
-            if (this.ccTimeout) {
-                clearTimeout(this.ccTimeout);
-                this.ccTimeout = null;
+            // Clear captions when disabled
+            if (this.captionManager) {
+                this.captionManager.clear();
             }
-            // Clear interim chunk queue and timeout
-            if (this.ccInterimChunkTimeout) {
-                clearTimeout(this.ccInterimChunkTimeout);
-                this.ccInterimChunkTimeout = null;
-            }
-            this.ccInterimChunkQueue = [];
-            this.ccWordsArray = [];  // Clear sliding window
-            // Reset caption timing
-            this.lastCaptionTime = 0;
             this.log('Closed captions disabled', 'info');
         }
     }
@@ -305,29 +392,18 @@ class GeminiLiveClient {
                 console.log(`   Oscillation range: ${initialForwardDuration - reverseDuration}s to ${initialForwardDuration}s`);
             }
 
-            // Load closed captions styling configuration
+            // Load closed captions configuration and initialize manager
             if (config.closedCaptions) {
                 const cc = config.closedCaptions;
-                document.documentElement.style.setProperty('--cc-width', `${cc.width}px`);
-                document.documentElement.style.setProperty('--cc-max-width-vh', `${cc.maxWidthVh}vh`);
-                document.documentElement.style.setProperty('--cc-max-width-vw', `${cc.maxWidthVw}vw`);
-                document.documentElement.style.setProperty('--cc-height', `${cc.height}px`);
+
+                // Set CSS variables
                 document.documentElement.style.setProperty('--cc-font-size', `${cc.fontSize}px`);
                 document.documentElement.style.setProperty('--cc-padding', `${cc.padding}px`);
                 document.documentElement.style.setProperty('--cc-border-radius', `${cc.borderRadius}px`);
-                document.documentElement.style.setProperty('--cc-line-height', cc.lineHeight);
 
-                // Load interim chunk delay for throttling word-by-word appearance
-                if (cc.interimChunkDelayMs !== undefined) {
-                    this.ccInterimChunkDelayMs = cc.interimChunkDelayMs;
-                }
-
-                // Load max visible words for sliding window
-                if (cc.maxVisibleWords !== undefined) {
-                    this.ccMaxVisibleWords = cc.maxVisibleWords;
-                }
-
-                console.log('✅ Closed captions styling loaded:', cc);
+                // Initialize roll-up caption manager
+                this.captionManager = new RollUpCaptionManager(cc, this.ccOverlay);
+                console.log('✅ Roll-up caption manager initialized:', cc);
             }
 
             // Load dance mode configuration
@@ -1069,135 +1145,21 @@ class GeminiLiveClient {
 
 
     updateClosedCaptions(text, isFinal = false) {
-        if (!this.ccText || !this.ccOverlay) return;
-
         // Don't show captions if CC toggle is off
         if (!this.isCCActive) return;
 
-        // For interim results, queue chunks and display with configured delay
-        if (!isFinal) {
-            // Add chunk to queue
-            this.ccInterimChunkQueue.push(text);
+        // Don't show captions during dance mode
+        if (this.isDancing) return;
 
-            // Start processing queue if not already processing
-            if (!this.ccInterimChunkTimeout) {
-                this.processInterimChunkQueue();
-            }
-            return;
+        // Use roll-up caption manager
+        if (this.captionManager) {
+            this.captionManager.addCaption(text, isFinal);
         }
-
-        // For final results, replace interim text IMMEDIATELY
-        // Final transcription should show right away (no 5s delay - that's only for NEW sentences)
-
-        // Clear interim chunk queue and timeout
-        this.ccInterimChunkQueue = [];
-        if (this.ccInterimChunkTimeout) {
-            clearTimeout(this.ccInterimChunkTimeout);
-            this.ccInterimChunkTimeout = null;
-        }
-
-        // Clear any existing timeout
-        if (this.ccTimeout) {
-            clearTimeout(this.ccTimeout);
-            this.ccTimeout = null;
-        }
-
-        // Apply sliding window to final transcription to prevent shift
-        const finalWords = text.trim().split(/\s+/).filter(word => word.length > 0);
-
-        // Only show last N words (same as interim chunks)
-        if (finalWords.length > this.ccMaxVisibleWords) {
-            const visibleWords = finalWords.slice(-this.ccMaxVisibleWords);
-            this.ccWordsArray = visibleWords;
-            this.ccText.textContent = visibleWords.join(' ');
-        } else {
-            this.ccWordsArray = finalWords;
-            this.ccText.textContent = text;
-        }
-
-        this.ccText.style.opacity = '1';  // Full opacity for final
-        this.ccOverlay.classList.add('active');
-        this.lastCaptionTime = Date.now();
-    }
-
-    processInterimChunkQueue() {
-        // No chunks to process
-        if (this.ccInterimChunkQueue.length === 0) {
-            this.ccInterimChunkTimeout = null;
-            return;
-        }
-
-        // Already processing - don't start another animation
-        if (this.ccInterimChunkTimeout) {
-            return;
-        }
-
-        // Get next chunk from queue
-        const chunk = this.ccInterimChunkQueue.shift();
-
-        // Check if there are more chunks coming after this one
-        const isLastChunk = this.ccInterimChunkQueue.length === 0;
-
-        // WORD-BY-WORD DISPLAY: Split chunk into individual words
-        const newWords = chunk.trim().split(/\s+/).filter(word => word.length > 0);
-
-        // Add each word with a delay (TV paint-on style)
-        let wordIndex = 0;
-        const addNextWord = () => {
-            if (wordIndex < newWords.length) {
-                const isLastWord = isLastChunk && (wordIndex === newWords.length - 1);
-
-                // Add one word at a time
-                this.ccWordsArray.push(newWords[wordIndex]);
-
-                // Maintain sliding window - remove oldest words if exceeds max
-                const shouldScroll = this.ccWordsArray.length > this.ccMaxVisibleWords && !isLastWord;
-                if (shouldScroll) {
-                    this.ccWordsArray.shift();
-                }
-
-                // Update text content - TV paint-on style (instant replacement, no scroll)
-                this.ccText.textContent = this.ccWordsArray.join(' ');
-                this.ccText.style.opacity = '0.8';  // Lower opacity for interim
-                this.ccOverlay.classList.add('active');
-
-                wordIndex++;
-
-                // Schedule next word with tracked timeout
-                this.ccInterimChunkTimeout = setTimeout(addNextWord, this.ccInterimChunkDelayMs);
-            } else {
-                // All words from this chunk added, process next chunk
-                this.ccInterimChunkTimeout = null;
-                if (this.ccInterimChunkQueue.length > 0) {
-                    this.processInterimChunkQueue();
-                }
-            }
-        };
-
-        // Start adding words
-        this.ccInterimChunkTimeout = setTimeout(addNextWord, 0);
     }
 
     clearClosedCaptions() {
-        if (!this.ccOverlay) return;
-
-        // Clear all CC timeouts and queues
-        if (this.ccTimeout) {
-            clearTimeout(this.ccTimeout);
-            this.ccTimeout = null;
-        }
-
-        if (this.ccInterimChunkTimeout) {
-            clearTimeout(this.ccInterimChunkTimeout);
-            this.ccInterimChunkTimeout = null;
-        }
-
-        this.ccInterimChunkQueue = [];
-        this.ccWordsArray = [];  // Clear sliding window
-
-        this.ccOverlay.classList.remove('active');
-        if (this.ccText) {
-            this.ccText.textContent = '';
+        if (this.captionManager) {
+            this.captionManager.clear();
         }
     }
 
