@@ -626,11 +626,12 @@ gcloud run services describe gemini-avatar-backend \
     "voiceName": "Algenib",
     "affectiveDialog": true
   },
-  "geminiVAD": {
-    "startSensitivity": "START_SENSITIVITY_HIGH",
-    "endSensitivity": "END_SENSITIVITY_HIGH",
+  "automaticVAD": {
+    "startOfSpeechSensitivity": "START_SENSITIVITY_LOW",
+    "endOfSpeechSensitivity": "END_SENSITIVITY_LOW",
     "prefixPaddingMs": 100,
-    "silenceDurationMs": 200
+    "silenceDurationMs": 500,
+    "_comment": "⚠️ CRITICAL: Only LOW/HIGH supported. MEDIUM causes immediate disconnect!"
   },
   "audio": {
     "outputSampleRate": 24000,
@@ -882,6 +883,70 @@ vim cloudbuild.yaml
 git add cloudbuild.yaml
 git commit -m "Increase Cloud Run memory to 1GB"
 git push origin main
+```
+
+---
+
+### **Immediate Disconnect After Session Start (VAD Sensitivity)**
+
+**Problem:** Session connects then immediately disconnects. No error message visible.
+
+**Root Cause:** Invalid VAD sensitivity value in `backend_config.json`. Gemini Live API **only supports LOW and HIGH** sensitivity options. Using `MEDIUM` or any other value causes Gemini to reject the session configuration.
+
+**Symptoms:**
+- WebSocket connects successfully
+- Backend sends "ready" message
+- Gemini session creation fails silently
+- Connection closes immediately
+
+**Check:**
+```bash
+# Check backend config for invalid VAD values
+cat backend/backend_config.json | grep -A5 "automaticVAD"
+
+# Check Cloud Run logs for config errors
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=gemini-avatar-backend" \
+  --limit=20 \
+  --format="value(textPayload)"
+```
+
+**Fix:**
+```json
+// backend/backend_config.json - Use ONLY LOW or HIGH
+"automaticVAD": {
+  "enabled": true,
+  "startOfSpeechSensitivity": "START_SENSITIVITY_LOW",  // ✅ LOW or HIGH only
+  "endOfSpeechSensitivity": "END_SENSITIVITY_LOW",      // ✅ LOW or HIGH only
+  "prefixPaddingMs": 100,
+  "silenceDurationMs": 500
+}
+```
+
+**Valid Values:**
+| Setting | Valid Values | Effect |
+|---------|-------------|--------|
+| startOfSpeechSensitivity | `START_SENSITIVITY_LOW`, `START_SENSITIVITY_HIGH` | LOW = less sensitive (reduces false positives) |
+| endOfSpeechSensitivity | `END_SENSITIVITY_LOW`, `END_SENSITIVITY_HIGH` | LOW = requires longer silence to end turn |
+
+**⚠️ INVALID:** `START_SENSITIVITY_MEDIUM`, `END_SENSITIVITY_MEDIUM` - These cause immediate disconnect!
+
+**Recommended Settings:**
+- `LOW` sensitivity + `500ms` silence: Reduces false positives from ambient noise, allows natural speech pauses
+- `HIGH` sensitivity + `200ms` silence: More responsive but may trigger on background noise
+
+**Deploy Fix:**
+```bash
+# Edit config
+vim backend/backend_config.json
+
+# Commit and push (triggers Cloud Build)
+git add backend/backend_config.json
+git commit -m "fix: Use LOW VAD sensitivity (MEDIUM not supported)"
+git push origin main
+
+# Also update frontend config if present
+vim frontend/frontend_config.json
+firebase deploy --only hosting
 ```
 
 ---
@@ -1230,6 +1295,121 @@ if config["initialContext"]["includeSetList"]:
 ---
 
 ## Recent Changes & Session History
+
+### **Session 5: VAD & Barge-In Fixes (2025-11-24)**
+
+#### **1. Avatar Self-Interruption Fix**
+
+**Problem:** Avatar was interrupting himself during speech. Audio would cut off mid-sentence.
+
+**Root Cause Analysis:** Two conflicting VAD systems were active:
+1. **Client-side barge-in detection** in `audio-recorder.js` using RMS threshold monitoring
+2. **Server-side Gemini VAD** (`automatic_activity_detection`)
+
+The client-side RMS detection could not distinguish between:
+- User speech (legitimate barge-in)
+- Speaker audio bleeding into microphone (false positive)
+
+This caused the avatar's own audio to trigger "barge-in" detection, interrupting himself.
+
+**Solution:**
+1. **Disabled client-side barge-in detection entirely** - Rely only on Gemini's server-side VAD
+2. **Reduced VAD sensitivity** from HIGH to LOW - Reduces false positives from ambient noise
+3. **Increased silence duration** from 200ms to 500ms - Allows natural speech pauses
+
+**Files Changed:**
+- `frontend/audio-recorder.js` - Disabled `startBargeInMonitoring()` (returns immediately)
+- `backend/backend_config.json` - Changed VAD to LOW sensitivity, 500ms silence
+- `frontend/frontend_config.json` - Updated VAD settings to match
+
+**Key Code Change (audio-recorder.js:120-125):**
+```javascript
+startBargeInMonitoring() {
+    // DISABLED - Rely on Gemini's server-side VAD instead
+    // Client-side RMS detection cannot distinguish speaker output from user speech
+    console.log('🎙️ Barge-in monitoring DISABLED (using server-side VAD)');
+    return;
+}
+```
+
+---
+
+#### **2. Invalid VAD Sensitivity Causing Immediate Disconnect**
+
+**Problem:** After changing VAD sensitivity to "MEDIUM", sessions would immediately disconnect after connecting.
+
+**Root Cause:** Gemini Live API **only supports LOW and HIGH** sensitivity values. `MEDIUM` is not a valid option and causes the session configuration to be rejected.
+
+**Symptoms:**
+- WebSocket connects successfully
+- Backend sends "ready" message
+- Connection immediately closes
+- No clear error message
+
+**Solution:** Changed sensitivity from `MEDIUM` to `LOW`:
+```json
+"automaticVAD": {
+  "startOfSpeechSensitivity": "START_SENSITIVITY_LOW",
+  "endOfSpeechSensitivity": "END_SENSITIVITY_LOW",
+  "prefixPaddingMs": 100,
+  "silenceDurationMs": 500
+}
+```
+
+**Valid VAD Sensitivity Values:**
+| Value | Effect |
+|-------|--------|
+| `START_SENSITIVITY_LOW` | Less sensitive to speech start (reduces false positives) |
+| `START_SENSITIVITY_HIGH` | More sensitive to speech start (faster response) |
+| `END_SENSITIVITY_LOW` | Requires longer silence before ending turn |
+| `END_SENSITIVITY_HIGH` | Shorter silence ends turn (more responsive) |
+
+**⚠️ CRITICAL:** `MEDIUM` is NOT valid and causes immediate disconnect!
+
+---
+
+#### **3. UI Layout Fix - Rack Panel Positioning**
+
+**Problem:** The 3D rack panel on the right was pushing the video window off-center.
+
+**Solution:** Changed rack panel to use absolute positioning so video stays centered:
+
+```css
+.main-layout {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.right-controls {
+    position: absolute;
+    right: 1vw;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
+```
+
+**Result:** Video window now stays perfectly centered, rack panel floats on the right.
+
+---
+
+#### **Summary of Session 5 Changes**
+
+| Change | File(s) | Impact |
+|--------|---------|--------|
+| Disable client-side barge-in | `audio-recorder.js` | Prevents avatar self-interruption |
+| VAD sensitivity LOW | `backend_config.json`, `frontend_config.json` | Reduces false positive interruptions |
+| Silence duration 500ms | `backend_config.json`, `frontend_config.json` | Allows natural speech pauses |
+| Fix MEDIUM → LOW | `backend_config.json`, `frontend_config.json` | Fixes immediate disconnect |
+| Rack absolute positioning | `index.html` | Video stays centered |
+
+**Git Commits:**
+- `92e343b` - fix: Disable client-side barge-in, rely on server-side VAD
+- `79b2fa9` - fix: Use LOW VAD sensitivity (MEDIUM not supported by Gemini)
+
+---
 
 ### **Session 4: Closed Captions Redesign - FCC/WCAG AAA Compliance (2025-11-24)**
 
