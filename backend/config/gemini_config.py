@@ -66,15 +66,17 @@ def get_gemini_config() -> dict:
             f"Update geminiVoice.voiceName in frontend/frontend_config.json"
         )
 
-    # SDK-COMPLIANT STRUCTURE: response_modalities and speech_config are TOP-LEVEL
-    # Per LiveConnectConfig fields: generation_config, response_modalities, speech_config, system_instruction, tools
+    # OFFICIAL GOOGLE PATTERN: speech_config as dictionary object
     # Reference: https://ai.google.dev/gemini-api/docs/audio
+    # The SDK requires speech_config to be a dictionary with voice_name
     config = {
-        "response_modalities": api_config.response_modalities,
-        "speech_config": {
-            "voice_config": {
-                "prebuilt_voice_config": {
-                    "voice_name": voice_name
+        "generation_config": {
+            "response_modalities": api_config.response_modalities,
+            "speech_config": {
+                "voice_config": {
+                    "prebuilt_voice_config": {
+                        "voice_name": voice_name
+                    }
                 }
             }
         },
