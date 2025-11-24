@@ -279,6 +279,12 @@ class GeminiLiveClient {
         this.audioBufferDuringCooldown = [];  // Buffer audio chunks during cooldown
         this.isInCooldown = false;  // Track if we're in post-interrupt cooldown
 
+        // Rapid interrupt threshold protection
+        this.interruptCount = 0;  // Count interrupts in current window
+        this.interruptWindowStart = 0;  // Start time of current window
+        this.maxInterruptsPerWindow = 3;  // Max interrupts allowed per window
+        this.interruptWindowMs = 5000;  // 5 second window for counting interrupts
+
         // Speaking cycle configuration (loaded from frontend_config.json)
         this.speakingCycleConfig = {
             enabled: true,
@@ -572,6 +578,17 @@ class GeminiLiveClient {
                 console.log(`✅ Interrupt cooldown loaded: ${this.interruptCooldownMs}ms`);
             }
 
+            // Load interrupt threshold configuration
+            if (config.timing) {
+                if (config.timing.maxInterruptsPerWindow !== undefined) {
+                    this.maxInterruptsPerWindow = config.timing.maxInterruptsPerWindow;
+                }
+                if (config.timing.interruptWindowMs !== undefined) {
+                    this.interruptWindowMs = config.timing.interruptWindowMs;
+                }
+                console.log(`✅ Interrupt threshold loaded: max ${this.maxInterruptsPerWindow} per ${this.interruptWindowMs}ms window`);
+            }
+
             // Preload dance music
             if (config.danceMode && config.danceMode.enabled && config.danceMode.musicFile) {
                 let musicPath = config.danceMode.musicFile;
@@ -829,8 +846,29 @@ class GeminiLiveClient {
         this.log('🎤 Microphone active', 'info');
     }
 
-    handleLocalBargeIn() {
+    /**
+     * Unified barge-in handler for both client-side and server-side interrupts.
+     * @param {boolean} fromServer - true if triggered by server 'interrupted' message
+     */
+    handleBargeIn(fromServer = false) {
         const now = Date.now();
+        const source = fromServer ? 'SERVER' : 'LOCAL';
+
+        // THRESHOLD CHECK: Prevent rapid interrupt stacking
+        // Reset window if expired
+        if (now - this.interruptWindowStart > this.interruptWindowMs) {
+            this.interruptCount = 0;
+            this.interruptWindowStart = now;
+        }
+
+        // Count this interrupt
+        this.interruptCount++;
+
+        // Check if we've exceeded the threshold
+        if (this.interruptCount > this.maxInterruptsPerWindow) {
+            console.log(`⚠️ ${source} BARGE-IN BLOCKED: Too many interrupts (${this.interruptCount}/${this.maxInterruptsPerWindow} in ${this.interruptWindowMs}ms window)`);
+            return;
+        }
 
         // IMPROVED DEBOUNCING: If already in cooldown, extend it
         if (this.isInCooldown) {
@@ -855,7 +893,7 @@ class GeminiLiveClient {
             this.forceCleanupInterrupt();
         }
 
-        console.log(`⚡ LOCAL BARGE-IN: Halting audio, starting ${this.interruptCooldownMs}ms cooldown`);
+        console.log(`⚡ ${source} BARGE-IN: Halting audio, starting ${this.interruptCooldownMs}ms cooldown (${this.interruptCount}/${this.maxInterruptsPerWindow} in window)`);
         this.lastInterruptTime = now;
 
         // 1. Set interrupted flag to block incoming audio from server
@@ -866,8 +904,9 @@ class GeminiLiveClient {
         this.audioBufferDuringCooldown = [];
         console.log('   📦 Audio buffer cleared, ready to accumulate during cooldown');
 
-        // 3. Send interrupt signal to backend to stop sending audio
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        // 3. Send interrupt signal to backend (only for client-side interrupts)
+        // Server-side interrupts don't need this - server already knows
+        if (!fromServer && this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({
                 type: 'interrupt'
             }));
@@ -887,15 +926,25 @@ class GeminiLiveClient {
         this.pendingTurnComplete = false;
         console.log('   🛑 Audio playback halted');
 
-        // 6. Return to idle state visually
+        // 6. Cancel CC fade timer - user is speaking, response will follow
+        if (this.captionManager) {
+            this.captionManager.cancelFadeTimer();
+        }
+
+        // 7. Return to idle state visually
         this.setAvatarState('idle');
 
-        // 7. Start cooldown period - user can speak, audio is buffered
+        // 8. Start cooldown period - user can speak, audio is buffered
         if (this.interruptTimeout) {
             clearTimeout(this.interruptTimeout);
         }
         console.log(`   ⏳ Cooldown started: buffering audio for ${this.interruptCooldownMs}ms`);
         this.interruptTimeout = setTimeout(() => this.endCooldownPeriod(), this.interruptCooldownMs);
+    }
+
+    // Legacy alias for backward compatibility
+    handleLocalBargeIn() {
+        this.handleBargeIn(false);
     }
 
     endCooldownPeriod() {
@@ -1105,38 +1154,10 @@ class GeminiLiveClient {
                     break;
 
                 case 'interrupted':
+                    // UNIFIED BARGE-IN: Server-side interrupts now use same robust logic as client-side
+                    // This provides proper cooldown, debouncing, and threshold protection
                     console.log('⚠️ Server-side interruption detected');
-                    // If we're already handling a client-side interrupt with cooldown, skip this
-                    if (this.isInCooldown) {
-                        console.log('   Already in cooldown from client-side interrupt');
-                        return;
-                    }
-
-                    // Cancel CC fade timer - user is speaking, response will follow
-                    if (this.captionManager) {
-                        this.captionManager.cancelFadeTimer();
-                    }
-
-                    // SERVER-SIDE BARGE-IN FLOW (uses legacy shorter timeout):
-                    // 1. Set interrupted flag to block incoming audio
-                    this.isInterrupted = true;
-
-                    // 2. Stop monitoring for more barge-ins
-                    if (this.audioRecorder) {
-                        this.audioRecorder.stopBargeInMonitoring();
-                    }
-
-                    // 3. Immediately stop ALL audio and clear pending flags
-                    this.audioPlayer.stop();
-                    this.pendingTurnComplete = false;
-                    this.setAvatarState('idle');
-                    console.log('   🛑 Audio halted, avatar to idle');
-
-                    // 4. Schedule transition to listening after brief pause (server-side uses legacy 150ms)
-                    if (this.interruptTimeout) {
-                        clearTimeout(this.interruptTimeout);
-                    }
-                    this.interruptTimeout = setTimeout(() => this.clearInterruptState(), 150);
+                    this.handleBargeIn(true);  // true = from server
                     break;
 
                 case 'tool_call':
@@ -1230,6 +1251,8 @@ class GeminiLiveClient {
         this.audioBufferDuringCooldown = [];  // Clear audio buffer
         this.pendingTurnComplete = false;  // Clear pending flags
         this.lastInterruptTime = 0;  // Reset interrupt timestamp
+        this.interruptCount = 0;  // Reset interrupt threshold counter
+        this.interruptWindowStart = 0;  // Reset threshold window
         this.isToggleAnimating = false;  // Reset animation flag
 
         this.updateToggleUI(false);
