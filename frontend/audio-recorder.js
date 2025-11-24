@@ -105,56 +105,23 @@ export class AudioRecorder {
 
     /**
      * Start monitoring for barge-in (user speaking while audio is playing)
+     *
+     * DISABLED: Client-side barge-in detection is disabled because it cannot
+     * distinguish between user speech and speaker audio bleeding into the mic.
+     * This caused the avatar to "interrupt himself" when his own audio played.
+     *
+     * Gemini's server-side VAD (automatic_activity_detection) handles interruption
+     * detection properly because it knows when it's generating audio vs receiving
+     * user input. See backend_config.json → automaticVAD settings.
+     *
+     * The server sends 'interrupted' messages when user speech is detected,
+     * which the frontend handles in the 'interrupted' case handler.
      */
     startBargeInMonitoring() {
-        // Stop any existing monitoring first
-        if (this.isMonitoringBargeIn) {
-            this.stopBargeInMonitoring();
-        }
-
-        if (!this.analyserNode) {
-            console.warn('Cannot start barge-in monitoring: analyser not initialized');
-            return;
-        }
-
-        this.isMonitoringBargeIn = true;
-        console.log('🎙️ Barge-in monitoring started');
-
-        const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
-
-        const checkAudioLevel = () => {
-            if (!this.isMonitoringBargeIn || !this.analyserNode) {
-                return;
-            }
-
-            // Get current audio data
-            this.analyserNode.getByteTimeDomainData(dataArray);
-
-            // Calculate RMS (Root Mean Square) for audio level
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-                const normalized = (dataArray[i] - 128) / 128;
-                sum += normalized * normalized;
-            }
-            const rms = Math.sqrt(sum / dataArray.length);
-
-            // If audio level exceeds threshold, trigger barge-in
-            if (rms > this.bargeInThreshold) {
-                console.log(`🎤 BARGE-IN detected! RMS: ${rms.toFixed(3)}`);
-                this.isMonitoringBargeIn = false;  // Stop monitoring
-                this.bargeInCheckTimer = null;  // Clear timer reference
-                if (this.onBargeInDetected) {
-                    this.onBargeInDetected();
-                }
-                return;  // Don't schedule next check
-            }
-
-            // Schedule next check
-            this.bargeInCheckTimer = setTimeout(checkAudioLevel, this.bargeInCheckInterval);
-        };
-
-        // Start checking
-        checkAudioLevel();
+        // DISABLED - Rely on Gemini's server-side VAD instead
+        // Client-side RMS detection cannot distinguish speaker output from user speech
+        console.log('🎙️ Barge-in monitoring DISABLED (using server-side VAD)');
+        return;
     }
 
     /**

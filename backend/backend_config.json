@@ -9,11 +9,11 @@
   },
   "automaticVAD": {
     "enabled": true,
-    "startOfSpeechSensitivity": "START_SENSITIVITY_HIGH",
-    "endOfSpeechSensitivity": "END_SENSITIVITY_HIGH",
+    "startOfSpeechSensitivity": "START_SENSITIVITY_MEDIUM",
+    "endOfSpeechSensitivity": "END_SENSITIVITY_MEDIUM",
     "prefixPaddingMs": 100,
-    "silenceDurationMs": 200,
-    "_comment": "Automatic Voice Activity Detection. Gemini will automatically detect when user starts/stops speaking."
+    "silenceDurationMs": 500,
+    "_comment": "Automatic Voice Activity Detection. MEDIUM sensitivity reduces false positives. 500ms silence allows natural speech pauses. Gemini handles interruption detection server-side."
   },
   "audio": {
     "outputSampleRate": 24000,

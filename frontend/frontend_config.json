@@ -127,11 +127,11 @@
     "affectiveDialog": true
   },
   "geminiVAD": {
-    "_comment": "Gemini's built-in automatic Voice Activity Detection per official docs. Only LOW/HIGH sensitivity options (no MEDIUM). prefixPaddingMs: speech duration before start commit. silenceDurationMs: silence duration before end commit. Default sensitivity is HIGH for both (more responsive).",
-    "startSensitivity": "START_SENSITIVITY_HIGH",
-    "endSensitivity": "END_SENSITIVITY_HIGH",
+    "_comment": "Gemini's server-side VAD handles all speech detection. MEDIUM sensitivity reduces false positives from ambient noise. 500ms silence allows natural speech pauses. Client-side barge-in is DISABLED (see audio-recorder.js).",
+    "startSensitivity": "START_SENSITIVITY_MEDIUM",
+    "endSensitivity": "END_SENSITIVITY_MEDIUM",
     "prefixPaddingMs": 100,
-    "silenceDurationMs": 200
+    "silenceDurationMs": 500
   },
   "timing": {
     "transitionDelay": {
