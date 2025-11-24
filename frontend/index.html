@@ -58,10 +58,10 @@
             overflow: hidden;
         }
 
-        /* Main 3-Column Layout */
+        /* Main Layout - Video centered, rack positioned absolutely */
         .main-layout {
+            position: relative;
             display: flex;
-            gap: 3vw;
             align-items: center;
             justify-content: center;
             flex: 1;
@@ -75,14 +75,18 @@
         }
 
         .right-controls {
+            position: absolute;
+            right: 1vw;
+            top: 50%;
+            transform: translateY(-50%);
             display: flex;
             flex-direction: column;
             gap: 0;
             min-width: 180px;
             max-width: 200px;
             justify-content: center;
-            align-self: center;
             overflow: visible;
+            z-index: 10;
         }
 
         .center-display {
@@ -1814,12 +1818,17 @@
                 flex-direction: column;
             }
 
-            .left-controls, .right-controls {
-                flex-direction: row;
-                max-width: 100%;
-                width: 100%;
-                justify-content: center;
-                gap: 2vw;
+            .left-controls {
+                display: none;
+            }
+
+            .right-controls {
+                position: absolute;
+                right: 0.5vw;
+                top: 50%;
+                transform: translateY(-50%);
+                min-width: 120px;
+                max-width: 140px;
             }
 
             .avatar-video-wrapper {
@@ -1990,6 +1999,6 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=VAD_SERVER_ONLY"></script>
+    <script type="module" src="app.js?v=RACK_LAYOUT_FIX"></script>
 </body>
 </html>
