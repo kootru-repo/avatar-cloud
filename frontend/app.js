@@ -166,6 +166,9 @@ class RollUpCaptionManager {
     }
 
     clear() {
+        // Cancel any fade timer
+        this.cancelFadeTimer();
+
         // Clear timeout
         if (this.displayTimeout) {
             clearTimeout(this.displayTimeout);
@@ -180,10 +183,13 @@ class RollUpCaptionManager {
         this.displayedWordCount = 0;
         this.isDisplaying = false;
 
-        // Clear display
+        // Clear display immediately (no fade)
         if (this.line1El) this.line1El.textContent = '';
         if (this.line2El) this.line2El.textContent = '';
-        if (this.ccOverlay) this.ccOverlay.classList.remove('active');
+        if (this.ccOverlay) {
+            this.ccOverlay.classList.remove('active', 'fading');
+            this.ccOverlay.style.opacity = '';  // Reset to CSS default
+        }
     }
 
     // Reset tracking state for new response (keeps visual display for continuity)
@@ -191,6 +197,59 @@ class RollUpCaptionManager {
         this.lastProcessedText = '';
         this.isFinalBuffered = false;
         console.log('📝 Caption tracking reset for new response');
+    }
+
+    /**
+     * Start 2-second fade timer after all audio completes
+     * Called when onAllAudioEnded fires
+     */
+    startFadeTimer() {
+        // Cancel any existing timer
+        this.cancelFadeTimer();
+
+        console.log('📝 Starting 2-second CC fade timer');
+        this.fadeTimer = setTimeout(() => {
+            this.fadeOut();
+        }, 2000);
+    }
+
+    /**
+     * Cancel fade timer (called when new activity starts)
+     */
+    cancelFadeTimer() {
+        if (this.fadeTimer) {
+            console.log('📝 CC fade timer cancelled');
+            clearTimeout(this.fadeTimer);
+            this.fadeTimer = null;
+        }
+        // If we were fading, restore visibility
+        if (this.ccOverlay && this.ccOverlay.classList.contains('fading')) {
+            this.ccOverlay.classList.remove('fading');
+            this.ccOverlay.style.opacity = '';
+            console.log('📝 CC fade interrupted, restored visibility');
+        }
+    }
+
+    /**
+     * Smoothly fade out the CC overlay
+     */
+    fadeOut() {
+        if (!this.ccOverlay) return;
+
+        console.log('📝 Fading out CC');
+        this.ccOverlay.classList.add('fading');
+
+        // After fade animation completes (1s), clear the text
+        setTimeout(() => {
+            // Only clear if still fading (not interrupted)
+            if (this.ccOverlay && this.ccOverlay.classList.contains('fading')) {
+                if (this.line1El) this.line1El.textContent = '';
+                if (this.line2El) this.line2El.textContent = '';
+                this.ccOverlay.classList.remove('active', 'fading');
+                this.ccOverlay.style.opacity = '';
+                console.log('📝 CC fade complete, text cleared');
+            }
+        }, 1000);  // Match CSS transition duration
     }
 }
 
@@ -725,6 +784,10 @@ class GeminiLiveClient {
                 this.pendingTurnComplete = false;
                 this.setAvatarState('listening');
             }
+            // Start 2-second CC fade timer (will be cancelled if new activity starts)
+            if (this.captionManager) {
+                this.captionManager.startFadeTimer();
+            }
         };
 
         // Resume AudioContext (required on some browsers)
@@ -922,6 +985,11 @@ class GeminiLiveClient {
                     return;
                 }
 
+                // Cancel CC fade timer - new response is starting
+                if (this.captionManager) {
+                    this.captionManager.cancelFadeTimer();
+                }
+
                 // Clear any pending turn_complete since we're receiving new audio
                 this.pendingTurnComplete = false;
 
@@ -1042,6 +1110,11 @@ class GeminiLiveClient {
                     if (this.isInCooldown) {
                         console.log('   Already in cooldown from client-side interrupt');
                         return;
+                    }
+
+                    // Cancel CC fade timer - user is speaking, response will follow
+                    if (this.captionManager) {
+                        this.captionManager.cancelFadeTimer();
                     }
 
                     // SERVER-SIDE BARGE-IN FLOW (uses legacy shorter timeout):

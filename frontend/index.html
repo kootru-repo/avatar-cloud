@@ -1355,6 +1355,12 @@
             opacity: 1;
         }
 
+        /* Smooth fade-out animation (1 second) */
+        .cc-box.fading {
+            opacity: 0 !important;
+            transition: opacity 1s ease-out;
+        }
+
         /* 2-line roll-up caption layout */
         .cc-content {
             display: flex;
@@ -1999,6 +2005,6 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=CC_WORD_EXTRACT_FIX"></script>
+    <script type="module" src="app.js?v=CC_FADE_OUT"></script>
 </body>
 </html>
