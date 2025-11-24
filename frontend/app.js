@@ -35,14 +35,45 @@ class RollUpCaptionManager {
     addCaption(text, isFinal = false) {
         if (!text || text.trim().length === 0) return;
 
-        this.isFinal = isFinal;
+        // For FINAL results, clear everything and restart fresh
+        if (isFinal) {
+            this.clear();
+            this.isFinal = true;
+            this.lastProcessedText = text;
 
-        // Only process NEW text (Gemini sends accumulated text)
-        if (text === this.lastProcessedText && !isFinal) {
-            // No new content, skip
+            // Break text into words
+            const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+
+            // Create chunks of 3-5 words
+            this.allChunks = [];
+            for (let i = 0; i < words.length; i += this.chunkSize) {
+                const chunk = words.slice(i, i + this.chunkSize).join(' ');
+                this.allChunks.push(chunk);
+            }
+
+            // Start displaying chunks
+            this.currentChunkIndex = 0;
+            this.displayNextChunk();
+
+            // Show overlay
+            if (this.ccOverlay) {
+                this.ccOverlay.classList.add('active');
+            }
             return;
         }
 
+        // For INTERIM results, ignore if already displaying
+        if (this.isDisplaying) {
+            // Let the current display sequence finish
+            return;
+        }
+
+        // Only process if text changed
+        if (text === this.lastProcessedText) {
+            return;
+        }
+
+        this.isFinal = false;
         this.lastProcessedText = text;
 
         // Break text into words
@@ -55,12 +86,9 @@ class RollUpCaptionManager {
             this.allChunks.push(chunk);
         }
 
-        // If not currently displaying, start from beginning
-        if (!this.isDisplaying) {
-            this.currentChunkIndex = 0;
-            this.displayNextChunk();
-        }
-        // If currently displaying and got final, let it finish naturally
+        // Start displaying chunks from beginning
+        this.currentChunkIndex = 0;
+        this.displayNextChunk();
 
         // Show overlay
         if (this.ccOverlay) {
