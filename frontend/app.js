@@ -39,15 +39,19 @@ class RollUpCaptionManager {
     addCaption(text, isFinal = false) {
         if (!text || text.trim().length === 0) return;
 
+        console.log(`📝 addCaption called: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}" (isFinal=${isFinal})`);
+
         // Extract only NEW complete words from this update
         const newWords = this.extractNewWords(text, this.lastProcessedText, isFinal);
 
         if (newWords.length > 0) {
             // Add new complete words to buffer
             this.bufferedWords.push(...newWords);
+            console.log(`📝 Buffer now has ${this.bufferedWords.length} words, displayed ${this.displayedWordCount}`);
 
             // Start independent display routine if not already running
             if (!this.isDisplaying) {
+                console.log('📝 Starting display routine');
                 this.startDisplayRoutine();
             }
         }
@@ -78,11 +82,11 @@ class RollUpCaptionManager {
             for (let i = 0; i < minLen; i++) {
                 if (currentWords[i] !== previousWords[i]) {
                     isReset = true;
-                    console.log(`📝 Caption reset detected: "${currentWords[0]}" != "${previousWords[0]}"`);
+                    console.log(`📝 Caption reset detected: "${currentWords[i]}" != "${previousWords[i]}"`);
                     break;
                 }
             }
-            // Also detect reset if current is shorter and doesn't match
+            // Also detect reset if current is shorter
             if (currentWords.length < previousWords.length) {
                 isReset = true;
                 console.log(`📝 Caption reset detected: shorter text (${currentWords.length} < ${previousWords.length})`);
@@ -91,30 +95,21 @@ class RollUpCaptionManager {
 
         // If reset detected, treat as fresh start
         const startIndex = isReset ? 0 : previousWords.length;
-        const newCompleteWords = [];
 
         // If current has fewer/equal words than previous AND not a reset, nothing new
         if (!isReset && currentWords.length <= previousWords.length) {
             return [];
         }
 
-        // Strategy: Extract new words, but exclude the CURRENT last word (might be incomplete)
-        // EXCEPT when it's the ONLY word (first word case) OR it's a final transcription
+        // Extract ALL new words from startIndex onwards
+        // Backend sends cumulative text with complete Gemini chunks, so words are complete
+        const newCompleteWords = [];
+        for (let i = startIndex; i < currentWords.length; i++) {
+            newCompleteWords.push(currentWords[i]);
+        }
 
-        if (isFinal) {
-            // Final transcription: include ALL new words including the last one
-            for (let i = startIndex; i < currentWords.length; i++) {
-                newCompleteWords.push(currentWords[i]);
-            }
-        } else if (currentWords.length === 1 && (previousWords.length === 0 || isReset)) {
-            // Special case: Very first word (or first after reset) - include it
-            newCompleteWords.push(currentWords[0]);
-        } else {
-            // Interim update with multiple words: extract new words but exclude the last one
-            // The last word might still be forming
-            for (let i = startIndex; i < currentWords.length - 1; i++) {
-                newCompleteWords.push(currentWords[i]);
-            }
+        if (newCompleteWords.length > 0) {
+            console.log(`📝 Extracted ${newCompleteWords.length} new word(s): "${newCompleteWords.join(' ')}"`);
         }
 
         return newCompleteWords;
@@ -1240,14 +1235,22 @@ class GeminiLiveClient {
 
     updateClosedCaptions(text, isFinal = false) {
         // Don't show captions if CC toggle is off
-        if (!this.isCCActive) return;
+        if (!this.isCCActive) {
+            console.log('📝 CC update skipped: CC toggle is OFF');
+            return;
+        }
 
         // Don't show captions during dance mode
-        if (this.isDancing) return;
+        if (this.isDancing) {
+            console.log('📝 CC update skipped: dancing');
+            return;
+        }
 
         // Use roll-up caption manager
         if (this.captionManager) {
             this.captionManager.addCaption(text, isFinal);
+        } else {
+            console.warn('📝 CC update skipped: captionManager not initialized');
         }
     }
 
