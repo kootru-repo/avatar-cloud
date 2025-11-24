@@ -38,9 +38,14 @@ class RollUpCaptionManager {
     addCaption(text, isFinal = false) {
         if (!text || text.trim().length === 0) return;
 
-        // Store in buffer
+        // ONLY accept final transcriptions (ignore interim with partial/incomplete words)
+        if (!isFinal) {
+            return;
+        }
+
+        // Store final transcription in buffer
         this.bufferedText = text;
-        this.isFinalBuffered = isFinal;
+        this.isFinalBuffered = true;
 
         // Start independent display routine if not already running
         if (!this.isDisplaying) {
