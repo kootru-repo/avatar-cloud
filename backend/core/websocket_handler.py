@@ -18,7 +18,7 @@ from core.session import (
     create_session, remove_session, SessionState, update_session_activity
 )
 from core.gemini_client import create_gemini_session
-from config.prompts import get_kv_cache_preload
+from config.prompts import get_initial_context
 
 logger = logging.getLogger(__name__)
 
@@ -649,16 +649,16 @@ async def handle_client(websocket: Any) -> None:
         async with gemini_session_context as gemini_session:
             session.genai_session = gemini_session
 
-            # Send backstory/setlist as first message for context
-            kv_cache_text = get_kv_cache_preload()
-            if kv_cache_text:
+            # Send backstory/setlist as first message for context (optional, disabled by default)
+            initial_context_text = get_initial_context()
+            if initial_context_text:
                 try:
-                    logger.info(f"📝 Sending context as message ({len(kv_cache_text)} chars)")
+                    logger.info(f"📝 Sending initial context as message ({len(initial_context_text)} chars)")
                     await asyncio.wait_for(
-                        gemini_session.send(input=kv_cache_text, end_of_turn=True),
+                        gemini_session.send(input=initial_context_text, end_of_turn=True),
                         timeout=SEND_TIMEOUT_SECONDS
                     )
-                    logger.info("✅ Context message sent")
+                    logger.info("✅ Initial context message sent")
 
                     # Wait for and consume the model's acknowledgment
                     async for response in gemini_session.receive():
