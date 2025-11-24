@@ -66,17 +66,15 @@ def get_gemini_config() -> dict:
             f"Update geminiVoice.voiceName in frontend/frontend_config.json"
         )
 
-    # OFFICIAL GOOGLE PATTERN: speech_config as dictionary object
+    # SDK-COMPLIANT STRUCTURE: response_modalities and speech_config are TOP-LEVEL
+    # Per LiveConnectConfig fields: generation_config, response_modalities, speech_config, system_instruction, tools
     # Reference: https://ai.google.dev/gemini-api/docs/audio
-    # The SDK requires speech_config to be a dictionary with voice_name
     config = {
-        "generation_config": {
-            "response_modalities": api_config.response_modalities,
-            "speech_config": {
-                "voice_config": {
-                    "prebuilt_voice_config": {
-                        "voice_name": voice_name
-                    }
+        "response_modalities": api_config.response_modalities,
+        "speech_config": {
+            "voice_config": {
+                "prebuilt_voice_config": {
+                    "voice_name": voice_name
                 }
             }
         },
@@ -139,11 +137,12 @@ def get_gemini_config() -> dict:
         }
         logger.info(f"   Automatic VAD: Enabled (start={vad_config.get('startOfSpeechSensitivity')}, end={vad_config.get('endOfSpeechSensitivity')})")
 
-    logger.info(f"✅ SDK-compliant Gemini config created (plain dict)")
+    logger.info(f"✅ SDK-compliant Gemini config created")
     logger.info(f"   Voice: {voice_name}")
     logger.info(f"   Response modalities: {', '.join(api_config.response_modalities)}")
+    logger.info(f"   System instruction: {len(SYSTEM_INSTRUCTIONS)} chars")
     if api_config.affective_dialog:
         logger.info(f"   Affective dialog: Enabled (adapts to tone/expression)")
-    logger.info(f"   Config type: {type(config)}")
+    logger.info(f"   Config keys: {list(config.keys())}")
 
     return config
