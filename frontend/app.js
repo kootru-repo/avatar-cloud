@@ -22,32 +22,45 @@ class RollUpCaptionManager {
         this.msPerWord = config.msPerWord || 400;  // 400ms per word = 150 WPM reading speed
         this.minDisplayMs = config.minDisplayMs || 1200;  // Minimum 1.2 seconds per chunk
 
-        // State
-        this.chunks = [];
+        // State for incremental display
+        this.lastProcessedText = '';
+        this.allChunks = [];
         this.currentChunkIndex = 0;
         this.displayTimeout = null;
+        this.isDisplaying = false;
         this.isFinal = false;
     }
 
-    // Add caption text - break into chunks and display sequentially
+    // Add caption text - handle incremental updates from Gemini
     addCaption(text, isFinal = false) {
         if (!text || text.trim().length === 0) return;
 
         this.isFinal = isFinal;
 
+        // Only process NEW text (Gemini sends accumulated text)
+        if (text === this.lastProcessedText && !isFinal) {
+            // No new content, skip
+            return;
+        }
+
+        this.lastProcessedText = text;
+
         // Break text into words
         const words = text.trim().split(/\s+/).filter(w => w.length > 0);
 
         // Create chunks of 3-5 words
-        this.chunks = [];
+        this.allChunks = [];
         for (let i = 0; i < words.length; i += this.chunkSize) {
             const chunk = words.slice(i, i + this.chunkSize).join(' ');
-            this.chunks.push(chunk);
+            this.allChunks.push(chunk);
         }
 
-        // Start displaying chunks from the beginning
-        this.currentChunkIndex = 0;
-        this.displayNextChunk();
+        // If not currently displaying, start from beginning
+        if (!this.isDisplaying) {
+            this.currentChunkIndex = 0;
+            this.displayNextChunk();
+        }
+        // If currently displaying and got final, let it finish naturally
 
         // Show overlay
         if (this.ccOverlay) {
@@ -64,12 +77,15 @@ class RollUpCaptionManager {
         }
 
         // Check if we have chunks to display
-        if (this.currentChunkIndex >= this.chunks.length) {
+        if (this.currentChunkIndex >= this.allChunks.length) {
+            this.isDisplaying = false;
             return;
         }
 
+        this.isDisplaying = true;
+
         // Get current chunk
-        const chunk = this.chunks[this.currentChunkIndex];
+        const chunk = this.allChunks[this.currentChunkIndex];
         const wordCount = chunk.split(/\s+/).length;
 
         // Display chunk
@@ -89,8 +105,10 @@ class RollUpCaptionManager {
         this.currentChunkIndex++;
 
         // Schedule next chunk (if there is one)
-        if (this.currentChunkIndex < this.chunks.length) {
+        if (this.currentChunkIndex < this.allChunks.length) {
             this.displayTimeout = setTimeout(() => this.displayNextChunk(), displayDuration);
+        } else {
+            this.isDisplaying = false;
         }
     }
 
@@ -102,8 +120,10 @@ class RollUpCaptionManager {
         }
 
         // Reset state
-        this.chunks = [];
+        this.lastProcessedText = '';
+        this.allChunks = [];
         this.currentChunkIndex = 0;
+        this.isDisplaying = false;
         this.isFinal = false;
 
         // Clear display
