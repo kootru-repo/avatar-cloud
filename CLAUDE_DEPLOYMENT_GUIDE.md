@@ -2,7 +2,7 @@
 ## Master Reference for All Deployments & Architecture
 
 **Project:** Gemini Live Avatar - Voice-to-voice AI conversation with animated avatar
-**Last Updated:** 2025-11-23 (Session 3 - System instruction restructuring & configuration cleanup)
+**Last Updated:** 2025-11-28 (Session 6 - Clarified automatic Cloud Build deployment)
 **Status:** Production-ready, automatic deployments via Cloud Build
 
 ---
@@ -103,9 +103,13 @@ The backend uses `FIREBASE_PROJECT_ID` to construct allowed origins:
 
 ### **Quick Deploy Commands**
 ```bash
-# Deploy backend (manual - from backend directory)
+# Deploy backend (AUTOMATIC via Cloud Build trigger)
+git add -A && git commit -m "commit" && git push origin main
+# Cloud Build automatically deploys to Cloud Run (3-5 minutes)
+
+# Deploy backend (MANUAL - fallback if Cloud Build unavailable)
 cd backend
-gcloud run deploy gemini-avatar-backend --source . --region=us-central1
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
 
 # Deploy frontend (manual - from project root)
 firebase deploy --only hosting
@@ -340,18 +344,20 @@ gemini-livewire-avatar/
 
 ## Deployment Workflows
 
-### **Workflow 1: Backend Manual Deployment (MANUAL)**
+### **Workflow 1: Backend Automatic Deployment (RECOMMENDED)**
 
-**Trigger:** Manual command after modifying `backend/` files
+**Trigger:** Push to `main` branch triggers Cloud Build automatically
 
 ```
 Developer modifies backend files
         ↓
-Developer commits to git (for version control)
+git add -A && git commit -m "commit" && git push origin main
         ↓
-Developer runs: cd backend && gcloud run deploy gemini-avatar-backend --source .
+GitHub webhook triggers Cloud Build
         ↓
-Cloud Run builds Docker image (backend/Dockerfile)
+Cloud Build runs cloudbuild.yaml
+        ↓
+Docker image built from backend/Dockerfile
         ↓
 Deploys to Cloud Run (gemini-avatar-backend)
         ↓
@@ -361,33 +367,27 @@ Routes 100% traffic to new revision
 ```
 
 **Time:** 3-5 minutes
-**Manual Intervention Required**
+**No Manual Intervention Required**
 
 **To deploy:**
 ```bash
 # Modify backend code
-vim backend/core/transcription.py
+vim backend/core/websocket_handler.py
 
-# Commit to git (for version control)
-git add backend/
-git commit -m "Fix transcription bug"
-git push origin main
+# Commit and push (triggers automatic deployment)
+git add -A && git commit -m "Fix transcription bug" && git push origin main
 
-# Deploy to Cloud Run
+# Monitor build progress
+# https://console.cloud.google.com/cloud-build/builds?project=avatar-478217
+```
+
+### **Workflow 1b: Backend Manual Deployment (FALLBACK)**
+
+**Use only if Cloud Build is unavailable**
+
+```bash
 cd backend
-gcloud run deploy gemini-avatar-backend \
-  --source . \
-  --region=us-central1 \
-  --platform=managed \
-  --allow-unauthenticated \
-  --min-instances=1 \
-  --max-instances=10 \
-  --timeout=300 \
-  --memory=512Mi \
-  --cpu=1 \
-  --set-env-vars=BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 \
-  --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest \
-  --port=8080
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
 ```
 
 ### **Workflow 2: Frontend Manual Deployment (MANUAL)**
@@ -629,9 +629,9 @@ gcloud run services describe gemini-avatar-backend \
   "automaticVAD": {
     "startOfSpeechSensitivity": "START_SENSITIVITY_LOW",
     "endOfSpeechSensitivity": "END_SENSITIVITY_LOW",
-    "prefixPaddingMs": 100,
-    "silenceDurationMs": 500,
-    "_comment": "⚠️ CRITICAL: Only LOW/HIGH supported. MEDIUM causes immediate disconnect!"
+    "prefixPaddingMs": 20,
+    "silenceDurationMs": 100,
+    "_comment": "Google boilerplate defaults. ⚠️ Only LOW/HIGH supported. MEDIUM causes immediate disconnect!"
   },
   "audio": {
     "outputSampleRate": 24000,
@@ -912,13 +912,13 @@ gcloud logging read "resource.type=cloud_run_revision AND resource.labels.servic
 
 **Fix:**
 ```json
-// backend/backend_config.json - Use ONLY LOW or HIGH
+// backend/backend_config.json - Google boilerplate defaults
 "automaticVAD": {
   "enabled": true,
   "startOfSpeechSensitivity": "START_SENSITIVITY_LOW",  // ✅ LOW or HIGH only
   "endOfSpeechSensitivity": "END_SENSITIVITY_LOW",      // ✅ LOW or HIGH only
-  "prefixPaddingMs": 100,
-  "silenceDurationMs": 500
+  "prefixPaddingMs": 20,
+  "silenceDurationMs": 100
 }
 ```
 
@@ -930,9 +930,9 @@ gcloud logging read "resource.type=cloud_run_revision AND resource.labels.servic
 
 **⚠️ INVALID:** `START_SENSITIVITY_MEDIUM`, `END_SENSITIVITY_MEDIUM` - These cause immediate disconnect!
 
-**Recommended Settings:**
-- `LOW` sensitivity + `500ms` silence: Reduces false positives from ambient noise, allows natural speech pauses
-- `HIGH` sensitivity + `200ms` silence: More responsive but may trigger on background noise
+**Google Boilerplate Settings (RECOMMENDED):**
+- `LOW` sensitivity + `prefixPaddingMs: 20` + `silenceDurationMs: 100`
+- This is the official Google recommended configuration for Live API
 
 **Deploy Fix:**
 ```bash
@@ -1719,13 +1719,13 @@ startBargeInMonitoring() {
 - Connection immediately closes
 - No clear error message
 
-**Solution:** Changed sensitivity from `MEDIUM` to `LOW`:
+**Solution:** Changed sensitivity from `MEDIUM` to `LOW` with Google boilerplate defaults:
 ```json
 "automaticVAD": {
   "startOfSpeechSensitivity": "START_SENSITIVITY_LOW",
   "endOfSpeechSensitivity": "END_SENSITIVITY_LOW",
-  "prefixPaddingMs": 100,
-  "silenceDurationMs": 500
+  "prefixPaddingMs": 20,
+  "silenceDurationMs": 100
 }
 ```
 
@@ -2202,9 +2202,11 @@ firebase deploy --only hosting
 
 **What Claude Needs to Know:**
 
-1. **Backend changes** (Python code in `backend/`) have TWO options:
-   - **Automatic:** Git commit + push to main → Cloud Build auto-deploys (3-5 min)
-   - **Manual:** `cd backend && gcloud run deploy gemini-avatar-backend --source . --region=us-central1`
+1. **Backend changes** (Python code in `backend/`) deploy AUTOMATICALLY via Cloud Build:
+   ```bash
+   git add -A && git commit -m "commit" && git push origin main
+   ```
+   Cloud Build trigger auto-deploys to Cloud Run (3-5 min)
 2. **Frontend changes** (HTML/JS in `frontend/`) require manual `firebase deploy --only hosting`
 3. **Always commit to git first** for version control
 4. **Backend URL:** https://gemini-avatar-backend-580499038386.us-central1.run.app
@@ -2221,35 +2223,24 @@ firebase deploy --only hosting
 
 **Deployment Workflow:**
 ```bash
-# For backend changes (AUTOMATIC via Cloud Build):
-git add backend/
-git commit -m "Fix: description"
-git push origin main
+# For backend changes (AUTOMATIC via Cloud Build trigger):
+git add -A && git commit -m "commit" && git push origin main
 # Cloud Build automatically deploys to Cloud Run (3-5 minutes)
 # Monitor: https://console.cloud.google.com/cloud-build/builds?project=avatar-478217
 
 # For backend changes (MANUAL - if Cloud Build unavailable):
 cd backend
-gcloud run deploy gemini-avatar-backend --source . --region us-central1 \
-  --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 \
-  --memory 512Mi --cpu 1 \
-  --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 \
-  --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest \
-  --port 8080
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
 # Takes 3-5 minutes
 
 # For frontend changes (ALWAYS MANUAL):
-git add frontend/
-git commit -m "Fix: description"
-git push origin main
+git add -A && git commit -m "commit" && git push origin main
 firebase deploy --only hosting
 # Takes 30-60 seconds
 
 # For both (backend auto-deploys, frontend manual):
-git add .
-git commit -m "Fix: description"
-git push origin main
-# Backend deploys automatically via Cloud Build
+git add -A && git commit -m "commit" && git push origin main
+# Backend deploys automatically via Cloud Build trigger
 firebase deploy --only hosting
 # Frontend requires manual deploy
 ```

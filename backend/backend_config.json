@@ -11,9 +11,9 @@
     "enabled": true,
     "startOfSpeechSensitivity": "START_SENSITIVITY_LOW",
     "endOfSpeechSensitivity": "END_SENSITIVITY_LOW",
-    "prefixPaddingMs": 100,
-    "silenceDurationMs": 500,
-    "_comment": "Automatic Voice Activity Detection. LOW sensitivity reduces false positives (Gemini only supports LOW/HIGH, no MEDIUM). 500ms silence allows natural speech pauses. Gemini handles interruption detection server-side."
+    "prefixPaddingMs": 20,
+    "silenceDurationMs": 100,
+    "_comment": "Google boilerplate VAD settings. LOW sensitivity is default. prefixPaddingMs=20 and silenceDurationMs=100 are Google recommended defaults. Gemini handles interruption detection server-side."
   },
   "audio": {
     "outputSampleRate": 24000,

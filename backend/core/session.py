@@ -1,13 +1,17 @@
 """
 Session management for Gemini Live Avatar
 Tracks individual client sessions and their state
+Enforces single-session per user (new session kicks old one)
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 import asyncio
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -24,6 +28,11 @@ class SessionState:
     last_activity: datetime = field(default_factory=datetime.now)
     message_count: int = 0
 
+    # User authentication (for single-session enforcement)
+    user_id: Optional[str] = None
+    user_email: Optional[str] = None
+    websocket: Optional[Any] = None  # Reference to websocket for disconnection
+
     # SDK-COMPLIANT: Usage tracking
     total_tokens: int = 0
 
@@ -38,6 +47,8 @@ class SessionState:
 
 # SDK-COMPLIANT: Global session storage with thread-safe access
 active_sessions: Dict[str, SessionState] = {}
+# User -> session mapping for single-session enforcement
+user_sessions: Dict[str, str] = {}  # user_id -> session_id
 _session_lock = asyncio.Lock()
 MAX_SESSIONS = 1000  # Prevent memory exhaustion
 SESSION_TIMEOUT_SECONDS = 600  # SDK maximum: 10 minutes (600 seconds)
@@ -96,7 +107,59 @@ async def remove_session(session_id: str) -> None:
     """Remove a session with thread-safe access."""
     async with _session_lock:
         if session_id in active_sessions:
+            session = active_sessions[session_id]
+            # Also remove from user_sessions mapping
+            if session.user_id and session.user_id in user_sessions:
+                if user_sessions[session.user_id] == session_id:
+                    del user_sessions[session.user_id]
+                    logger.info(f"🔓 User {session.user_email} session mapping removed")
             del active_sessions[session_id]
+
+
+async def register_user_session(session_id: str, user_id: str, user_email: str, websocket: Any) -> Optional[Any]:
+    """
+    Register a user with a session. If user already has an active session,
+    return the old websocket to be disconnected (single-session enforcement).
+
+    Returns:
+        Old websocket to disconnect, or None if no existing session
+    """
+    old_websocket = None
+
+    async with _session_lock:
+        # Check if user already has an active session
+        if user_id in user_sessions:
+            old_session_id = user_sessions[user_id]
+            if old_session_id in active_sessions and old_session_id != session_id:
+                old_session = active_sessions[old_session_id]
+                old_websocket = old_session.websocket
+                logger.info(f"👢 Kicking existing session for user {user_email} (session: {old_session_id[:8]}...)")
+
+                # Clean up old session
+                del active_sessions[old_session_id]
+
+        # Register new session for user
+        user_sessions[user_id] = session_id
+
+        # Update session with user info
+        if session_id in active_sessions:
+            session = active_sessions[session_id]
+            session.user_id = user_id
+            session.user_email = user_email
+            session.websocket = websocket
+            logger.info(f"✅ User {user_email} registered with session {session_id[:8]}...")
+
+    return old_websocket
+
+
+async def get_user_session(user_id: str) -> Optional[Tuple[str, SessionState]]:
+    """Get the active session for a user, if any."""
+    async with _session_lock:
+        if user_id in user_sessions:
+            session_id = user_sessions[user_id]
+            if session_id in active_sessions:
+                return (session_id, active_sessions[session_id])
+    return None
 
 
 async def update_session_activity(session_id: str) -> None:

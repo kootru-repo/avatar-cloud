@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kootru LLC - Live Custom AI Avatar Service. Create stunning, interactive AI-powered avatars for your brand.">
+    <meta name="keywords" content="AI avatar, custom avatar, live avatar, AI service, virtual assistant">
+    <title>Kootru | Live Custom AI Avatars</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --accent: #22d3ee;
+            --accent-alt: #a855f7;
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a25;
+            --text: #e4e4e7;
+            --text-muted: #71717a;
+            --border: #27272a;
+            --glow: rgba(99, 102, 241, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Background Effects */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-orbs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            top: -200px;
+            right: -200px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+            bottom: -150px;
+            left: -150px;
+            animation-delay: -7s;
+        }
+
+        .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, var(--accent-alt) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -50px) scale(1.1); }
+            50% { transform: translate(-30px, 30px) scale(0.95); }
+            75% { transform: translate(-50px, -30px) scale(1.05); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        nav.scrolled {
+            padding: 0.75rem 2rem;
+            background: rgba(10, 10, 15, 0.95);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white !important;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 20px var(--glow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px var(--glow);
+        }
+
+        .nav-cta::after {
+            display: none;
+        }
+
+        .demo-nav-link {
+            color: var(--accent) !important;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .mobile-menu-btn span {
+            width: 25px;
+            height: 2px;
+            background: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text {
+            max-width: 600px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+        }
+
+        h1 span {
+            background: linear-gradient(135deg, var(--primary), var(--accent), var(--accent-alt));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-description {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.9rem 1.75rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 20px var(--glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px var(--glow);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--primary);
+        }
+
+        /* 3D Avatar Display */
+        .hero-visual {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            perspective: 1000px;
+        }
+
+        .avatar-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid;
+            animation: rotate3d 10s linear infinite;
+        }
+
+        .ring-1 {
+            width: 100%;
+            height: 100%;
+            border-color: rgba(99, 102, 241, 0.3);
+            animation-duration: 15s;
+        }
+
+        .ring-2 {
+            width: 85%;
+            height: 85%;
+            top: 7.5%;
+            left: 7.5%;
+            border-color: rgba(34, 211, 238, 0.3);
+            animation-duration: 12s;
+            animation-direction: reverse;
+        }
+
+        .ring-3 {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            border-color: rgba(168, 85, 247, 0.3);
+            animation-duration: 10s;
+        }
+
+        @keyframes rotate3d {
+            0% { transform: rotateX(60deg) rotateZ(0deg); }
+            100% { transform: rotateX(60deg) rotateZ(360deg); }
+        }
+
+        .avatar-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, var(--primary), var(--accent-alt));
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            animation: morph 8s ease-in-out infinite, glow 3s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes morph {
+            0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+            25% { border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%; }
+            50% { border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%; }
+            75% { border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%; }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 40px var(--glow), 0 0 80px rgba(168, 85, 247, 0.3); }
+            50% { box-shadow: 0 0 60px var(--glow), 0 0 120px rgba(168, 85, 247, 0.4); }
+        }
+
+        .avatar-face {
+            font-size: 4rem;
+        }
+
+        .floating-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .float-item {
+            position: absolute;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            animation: floatItem 6s ease-in-out infinite;
+            white-space: nowrap;
+        }
+
+        .float-item:nth-child(1) {
+            top: 10%;
+            right: -20px;
+            animation-delay: 0s;
+        }
+
+        .float-item:nth-child(2) {
+            bottom: 20%;
+            left: -30px;
+            animation-delay: -2s;
+        }
+
+        .float-item:nth-child(3) {
+            top: 60%;
+            right: -40px;
+            animation-delay: -4s;
+        }
+
+        @keyframes floatItem {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Sections Common */
+        section {
+            padding: 6rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 4rem;
+        }
+
+        .section-label {
+            display: inline-block;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Features Section */
+        #features {
+            background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.03), transparent);
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.3);
+            background: var(--bg-card-hover);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Services/Products Section */
+        #services {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .services-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .service-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        .service-card.featured {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.05));
+        }
+
+        .service-card.featured::before {
+            content: 'POPULAR';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--accent-alt));
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            letter-spacing: 0.05em;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .service-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .service-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .service-price span {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .service-desc {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .service-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .service-features li {
+            padding: 0.6rem 0;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .service-features li::before {
+            content: '✓';
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .service-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* How It Works */
+        #how-it-works {
+            background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.03), transparent);
+        }
+
+        .steps-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            position: relative;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary), var(--accent-alt));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+
+        .step h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .step p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Testimonials */
+        .testimonials-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .testimonial-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+
+        .testimonial-stars {
+            color: #fbbf24;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+
+        .testimonial-text {
+            color: var(--text);
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .author-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .author-info h4 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .author-info p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* FAQ Section */
+        #faq {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s ease;
+        }
+
+        .faq-question:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .faq-icon {
+            font-size: 1.5rem;
+            color: var(--primary);
+            transition: transform 0.3s ease;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+        }
+
+        .faq-answer p {
+            padding: 0 1.5rem 1.25rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* Contact Section */
+        #contact {
+            background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.05));
+        }
+
+        .contact-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+        }
+
+        .contact-info h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .contact-info > p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .contact-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .contact-method {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .contact-method:hover {
+            color: var(--primary);
+        }
+
+        .contact-method-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .contact-form {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 4rem 2rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand .logo {
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            max-width: 300px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .social-link {
+            width: 42px;
+            height: 42px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        .footer-column h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--text);
+        }
+
+        .footer-bottom {
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-bottom p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .footer-legal {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-legal a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-legal a:hover {
+            color: var(--text);
+        }
+
+        /* Demo Modal */
+        .demo-modal-overlay,
+        .privacy-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .demo-modal-overlay.active,
+        .privacy-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .demo-modal,
+        .privacy-modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 420px;
+            width: 90%;
+            position: relative;
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .privacy-modal {
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 2.5rem;
+        }
+
+        .demo-modal-overlay.active .demo-modal,
+        .privacy-modal-overlay.active .privacy-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .demo-modal-close,
+        .privacy-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .demo-modal-close:hover {
+            background: var(--bg-dark);
+            color: var(--text);
+        }
+
+        .demo-modal-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .demo-modal-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1.25rem;
+            box-shadow: 0 10px 40px var(--glow);
+        }
+
+        .demo-modal-header h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-modal-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .demo-form .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .demo-form .btn {
+            width: 100%;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+
+        .demo-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .demo-divider::before,
+        .demo-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .demo-guest-btn {
+            width: 100%;
+            justify-content: center;
+            background: rgba(34, 211, 238, 0.1);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            color: var(--accent);
+        }
+
+        .demo-guest-btn:hover {
+            background: rgba(34, 211, 238, 0.2);
+            border-color: var(--accent);
+        }
+
+        .demo-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .demo-footer p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .demo-footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .demo-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Privacy Policy Modal Content */
+        .privacy-modal-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .privacy-modal-header h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .privacy-modal-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .privacy-content h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            margin: 1.75rem 0 0.75rem;
+            color: var(--text);
+        }
+
+        .privacy-content p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .privacy-content ul {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        .privacy-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .privacy-content strong {
+            color: var(--text);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-text {
+                max-width: 100%;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .avatar-container {
+                width: 300px;
+                height: 300px;
+            }
+
+            .contact-container {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(10, 10, 15, 0.98);
+                flex-direction: column;
+                padding: 2rem;
+                gap: 1.5rem;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+
+            .hero {
+                padding: 7rem 1.5rem 3rem;
+            }
+
+            .avatar-container {
+                width: 250px;
+                height: 250px;
+            }
+
+            .float-item {
+                display: none;
+            }
+
+            section {
+                padding: 4rem 1.5rem;
+            }
+
+            .services-container {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-legal {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-grid"></div>
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">KOOTRU</a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#features">Features</a></li>
+                <li><a href="https://avatar-478217.web.app" target="_blank" rel="noopener" class="demo-nav-link">Live Demo</a></li>
+                <li><a href="#services">Pricing</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#testimonials">Testimonials</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#contact" class="nav-cta">Get Started</a></li>
+            </ul>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">
+                    <span>Now Available</span>
+                </div>
+                <h1>Live Custom <span>AI Avatars</span> for Your Brand</h1>
+                <p class="hero-description">Transform customer engagement with hyper-realistic, interactive AI avatars. Real-time conversations, unlimited scalability, and seamless integration with your existing platforms.</p>
+                <div class="hero-buttons">
+                    <a href="#contact" class="btn btn-primary">
+                        <span>Start Free Trial</span>
+                        <span>→</span>
+                    </a>
+                    <a href="https://avatar-478217.web.app" target="_blank" rel="noopener" class="btn btn-secondary">
+                        <span>▶</span>
+                        <span>Try Live Demo</span>
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="avatar-container">
+                    <div class="avatar-ring ring-1"></div>
+                    <div class="avatar-ring ring-2"></div>
+                    <div class="avatar-ring ring-3"></div>
+                    <div class="avatar-core">
+                        <span class="avatar-face">🤖</span>
+                    </div>
+                    <div class="floating-elements">
+                        <div class="float-item">✨ Real-time Voice</div>
+                        <div class="float-item">🎭 Custom Personas</div>
+                        <div class="float-item">🌐 24/7 Availability</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features">
+        <div class="section-header">
+            <span class="section-label">Features</span>
+            <h2>Powerful AI Avatar Technology</h2>
+            <p class="section-description">Built on cutting-edge AI with real-time processing, natural language understanding, and lifelike visual rendering.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎙️</div>
+                <h3>Real-Time Voice Synthesis</h3>
+                <p>Natural, expressive voice cloning with sub-200ms latency. Your avatar speaks with personality and emotion.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Advanced Context Memory</h3>
+                <p>Persistent memory across conversations. Your avatar remembers customers and builds lasting relationships.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>Custom Visual Design</h3>
+                <p>Photorealistic or stylized avatars matched to your brand identity. Fully customizable appearance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔌</div>
+                <h3>Easy Integration</h3>
+                <p>RESTful API, WebSocket streams, and native SDKs. Deploy anywhere in minutes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Analytics Dashboard</h3>
+                <p>Track engagement, sentiment, and conversion metrics. Gain insights from every conversation.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Enterprise Security</h3>
+                <p>SOC 2 compliant, end-to-end encryption, and GDPR ready. Your data stays protected.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services/Pricing Section -->
+    <section id="services">
+        <div class="section-header">
+            <span class="section-label">Pricing</span>
+            <h2>Plans for Every Scale</h2>
+            <p class="section-description">From startups to enterprises, we have a solution that fits your needs.</p>
+        </div>
+        <div class="services-container">
+            <div class="service-card">
+                <h3 class="service-name">Starter</h3>
+                <div class="service-price">$299<span>/month</span></div>
+                <p class="service-desc">Perfect for small businesses getting started with AI avatars.</p>
+                <ul class="service-features">
+                    <li>1 Custom Avatar</li>
+                    <li>5,000 Minutes/Month</li>
+                    <li>Basic Voice Cloning</li>
+                    <li>Standard Support</li>
+                    <li>Web Embed Widget</li>
+                </ul>
+                <a href="#contact" class="btn btn-secondary service-btn">Get Started</a>
+            </div>
+            <div class="service-card featured">
+                <h3 class="service-name">Professional</h3>
+                <div class="service-price">$799<span>/month</span></div>
+                <p class="service-desc">Ideal for growing businesses with advanced needs.</p>
+                <ul class="service-features">
+                    <li>3 Custom Avatars</li>
+                    <li>25,000 Minutes/Month</li>
+                    <li>Premium Voice Cloning</li>
+                    <li>Priority Support</li>
+                    <li>API Access</li>
+                    <li>Analytics Dashboard</li>
+                </ul>
+                <a href="#contact" class="btn btn-primary service-btn">Get Started</a>
+            </div>
+            <div class="service-card">
+                <h3 class="service-name">Enterprise</h3>
+                <div class="service-price">Custom</div>
+                <p class="service-desc">Tailored solutions for large-scale deployments.</p>
+                <ul class="service-features">
+                    <li>Unlimited Avatars</li>
+                    <li>Unlimited Minutes</li>
+                    <li>Custom Voice Training</li>
+                    <li>Dedicated Support</li>
+                    <li>Custom Integrations</li>
+                    <li>SLA Guarantee</li>
+                </ul>
+                <a href="#contact" class="btn btn-secondary service-btn">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works">
+        <div class="section-header">
+            <span class="section-label">Process</span>
+            <h2>How It Works</h2>
+            <p class="section-description">Get your custom AI avatar live in three simple steps.</p>
+        </div>
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Design Your Avatar</h3>
+                <p>Work with our team to create your perfect avatar's appearance, voice, and personality.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Train & Configure</h3>
+                <p>Upload your knowledge base, set conversation flows, and fine-tune responses.</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Deploy & Scale</h3>
+                <p>Integrate with your platform and go live. Scale instantly to meet demand.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials">
+        <div class="section-header">
+            <span class="section-label">Testimonials</span>
+            <h2>Trusted by Innovators</h2>
+            <p class="section-description">See what our clients are saying about their AI avatar experience.</p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Kootru transformed our customer support. Our avatar handles 80% of inquiries with higher satisfaction scores than our human agents had."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">JM</div>
+                    <div class="author-info">
+                        <h4>James Mitchell</h4>
+                        <p>CTO, TechFlow Inc</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"The realism is incredible. Our customers genuinely enjoy talking to our avatar. It's become a differentiator for our brand."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">SL</div>
+                    <div class="author-info">
+                        <h4>Sarah Lee</h4>
+                        <p>Marketing Director, Luxe Retail</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">★★★★★</div>
+                <p class="testimonial-text">"Setup was seamless. The Kootru team understood our brand instantly and delivered an avatar that felt authentically us."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">RK</div>
+                    <div class="author-info">
+                        <h4>Raj Kumar</h4>
+                        <p>Founder, NextGen Health</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq">
+        <div class="section-header">
+            <span class="section-label">FAQ</span>
+            <h2>Frequently Asked Questions</h2>
+            <p class="section-description">Everything you need to know about Kootru AI avatars.</p>
+        </div>
+        <div class="faq-container">
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>How realistic are the avatars?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>Our avatars use state-of-the-art neural rendering and voice synthesis to create incredibly lifelike digital humans. Most users report they feel like they're talking to a real person. We offer both photorealistic and stylized options depending on your brand needs.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Can I use my own voice or likeness?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>Absolutely! With our Professional and Enterprise plans, you can train the avatar on your own voice with just 30 minutes of audio. For visual likeness, we can create avatars based on real people (with proper consent) or design entirely new characters.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What platforms can I deploy on?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>Kootru avatars work anywhere. Web embed widgets, mobile SDKs (iOS & Android), desktop applications, kiosk systems, and custom integrations via our API. If you can display video, you can run a Kootru avatar.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>How long does setup take?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>Most clients go live within 2-3 weeks. This includes avatar design, voice training, knowledge base setup, and integration. For simpler deployments using pre-designed avatars, you can be live in as little as 3 days.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Is my data secure?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>Security is our top priority. We're SOC 2 Type II certified, GDPR compliant, and use end-to-end encryption for all conversations. Enterprise clients can opt for dedicated infrastructure and custom data retention policies.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What data does Kootru collect from end users?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p><strong>None.</strong> Kootru does not collect, store, or have access to any personal data from end users who interact with deployed avatars. We operate solely as a technology provider—all data exchanged during avatar interactions remains between end users and our Client's systems. Our Clients maintain full control and responsibility for their own data practices. For complete details, please review our <a href="#" id="faqPrivacyLink" style="color: var(--primary);">Privacy Policy</a>.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <div class="contact-container">
+            <div class="contact-info">
+                <h3>Let's Build Your AI Avatar</h3>
+                <p>Ready to transform your customer experience? Get in touch with our team to discuss your project.</p>
+                <div class="contact-methods">
+                    <a href="mailto:hello@kootru.com" class="contact-method">
+                        <div class="contact-method-icon">✉️</div>
+                        <div>
+                            <strong>Email Us</strong>
+                            <p>hello@kootru.com</p>
+                        </div>
+                    </a>
+                    <a href="tel:+1-555-KOOTRU" class="contact-method">
+                        <div class="contact-method-icon">📞</div>
+                        <div>
+                            <strong>Call Us</strong>
+                            <p>+1 (555) KOOTRU</p>
+                        </div>
+                    </a>
+                    <div class="contact-method">
+                        <div class="contact-method-icon">📍</div>
+                        <div>
+                            <strong>Location</strong>
+                            <p>United States</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form class="contact-form" id="contactForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="John Smith" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="john@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="company">Company</label>
+                    <input type="text" id="company" name="company" placeholder="Your Company">
+                </div>
+                <div class="form-group">
+                    <label for="plan">Interested Plan</label>
+                    <select id="plan" name="plan">
+                        <option value="">Select a plan...</option>
+                        <option value="starter">Starter - $299/mo</option>
+                        <option value="professional">Professional - $799/mo</option>
+                        <option value="enterprise">Enterprise - Custom</option>
+                        <option value="unsure">Not sure yet</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" placeholder="Tell us about your project..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary service-btn">Send Message →</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Privacy Policy Modal -->
+    <div class="privacy-modal-overlay" id="privacyModal">
+        <div class="privacy-modal">
+            <button class="privacy-modal-close" id="privacyModalClose" aria-label="Close">×</button>
+            <div class="privacy-modal-header">
+                <h2>Privacy Policy</h2>
+                <p>Last Updated: January 2025</p>
+            </div>
+            <div class="privacy-content">
+                <h3>1. Introduction</h3>
+                <p>Kootru LLC ("Kootru," "we," "us," or "our") is committed to protecting the privacy and security of all individuals who interact with our services. This Privacy Policy describes our practices concerning data handling in connection with our live custom AI avatar services (the "Services").</p>
+                <p>By accessing our website or engaging our Services, you acknowledge that you have read and understood this Privacy Policy.</p>
+
+                <h3>2. Our Role as a Service Provider</h3>
+                <p>Kootru operates exclusively as a <strong>technology service provider</strong> to business clients ("Clients"). We provide customized AI avatar solutions that are deployed and controlled by our Clients for their own business purposes.</p>
+                <p><strong>Critical Distinction:</strong> Kootru does not collect, store, process, or distribute any personal data from end users who interact with AI avatars deployed by our Clients. Any data exchanged during avatar interactions is solely between the end user and the Client's systems.</p>
+
+                <h3>3. Data We Do Not Collect</h3>
+                <p>Through our AI avatar interface and technology, Kootru <strong>does not</strong> collect, retain, or have access to:</p>
+                <ul>
+                    <li>Personal identifying information of end users</li>
+                    <li>Conversation logs, transcripts, or recordings</li>
+                    <li>Voice data, biometric data, or facial recognition data</li>
+                    <li>Behavioral data, usage patterns, or interaction history</li>
+                    <li>IP addresses, device identifiers, or geolocation data of end users</li>
+                    <li>Any data input by end users during avatar interactions</li>
+                </ul>
+
+                <h3>4. Data Processing on Behalf of Clients</h3>
+                <p>When providing customization and configuration services to our Clients, we process only the information <strong>expressly provided to us by the Client</strong> for the purpose of building and deploying their custom avatar solution. This may include:</p>
+                <ul>
+                    <li>Brand assets (logos, color schemes, style guidelines)</li>
+                    <li>Knowledge base content provided by the Client</li>
+                    <li>Voice samples or persona specifications authorized by the Client</li>
+                    <li>Integration credentials and technical configurations</li>
+                </ul>
+                <p>All Client-provided data is used exclusively for the purpose of delivering the contracted Services and is handled in accordance with our Data Processing Agreement with each Client.</p>
+
+                <h3>5. Client Responsibilities</h3>
+                <p>Our Clients, as data controllers for their deployed avatar solutions, bear sole responsibility for:</p>
+                <ul>
+                    <li>Compliance with all applicable data protection laws and regulations (including GDPR, CCPA, and other jurisdictional requirements)</li>
+                    <li>Providing appropriate privacy notices to their end users</li>
+                    <li>Obtaining necessary consents for data collection and processing</li>
+                    <li>Handling, storing, and securing any data collected through their avatar deployment</li>
+                    <li>Responding to data subject access requests and other privacy-related inquiries from their end users</li>
+                </ul>
+
+                <h3>6. Website Data Collection</h3>
+                <p>When you visit kootru.com or submit inquiries through our contact form, we may collect:</p>
+                <ul>
+                    <li>Contact information you voluntarily provide (name, email, company name)</li>
+                    <li>Inquiry details and message content</li>
+                    <li>Basic analytics data (page views, referral sources) via privacy-respecting analytics</li>
+                </ul>
+                <p>This information is used solely for responding to your inquiries, providing requested information about our Services, and improving our website experience.</p>
+
+                <h3>7. Data Security</h3>
+                <p>Kootru implements industry-standard technical and organizational security measures to protect any data within our control, including:</p>
+                <ul>
+                    <li>Encryption of data in transit and at rest</li>
+                    <li>Access controls and authentication requirements</li>
+                    <li>Regular security assessments and monitoring</li>
+                    <li>Employee training on data protection practices</li>
+                </ul>
+
+                <h3>8. Data Retention</h3>
+                <p>Client-provided configuration data is retained only for the duration of the service relationship plus any legally required retention period. Upon termination of services, Client data is securely deleted within thirty (30) days unless otherwise required by law or contractual obligation.</p>
+
+                <h3>9. Third-Party Disclosure</h3>
+                <p>Kootru does not sell, rent, lease, or otherwise distribute any data to third parties. We may share data only:</p>
+                <ul>
+                    <li>With service providers who assist in delivering our Services, under strict contractual confidentiality obligations</li>
+                    <li>When required by law, court order, or governmental authority</li>
+                    <li>To protect the rights, property, or safety of Kootru, our Clients, or others</li>
+                </ul>
+
+                <h3>10. International Data Transfers</h3>
+                <p>If Client-provided data is transferred across international borders, Kootru ensures appropriate safeguards are in place, including Standard Contractual Clauses or other legally recognized transfer mechanisms.</p>
+
+                <h3>11. Your Rights</h3>
+                <p>Depending on your jurisdiction, you may have rights regarding personal data, including access, correction, deletion, and portability. For any data held by Kootru directly (such as contact form submissions), please contact us using the information below. For data collected through a Client's deployed avatar, please contact that Client directly.</p>
+
+                <h3>12. Children's Privacy</h3>
+                <p>Our Services are not directed to individuals under the age of 18. Kootru does not knowingly collect personal information from children. Clients deploying avatar solutions must ensure compliance with applicable laws regarding minors.</p>
+
+                <h3>13. Changes to This Policy</h3>
+                <p>We may update this Privacy Policy periodically to reflect changes in our practices or applicable law. Material changes will be posted on this page with an updated effective date. Continued use of our Services following any changes constitutes acceptance of the revised policy.</p>
+
+                <h3>14. Contact Information</h3>
+                <p>For questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact:</p>
+                <p><strong>Kootru LLC</strong><br>
+                Email: privacy@kootru.com<br>
+                Website: kootru.com</p>
+
+                <h3>15. Governing Law</h3>
+                <p>This Privacy Policy shall be governed by and construed in accordance with the laws of the United States, without regard to conflict of law principles.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">KOOTRU</a>
+                    <p>Pioneering the future of human-AI interaction with live, intelligent avatars that connect, engage, and convert.</p>
+                    <div class="social-links">
+                        <a href="https://twitter.com/kootru" class="social-link" aria-label="Twitter" target="_blank" rel="noopener">𝕏</a>
+                        <a href="https://linkedin.com/company/kootru" class="social-link" aria-label="LinkedIn" target="_blank" rel="noopener">in</a>
+                        <a href="https://youtube.com/@kootru" class="social-link" aria-label="YouTube" target="_blank" rel="noopener">▶</a>
+                        <a href="https://discord.gg/kootru" class="social-link" aria-label="Discord" target="_blank" rel="noopener">💬</a>
+                        <a href="https://github.com/kootru" class="social-link" aria-label="GitHub" target="_blank" rel="noopener">⌘</a>
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h4>Product</h4>
+                    <ul class="footer-links">
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#services">Pricing</a></li>
+                        <li><a href="#">API Docs</a></li>
+                        <li><a href="#">Integrations</a></li>
+                        <li><a href="#">Changelog</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Press Kit</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Community</a></li>
+                        <li><a href="#">Status</a></li>
+                        <li><a href="#">Partners</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Kootru LLC. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#" id="privacyLink">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Cookie Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Navbar Scroll Effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // FAQ Accordion
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            question.addEventListener('click', () => {
+                const isActive = item.classList.contains('active');
+                faqItems.forEach(i => i.classList.remove('active'));
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth Scroll for Anchor Links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    // Close mobile menu if open
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+
+        // Form Submission Handler
+        const contactForm = document.getElementById('contactForm');
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Replace this with your actual form handling logic
+            // For Hostinger, you might use a PHP backend or a service like Formspree
+            alert('Thank you for your message! We\'ll be in touch soon.');
+            contactForm.reset();
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navLinks.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                navLinks.classList.remove('active');
+            }
+        });
+
+        // Privacy Policy Modal
+        const privacyLink = document.getElementById('privacyLink');
+        const privacyModal = document.getElementById('privacyModal');
+        const privacyModalClose = document.getElementById('privacyModalClose');
+
+        privacyLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            privacyModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        privacyModalClose.addEventListener('click', () => {
+            privacyModal.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+
+        privacyModal.addEventListener('click', (e) => {
+            if (e.target === privacyModal) {
+                privacyModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && privacyModal.classList.contains('active')) {
+                privacyModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // FAQ Privacy Link
+        const faqPrivacyLink = document.getElementById('faqPrivacyLink');
+        if (faqPrivacyLink) {
+            faqPrivacyLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                privacyModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+    </script>
+</body>
+</html>

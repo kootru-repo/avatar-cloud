@@ -15,7 +15,8 @@ from pathlib import Path
 from google.genai import types
 
 from core.session import (
-    create_session, remove_session, SessionState, update_session_activity
+    create_session, remove_session, SessionState, update_session_activity,
+    register_user_session
 )
 from core.gemini_client import create_gemini_session
 from config.prompts import get_initial_context
@@ -208,6 +209,40 @@ async def handle_client_messages(websocket: Any, session: SessionState, session_
                 elif msg_type == "end":
                     # Client VAD detected end - server VAD handles this automatically
                     logger.debug("Client VAD detected silence (server VAD active)")
+                elif msg_type == "auth":
+                    # User authentication for single-session enforcement
+                    user_id = data.get("data", {}).get("uid")
+                    user_email = data.get("data", {}).get("email", "unknown")
+
+                    if user_id:
+                        logger.info(f"🔐 Auth received: {user_email} (uid: {user_id[:8]}...)")
+
+                        # Register user session, kick old if exists
+                        old_websocket = await register_user_session(
+                            session_id, user_id, user_email, websocket
+                        )
+
+                        # Disconnect old session if it exists
+                        if old_websocket:
+                            try:
+                                await old_websocket.send(json.dumps({
+                                    "type": "session_takeover",
+                                    "data": {
+                                        "message": "Your session was opened in another window."
+                                    }
+                                }))
+                                await old_websocket.close(code=4000, reason="Session opened elsewhere")
+                                logger.info(f"👢 Old session disconnected for {user_email}")
+                            except Exception as e:
+                                logger.warning(f"Failed to close old session: {e}")
+
+                        # Confirm auth to client
+                        await websocket.send(json.dumps({
+                            "type": "auth_confirmed",
+                            "data": {"email": user_email}
+                        }))
+                    else:
+                        logger.warning("Auth message missing user ID")
                 else:
                     logger.warning(f"Unsupported message type: {msg_type}")
 

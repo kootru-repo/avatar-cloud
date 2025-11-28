@@ -834,6 +834,46 @@
             animation: ledPulse 1.5s ease-in-out infinite;
         }
 
+        /* Logout button styles */
+        .logout-button {
+            background:
+                linear-gradient(180deg,
+                    rgba(60, 45, 35, 0.95) 0%,
+                    rgba(45, 35, 28, 0.98) 50%,
+                    rgba(35, 28, 22, 0.95) 100%
+                );
+            border: 1px solid rgba(100, 75, 55, 0.7);
+        }
+
+        .logout-button:hover {
+            background:
+                linear-gradient(180deg,
+                    rgba(80, 55, 40, 0.95) 0%,
+                    rgba(60, 45, 35, 0.98) 50%,
+                    rgba(45, 35, 28, 0.95) 100%
+                );
+            border-color: rgba(120, 90, 65, 0.8);
+        }
+
+        .logout-led {
+            background: radial-gradient(circle at 40% 40%,
+                #cc8844 0%,
+                #aa6633 50%,
+                #774422 100%
+            );
+            box-shadow:
+                0 0 4px rgba(204, 136, 68, 0.6),
+                0 0 8px rgba(170, 102, 51, 0.4),
+                inset 0 1px 1px rgba(0, 0, 0, 0.5),
+                0 0.5px 0 rgba(255, 200, 150, 0.2);
+        }
+
+        #logoutModule {
+            margin-top: 8px;
+            border-top: 1px solid rgba(60, 60, 65, 0.5);
+            padding-top: 8px;
+        }
+
         /* Status display module */
         .rack-status-display {
             background:
@@ -1874,9 +1914,721 @@
                 max-height: 80vw;
             }
         }
+
+        /* ==========================================
+           KOOTRU LLC AUTHENTICATION UI
+           Professional login overlay
+           ========================================== */
+
+        /* Auth Gate - Full screen overlay */
+        .auth-gate {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+
+        .auth-gate.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .auth-gate::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Login Container */
+        .login-container {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Login Card */
+        .login-card {
+            background: rgba(20, 20, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        /* Branding Header */
+        .login-branding {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 900;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .login-company {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 3px;
+            margin-bottom: 0.25rem;
+        }
+
+        .login-tagline {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Form Elements */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .form-input-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            color: #ffffff;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-input:focus {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Password Toggle */
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Remember Me */
+        .remember-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+        }
+
+        .remember-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .remember-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: #3b82f6;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .forgot-link:hover {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
+
+        /* Primary Button */
+        .btn-primary {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Loading State */
+        .btn-primary.loading {
+            color: transparent;
+        }
+
+        .btn-primary.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Divider */
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .login-divider span {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Google Button */
+        .btn-google {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-google:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-google:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-google svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Error Message */
+        .login-error {
+            display: none;
+            padding: 0.75rem 1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: #f87171;
+            text-align: center;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .login-error.visible {
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+            20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+
+        /* Success Message */
+        .login-success {
+            display: none;
+            padding: 0.75rem 1rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: #4ade80;
+            text-align: center;
+        }
+
+        .login-success.visible {
+            display: block;
+        }
+
+        /* Footer */
+        .login-footer {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .login-copyright {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Loading Overlay */
+        .auth-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1.5rem;
+            opacity: 1;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .auth-loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .auth-loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .auth-loading-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 1px;
+        }
+
+        /* User Badge (shown when logged in) */
+        .user-badge {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 20px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.7rem;
+            color: #60a5fa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-badge:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .user-badge.visible {
+            display: flex;
+        }
+
+        .user-badge-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* Forgot Password Modal */
+        .forgot-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10002;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .forgot-modal.visible {
+            display: flex;
+        }
+
+        .forgot-modal-content {
+            background: rgba(20, 20, 30, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 380px;
+            width: 90%;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .forgot-modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .forgot-modal-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .forgot-modal-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Auth Mode Toggle */
+        .auth-mode-toggle {
+            text-align: center;
+            margin-top: 1.25rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .mode-toggle-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+            margin-left: 0.25rem;
+            transition: color 0.2s;
+        }
+
+        .mode-toggle-link:hover {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
     </style>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
+    <!-- Auth Loading Screen - shown while checking auth state -->
+    <div id="authLoading" class="auth-loading">
+        <div class="auth-loading-spinner"></div>
+        <div class="auth-loading-text">Initializing...</div>
+    </div>
+
+    <!-- Auth Gate - Login Screen -->
+    <div id="authGate" class="auth-gate hidden">
+        <div class="login-container">
+            <div class="login-card">
+                <!-- Branding -->
+                <div class="login-branding">
+                    <div class="login-logo">K</div>
+                    <div class="login-company">KOOTRU</div>
+                    <div class="login-tagline">AI Avatar Platform</div>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="login-form" autocomplete="on">
+                    <!-- Error Message -->
+                    <div id="loginError" class="login-error"></div>
+
+                    <!-- Success Message -->
+                    <div id="loginSuccess" class="login-success"></div>
+
+                    <!-- Name (Sign-up only) -->
+                    <div class="form-group" id="nameGroup" style="display: none;">
+                        <label class="form-label" for="loginName">Full Name</label>
+                        <input
+                            type="text"
+                            id="loginName"
+                            class="form-input"
+                            placeholder="Your name"
+                            autocomplete="name"
+                        >
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label class="form-label" for="loginEmail">Email</label>
+                        <input
+                            type="email"
+                            id="loginEmail"
+                            class="form-input"
+                            placeholder="you@company.com"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label class="form-label" for="loginPassword">Password</label>
+                        <div class="form-input-wrapper">
+                            <input
+                                type="password"
+                                id="loginPassword"
+                                class="form-input"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+                            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+                                👁
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password (Sign-up only) -->
+                    <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+                        <label class="form-label" for="confirmPassword">Confirm Password</label>
+                        <div class="form-input-wrapper">
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                class="form-input"
+                                placeholder="Confirm your password"
+                                autocomplete="new-password"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="remember-row" id="rememberRow">
+                        <label class="remember-label">
+                            <input type="checkbox" id="rememberMe" class="remember-checkbox" checked>
+                            Remember me
+                        </label>
+                        <a href="#" id="forgotPasswordLink" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <!-- Sign In / Sign Up Button -->
+                    <button type="submit" id="signInBtn" class="btn-primary">
+                        SIGN IN
+                    </button>
+
+                    <!-- Mode Toggle -->
+                    <div class="auth-mode-toggle">
+                        <span id="modeText">Don't have an account?</span>
+                        <a href="#" id="modeToggle" class="mode-toggle-link">Create one</a>
+                    </div>
+                </form>
+
+                <!-- Divider -->
+                <div class="login-divider">
+                    <span>or continue with</span>
+                </div>
+
+                <!-- Google Sign In -->
+                <button type="button" id="googleSignInBtn" class="btn-google">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Sign in with Google
+                </button>
+
+                <!-- Footer -->
+                <div class="login-footer">
+                    <p class="login-copyright">© 2024 Kootru LLC. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotModal" class="forgot-modal">
+        <div class="forgot-modal-content">
+            <h3 class="forgot-modal-title">Reset Password</h3>
+            <p class="forgot-modal-text">Enter your email address and we'll send you a link to reset your password.</p>
+
+            <div id="forgotError" class="login-error"></div>
+            <div id="forgotSuccess" class="login-success"></div>
+
+            <div class="form-group">
+                <label class="form-label" for="forgotEmail">Email</label>
+                <input
+                    type="email"
+                    id="forgotEmail"
+                    class="form-input"
+                    placeholder="you@company.com"
+                    required
+                >
+            </div>
+
+            <div class="forgot-modal-buttons">
+                <button type="button" id="forgotCancelBtn" class="btn-secondary">Cancel</button>
+                <button type="button" id="forgotSubmitBtn" class="btn-primary">Send Reset Link</button>
+            </div>
+        </div>
+    </div>
+
     <div class="console-container">
         <div class="console-header">
             <h1>🎸 Live with Whinny Kravitz</h1>
@@ -1961,6 +2713,15 @@
                         </div>
                     </div>
 
+                    <!-- Log Out Module -->
+                    <div class="rack-module" id="logoutModule">
+                        <div class="rack-module-label">● SESSION ●</div>
+                        <button class="rack-button logout-button" id="logoutBtn">
+                            <div class="rack-led logout-led"></div>
+                            <span>LOG OUT</span>
+                        </button>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -2005,6 +2766,335 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=UNIFIED_BARGEIN"></script>
+    <!-- Auth Manager (must load before app.js) -->
+    <script src="auth.js?v=SINGLE_SESSION"></script>
+
+    <!-- Login UI Handler -->
+    <script>
+        (function() {
+            // DOM Elements
+            const authLoading = document.getElementById('authLoading');
+            const authGate = document.getElementById('authGate');
+            const loginForm = document.getElementById('loginForm');
+            const loginName = document.getElementById('loginName');
+            const nameGroup = document.getElementById('nameGroup');
+            const loginEmail = document.getElementById('loginEmail');
+            const loginPassword = document.getElementById('loginPassword');
+            const confirmPassword = document.getElementById('confirmPassword');
+            const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+            const passwordToggle = document.getElementById('passwordToggle');
+            const rememberMe = document.getElementById('rememberMe');
+            const rememberRow = document.getElementById('rememberRow');
+            const signInBtn = document.getElementById('signInBtn');
+            const googleSignInBtn = document.getElementById('googleSignInBtn');
+            const loginError = document.getElementById('loginError');
+            const loginSuccess = document.getElementById('loginSuccess');
+            const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+            const forgotModal = document.getElementById('forgotModal');
+            const forgotEmail = document.getElementById('forgotEmail');
+            const forgotCancelBtn = document.getElementById('forgotCancelBtn');
+            const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
+            const forgotError = document.getElementById('forgotError');
+            const forgotSuccess = document.getElementById('forgotSuccess');
+            const modeToggle = document.getElementById('modeToggle');
+            const modeText = document.getElementById('modeText');
+
+            // Auth mode state
+            let isSignUpMode = false;
+
+            // Helper functions
+            function showError(element, message) {
+                element.textContent = message;
+                element.classList.add('visible');
+            }
+
+            function hideError(element) {
+                element.classList.remove('visible');
+            }
+
+            function showSuccess(element, message) {
+                element.textContent = message;
+                element.classList.add('visible');
+            }
+
+            function hideSuccess(element) {
+                element.classList.remove('visible');
+            }
+
+            function setLoading(button, loading) {
+                if (loading) {
+                    button.classList.add('loading');
+                    button.disabled = true;
+                } else {
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                }
+            }
+
+            function disableForm(disabled) {
+                loginName.disabled = disabled;
+                loginEmail.disabled = disabled;
+                loginPassword.disabled = disabled;
+                confirmPassword.disabled = disabled;
+                rememberMe.disabled = disabled;
+                googleSignInBtn.disabled = disabled;
+            }
+
+            // Toggle between sign-in and sign-up modes
+            function setAuthMode(signUp) {
+                isSignUpMode = signUp;
+                hideError(loginError);
+                hideSuccess(loginSuccess);
+
+                if (signUp) {
+                    // Sign-up mode
+                    nameGroup.style.display = 'flex';
+                    confirmPasswordGroup.style.display = 'flex';
+                    forgotPasswordLink.style.display = 'none';
+                    signInBtn.textContent = 'CREATE ACCOUNT';
+                    modeText.textContent = 'Already have an account?';
+                    modeToggle.textContent = 'Sign in';
+                    loginPassword.autocomplete = 'new-password';
+                } else {
+                    // Sign-in mode
+                    nameGroup.style.display = 'none';
+                    confirmPasswordGroup.style.display = 'none';
+                    forgotPasswordLink.style.display = 'inline';
+                    signInBtn.textContent = 'SIGN IN';
+                    modeText.textContent = "Don't have an account?";
+                    modeToggle.textContent = 'Create one';
+                    loginPassword.autocomplete = 'current-password';
+                }
+            }
+
+            // Mode toggle click
+            modeToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                setAuthMode(!isSignUpMode);
+            });
+
+            // Password visibility toggle
+            passwordToggle.addEventListener('click', () => {
+                const type = loginPassword.type === 'password' ? 'text' : 'password';
+                loginPassword.type = type;
+                passwordToggle.textContent = type === 'password' ? '👁' : '🙈';
+            });
+
+            // Form submit (handles both sign-in and sign-up)
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideError(loginError);
+                hideSuccess(loginSuccess);
+
+                const email = loginEmail.value.trim();
+                const password = loginPassword.value;
+                const remember = rememberMe.checked;
+
+                if (!email || !password) {
+                    showError(loginError, 'Please enter both email and password.');
+                    return;
+                }
+
+                if (isSignUpMode) {
+                    // Sign-up validation
+                    const confirm = confirmPassword.value;
+                    if (password !== confirm) {
+                        showError(loginError, 'Passwords do not match.');
+                        return;
+                    }
+                    if (password.length < 6) {
+                        showError(loginError, 'Password must be at least 6 characters.');
+                        return;
+                    }
+                }
+
+                setLoading(signInBtn, true);
+                disableForm(true);
+
+                try {
+                    if (isSignUpMode) {
+                        // Sign up
+                        const displayName = loginName.value.trim() || null;
+                        await window.authManager.signUpWithEmail(email, password, displayName, remember);
+                        showSuccess(loginSuccess, 'Account created! Loading...');
+                    } else {
+                        // Sign in
+                        await window.authManager.signInWithEmail(email, password, remember);
+                        showSuccess(loginSuccess, 'Sign in successful! Loading...');
+                    }
+                    // Auth state change will handle the transition
+                } catch (error) {
+                    showError(loginError, error.message);
+                    setLoading(signInBtn, false);
+                    disableForm(false);
+                }
+            });
+
+            // Google sign in (works for both new and existing users)
+            googleSignInBtn.addEventListener('click', async () => {
+                hideError(loginError);
+                hideSuccess(loginSuccess);
+                setLoading(googleSignInBtn, true);
+                disableForm(true);
+
+                try {
+                    await window.authManager.signInWithGoogle();
+                    showSuccess(loginSuccess, 'Sign in successful! Loading...');
+                } catch (error) {
+                    showError(loginError, error.message);
+                    setLoading(googleSignInBtn, false);
+                    disableForm(false);
+                }
+            });
+
+            // Forgot password link
+            forgotPasswordLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                hideError(forgotError);
+                hideSuccess(forgotSuccess);
+                forgotEmail.value = loginEmail.value;
+                forgotModal.classList.add('visible');
+            });
+
+            // Forgot password cancel
+            forgotCancelBtn.addEventListener('click', () => {
+                forgotModal.classList.remove('visible');
+            });
+
+            // Forgot password submit
+            forgotSubmitBtn.addEventListener('click', async () => {
+                hideError(forgotError);
+                hideSuccess(forgotSuccess);
+
+                const email = forgotEmail.value.trim();
+                if (!email) {
+                    showError(forgotError, 'Please enter your email address.');
+                    return;
+                }
+
+                setLoading(forgotSubmitBtn, true);
+
+                try {
+                    await window.authManager.sendPasswordReset(email);
+                    showSuccess(forgotSuccess, 'Password reset email sent! Check your inbox.');
+                    setTimeout(() => {
+                        forgotModal.classList.remove('visible');
+                    }, 3000);
+                } catch (error) {
+                    showError(forgotError, error.message);
+                } finally {
+                    setLoading(forgotSubmitBtn, false);
+                }
+            });
+
+            // Close modal on backdrop click
+            forgotModal.addEventListener('click', (e) => {
+                if (e.target === forgotModal) {
+                    forgotModal.classList.remove('visible');
+                }
+            });
+
+            // Auth state handler - called when Firebase determines auth state
+            window.handleAuthStateChange = function(user) {
+                // Hide loading spinner
+                authLoading.classList.add('hidden');
+
+                if (user) {
+                    // User is signed in - hide login, show app
+                    console.log('🔐 User authenticated:', user.email);
+
+                    // Reset form NOW so it's clean when we show it later on logout
+                    resetLoginForm();
+
+                    authGate.classList.add('hidden');
+                } else {
+                    // User is not signed in - show login
+                    console.log('🔓 No user - showing login');
+
+                    // Reset login form to clean state before showing
+                    resetLoginForm();
+
+                    authGate.classList.remove('hidden');
+                }
+            };
+
+            // For auth disabled mode (local dev)
+            window.skipAuthGate = function() {
+                authLoading.classList.add('hidden');
+                authGate.classList.add('hidden');
+            };
+
+            // Reset login form to clean state
+            function resetLoginForm() {
+                // Reset form fields
+                if (loginForm) loginForm.reset();
+
+                // Hide messages
+                hideError(loginError);
+                hideSuccess(loginSuccess);
+                hideError(forgotError);
+                hideSuccess(forgotSuccess);
+
+                // Close forgot password modal if open
+                forgotModal.classList.remove('visible');
+
+                // Reset button loading states
+                setLoading(signInBtn, false);
+                setLoading(googleSignInBtn, false);
+                setLoading(forgotSubmitBtn, false);
+
+                // Re-enable all form inputs
+                disableForm(false);
+
+                // Reset to sign-in mode
+                setAuthMode(false);
+
+                // Reset password visibility
+                loginPassword.type = 'password';
+                passwordToggle.textContent = '👁';
+
+                console.log('🔄 Login form reset to clean state');
+            }
+
+            // Logout button handler
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    // Confirm logout
+                    if (!confirm('Are you sure you want to log out?')) {
+                        return;
+                    }
+
+                    console.log('🚪 Logging out...');
+
+                    try {
+                        // Stop the avatar session if running
+                        if (window.avatarClient) {
+                            console.log('🛑 Stopping avatar session...');
+                            window.avatarClient.stop();
+                        }
+
+                        // Sign out from Firebase
+                        if (window.authManager) {
+                            await window.authManager.signOut();
+                            console.log('✅ Signed out from Firebase');
+                        }
+
+                        // Reset the login form to clean state
+                        resetLoginForm();
+
+                    } catch (error) {
+                        console.error('❌ Logout error:', error);
+                        // Still try to reset form and show login
+                        resetLoginForm();
+                        authGate.classList.remove('hidden');
+                        alert('Error logging out. Please try again.');
+                    }
+                });
+            }
+        })();
+    </script>
+
+    <script type="module" src="app.js?v=SINGLE_SESSION"></script>
 </body>
 </html>

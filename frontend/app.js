@@ -752,6 +752,21 @@ class GeminiLiveClient {
             this.ws.onopen = () => {
                 clearTimeout(timeout);
                 this.log('WebSocket connected', 'success');
+
+                // Send auth info for single-session enforcement
+                if (window.authManager && window.authManager.isAuthenticated()) {
+                    const user = window.authManager.getCurrentUser();
+                    if (user && user.uid) {
+                        this.ws.send(JSON.stringify({
+                            type: 'auth',
+                            data: {
+                                uid: user.uid,
+                                email: user.email
+                            }
+                        }));
+                        console.log(`🔐 Sent auth for user: ${user.email}`);
+                    }
+                }
             };
 
             this.ws.onmessage = (event) => {
@@ -1186,6 +1201,24 @@ class GeminiLiveClient {
                 case 'go_away':
                     this.log('🚪 Server closing connection', 'info');
                     this.stop();
+                    break;
+
+                case 'session_takeover':
+                    // Another session was opened - this one is being closed
+                    console.log('👢 Session taken over by another window');
+                    this.log('⚠️ Session opened elsewhere', 'error');
+
+                    // Show user-friendly message
+                    const takeoverMsg = message.data?.message || 'Your session was opened in another window.';
+                    alert(takeoverMsg);
+
+                    // Clean up gracefully
+                    this.stop();
+                    break;
+
+                case 'auth_confirmed':
+                    // Auth acknowledged by server
+                    console.log(`✅ Auth confirmed for: ${message.data?.email}`);
                     break;
             }
 
@@ -2119,6 +2152,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load config and initialize avatar video
     try {
         const config = await window.geminiClient.loadConfig();
+
+        // Initialize Firebase Auth
+        if (window.authManager) {
+            try {
+                // Set up auth state change callback BEFORE initialization
+                // so it's ready when onAuthStateChanged fires
+                window.authManager.onAuthStateChanged((user) => {
+                    if (window.handleAuthStateChange) {
+                        window.handleAuthStateChange(user);
+                    }
+                });
+
+                await window.authManager.initialize(config);
+
+                // Check if auth is enabled
+                if (window.authManager.isEnabled()) {
+                    // Wait for auth to be ready
+                    const isAuthenticated = await window.authManager.waitForAuthReady();
+                    console.log(`🔐 Auth ready, authenticated: ${isAuthenticated}`);
+
+                    // If not authenticated, the auth gate will be shown
+                    // The app will initialize but won't be visible until login
+                    if (!isAuthenticated) {
+                        console.log('🔓 Waiting for user authentication...');
+                    }
+                } else {
+                    // Auth disabled - skip the gate
+                    console.log('🔓 Auth disabled - skipping login');
+                    if (window.skipAuthGate) {
+                        window.skipAuthGate();
+                    }
+                }
+            } catch (authError) {
+                console.error('❌ Auth initialization error:', authError);
+                // Show the login screen anyway so user can see it
+                if (window.handleAuthStateChange) {
+                    window.handleAuthStateChange(null);
+                }
+            }
+        } else {
+            // No auth manager - skip the gate
+            console.log('⚠️ Auth manager not loaded - skipping login');
+            if (window.skipAuthGate) {
+                window.skipAuthGate();
+            }
+        }
 
         // Set CSS variables from config
         if (config.video) {
