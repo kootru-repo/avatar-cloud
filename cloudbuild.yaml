@@ -69,8 +69,8 @@ steps:
       - '--region=us-central1'
       - '--platform=managed'
       - '--allow-unauthenticated'
-      - '--min-instances=1'
-      - '--max-instances=10'
+      - '--min-instances=0'
+      - '--max-instances=5'
       - '--timeout=300'
       - '--memory=512Mi'
       - '--cpu=1'
@@ -83,7 +83,7 @@ steps:
 # Configure logging
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'E2_HIGHCPU_8'
+  machineType: 'E2_MEDIUM'
 
 # Timeout for entire build (10 minutes)
 timeout: 600s

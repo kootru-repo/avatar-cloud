@@ -31,8 +31,8 @@ gcloud run deploy gemini-avatar-backend \
   --source . \
   --region=us-central1 \
   --allow-unauthenticated \
-  --min-instances=1 \
-  --max-instances=10 \
+  --min-instances=0 \
+  --max-instances=5 \
   --timeout=300 \
   --memory=512Mi \
   --cpu=1 \
@@ -109,7 +109,7 @@ git add -A && git commit -m "commit" && git push origin main
 
 # Deploy backend (MANUAL - fallback if Cloud Build unavailable)
 cd backend
-gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 0 --max-instances 5 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
 
 # Deploy frontend (manual - from project root)
 firebase deploy --only hosting
@@ -241,10 +241,11 @@ gemini-livewire-avatar/
 - **Configuration:**
   - Memory: 512Mi
   - CPU: 1
-  - Min Instances: 1 (keeps warm)
-  - Max Instances: 10
+  - Min Instances: 0 (scale to zero - cost optimized for dev/demo)
+  - Max Instances: 5
   - Timeout: 300s
   - Authentication: Unauthenticated (public)
+  - **Note:** First request after idle has 5-15s cold start delay
 - **Environment Variables:**
   - `BACKEND_HOST=0.0.0.0`
   - `BACKEND_PORT=8080`
@@ -387,7 +388,7 @@ git add -A && git commit -m "Fix transcription bug" && git push origin main
 
 ```bash
 cd backend
-gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 0 --max-instances 5 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
 ```
 
 ### **Workflow 2: Frontend Manual Deployment (MANUAL)**
@@ -2230,7 +2231,7 @@ git add -A && git commit -m "commit" && git push origin main
 
 # For backend changes (MANUAL - if Cloud Build unavailable):
 cd backend
-gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 1 --max-instances 10 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
+gcloud run deploy gemini-avatar-backend --source . --region us-central1 --allow-unauthenticated --min-instances 0 --max-instances 5 --timeout 300 --memory 512Mi --cpu 1 --set-env-vars BACKEND_HOST=0.0.0.0,BACKEND_PORT=8080,DEBUG=false,REQUIRE_AUTH=false,FIREBASE_PROJECT_ID=avatar-478217 --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest --port 8080
 # Takes 3-5 minutes
 
 # For frontend changes (ALWAYS MANUAL):
