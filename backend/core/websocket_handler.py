@@ -704,6 +704,10 @@ async def handle_client(websocket: Any) -> None:
                         if server_content:
                             break
 
+                    # CRITICAL: Clear the skip flag after consuming acknowledgment
+                    # Without this, the first real user response gets skipped!
+                    session.skip_initial_greeting = False
+
                 except Exception as e:
                     logger.warning(f"⚠️ Failed to send context: {e}")
 
